@@ -20,7 +20,9 @@
       "Bash(git push origin main:*)",
       "Bash(git push origin HEAD:main:*)",
       "Read(.env.local)",
-      "Read(./.env.local)"
+      "Read(./.env.local)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)"
     ]
   }
 }

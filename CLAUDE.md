@@ -10,7 +10,7 @@
 - 할 일 목록: `docs/tasks/frontend-ge.md`, `docs/tasks/frontend-jw.md`. 사용자가 "N번 작업"이라고 하면 이 파일의 해당 항목을 따름. 끝나면 `[ ]` → `[x]`
 - 사용자는 코드를 읽지 않음. 바꾼 내용은 "어느 화면에서 무엇이 달라졌는지, 어떻게 눌러서 확인하는지"로 3줄 이내 설명
 - 한 번에 한 화면·한 기능만. 끝나면 직접 확인할 방법을 알려주고 `/save` 를 권하기
-- 슬래시 커맨드: `/start`(최신화·main 합치기), `/save`(검사·커밋·push), `/pr`(main 으로 PR). 내용은 .claude/commands/
+- 슬래시 커맨드: `/start`(최신화·main 합치기), `/save`(검사·커밋·push). 내용은 .claude/commands/
 - 🚧 `ScreenPlaceholder` 가 있는 화면은 아직 안 만든 화면. 실제 화면을 만들면 지우기
 - 화면 주소(라우트)는 src/App.tsx 에 이미 다 연결돼 있음. 프론트 B 는 App.tsx 를 고칠 필요 없음
 - 참고 구현: `origin/feature/frontend-session` 에 먼저 만들어 본 계획·자격증·온보딩 화면이 있음. `git show origin/feature/frontend-session:<경로>` 로 읽고 참고만 하고, 브랜치째 merge 하지 않기 (main 과 충돌 많음)
@@ -31,8 +31,9 @@
 - src/features/forecast/calc.ts 는 B 폴더에 있지만 모두가 쓰는 산출 모듈. 고칠 땐 테스트 전부 통과 + 사용자에게 알리기
 
 ## 브랜치·병합
-- main이 팀 기준점. main에 직접 push·머지 금지. 각자 브랜치 → main PR (CONTRIBUTING.md, 리뷰 1명 + CI 통과 → Squash and merge)
-- 매일 저녁 각자 브랜치 → main PR (명세서 NFR-MAINT-2). 다른 사람 작업은 git fetch origin && git merge origin/main 으로 받기 (main을 rebase 하지 않기)
+- main이 팀 기준점. main에 직접 push·머지 금지
+- 팀 결정(10/13): 프론트 작업은 **각자 브랜치에 push까지만**. main 으로 PR 은 팀장이 정할 때만 만들고, 팀원·Claude Code 는 PR 을 만들거나 머지하지 않기
+- main 에 새로 들어온 작업은 git fetch origin && git merge origin/main 으로 받기 (main을 rebase 하지 않기)
 - push 전 git pull --rebase origin <내 브랜치>, force push 금지
 - push 전 pnpm lint && pnpm typecheck && pnpm test && pnpm build 통과
 

@@ -1,41 +1,47 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
-
+/*
+ * 학기예보 토큰
+ * ink(밤하늘 남색) / sky(예보 파랑) / paper(서늘한 회백)
+ * clear·caution·storm = 맑음·흐림·폭풍 (여유·주의·과부하)
+ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.36 0.07 255);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.5 0.042 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.55 0.08 255);
 
-  /* 부담 단계 (맑음·흐림·폭풍) */
-  --sunny: oklch(0.58 0.12 150);
-  --cloudy: oklch(0.7 0.14 70);
-  --storm: oklch(0.56 0.17 28);
+  --ink: #17233b;
+  --clear: #2f9e6b;
+  --caution: #e59a2e;
+  --storm: #d2453f;
+
+  --background: #f5f7fa;
+  --foreground: #17233b;
+  --card: #ffffff;
+  --card-foreground: #17233b;
+  --popover: #ffffff;
+  --popover-foreground: #17233b;
+  --primary: #3f6fd8;
+  --primary-foreground: #ffffff;
+  --secondary: #e8edf4;
+  --secondary-foreground: #17233b;
+  --muted: #e8edf4;
+  --muted-foreground: #5a6780;
+  --accent: #e3ebfb;
+  --accent-foreground: #17233b;
+  --destructive: #d2453f;
+  --border: #d5dce6;
+  --input: #c9d2de;
+  --ring: #3f6fd8;
 }
 
 @theme inline {
-  --font-sans: 'Pretendard', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  --color-ink: var(--ink);
+  --color-clear: var(--clear);
+  --color-caution: var(--caution);
+  --color-storm: var(--storm);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -54,17 +60,38 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-sunny: var(--sunny);
-  --color-cloudy: var(--cloudy);
-  --color-storm: var(--storm);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
     word-break: keep-all;
+  }
+}
+
+/* 로그인 화면의 예보 막대: 페이지 진입 시 한 번만 차오름 */
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+.forecast-bar {
+  transform-origin: bottom;
+  animation: bar-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .forecast-bar {
+    animation: none;
   }
 }

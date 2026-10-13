@@ -28,11 +28,21 @@ git clone <이 레포 주소>
 cd vibe-coding-challenge
 pnpm install
 
-cp .env.example .env.local   # 값은 팀 채널에서 공유받기
-
-supabase start               # 로컬 Supabase 실행
-pnpm dev                     # 개발 서버 실행
+cp .env.example .env.local   # 값은 팀 채널에서 공유받기 (개발용 Supabase 서울 프로젝트)
+pnpm dev                     # http://localhost:5173
 ```
+
+로그인은 Google만 씁니다. 로컬에서는 `.env.local`에 `VITE_DEMO_LOGIN=true`를 넣으면 데모 계정(`yebo@hakgi.test` 등)으로 바로 들어갈 수 있습니다 ([docs/DUMMY_DATA.md](./docs/DUMMY_DATA.md))
+
+## 문서
+
+| 문서 | 내용 |
+|---|---|
+| [docs/FRONTEND_GUIDE.md](./docs/FRONTEND_GUIDE.md) | **프론트 팀원 시작 가이드** (설치·실행·매일 작업 흐름) |
+| [docs/tasks/](./docs/tasks/) | 프론트 A(ge)·B(jw) 할 일 목록과 Claude Code 프롬프트 |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | ERD, 데이터 흐름, 보안 규칙(RLS) |
+| [docs/AUTH.md](./docs/AUTH.md) | 로그인·세션 동작 방식, Supabase 인증 설정 방법 |
+| [docs/DUMMY_DATA.md](./docs/DUMMY_DATA.md) | 데모 계정, 더미데이터, 명세서 기준값 |
 
 ## 협업 규칙
 

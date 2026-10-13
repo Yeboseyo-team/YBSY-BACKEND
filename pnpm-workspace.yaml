@@ -1,0 +1,7 @@
+# pnpm은 설치 스크립트를 기본 차단합니다. 빌드가 필요한 패키지만 허용.
+# pnpm 10.x
+onlyBuiltDependencies:
+  - esbuild
+# pnpm 11+
+allowBuilds:
+  esbuild: true

@@ -11,6 +11,10 @@ const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
+const PlansPage = lazy(() => import("@/pages/PlansPage"));
+const PlanNewPage = lazy(() => import("@/pages/PlanNewPage"));
+const PlanEditPage = lazy(() => import("@/pages/PlanEditPage"));
+const CertificateSearchPage = lazy(() => import("@/pages/CertificateSearchPage"));
 
 export default function App() {
   return (
@@ -23,6 +27,12 @@ export default function App() {
           <Route element={<OnboardingGuard />}>
             <Route element={<AppShell />}>
               <Route index element={<HomePage />} />
+              <Route path="plans" element={<PlansPage />} />
+              <Route path="plans/new" element={<PlanNewPage />} />
+              <Route path="plans/:id" element={<PlanEditPage />} />
+              {/* /certificates 는 B의 "내 자격증" 화면이 생기면 그쪽으로 바꿉니다 */}
+              <Route path="certificates" element={<CertificateSearchPage />} />
+              <Route path="certificates/add" element={<CertificateSearchPage />} />
             </Route>
           </Route>
         </Route>

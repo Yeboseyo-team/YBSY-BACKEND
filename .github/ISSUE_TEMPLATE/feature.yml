@@ -1,0 +1,26 @@
+name: ✨ 기능
+description: 새 기능이나 작업을 등록해요
+title: "[Feat] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 무엇을 만드나요?
+      description: 기능 설명과 목적
+    validations:
+      required: true
+  - type: textarea
+    id: todo
+    attributes:
+      label: 할 일
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 참고 사항
+      description: 디자인 링크, 관련 이슈 등

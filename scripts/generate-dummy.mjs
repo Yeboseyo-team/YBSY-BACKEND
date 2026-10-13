@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // ─────────────────────────────────────────────
-// 1. 학기 · 산출 기준 (제안서 6장)
+// 1. 학기 · 산출 기준 (요구사항 명세서 4장)
 // ─────────────────────────────────────────────
 export const SEMESTER = {
   label: '2026년 2학기',
@@ -20,14 +20,27 @@ export const SEMESTER = {
   finalWeek: 15, // 12/7 ~ 12/13
 };
 export const EXAM_WEIGHT = 1.5; // 시험 주차 수업 가중치
-export const LEVEL = { OK_BELOW: 0.8, OVER_ABOVE: 1.0 }; // <80% 여유, 80~100% 주의, >100% 과부하
+export const LEVEL = { OK_BELOW: 0.8, OVER_ABOVE: 1.0 }; // <0.8 맑음, 0.8~1.0 흐림, >1.0 폭풍 (반올림 전 값으로 판정)
+export const MAX_PLANS = 30; // FR-02-5
 
-// F-03 유형별 기본값 (적음·보통·많음)
+// F-03 유형별 기본값 (명세서 3장 표, 팀 확정 필요)
+//   수업은 "학점당" 시간 → 학점 × 값 (3학점 보통 = 6시간)
 export const PLAN_DEFAULTS = {
-  class: { label: '수업', low: 4, mid: 6, high: 9, hint: '3학점 전공 기준' },
-  activity: { label: '활동', low: 2, mid: 4, high: 8, hint: '동아리·학회·대외활동' },
-  project: { label: '프로젝트', low: 3, mid: 5, high: 10, hint: '팀 과제·공모전' },
+  class: { label: '수업', perCredit: true, low: 1.5, normal: 2, high: 3, hint: '학점당 시간, 3학점 보통 = 주 6시간' },
+  activity: { label: '활동', perCredit: false, low: 2, normal: 4, high: 8, hint: '동아리·학회·대외활동' },
+  project: { label: '프로젝트', perCredit: false, low: 3, normal: 6, high: 10, hint: '팀 과제·공모전' },
 };
+
+/** 유형·학점·단계로 기본 주당 시간 계산 (FR-03-1, FR-03-2) */
+export function defaultHours(type, level, credits) {
+  const d = PLAN_DEFAULTS[type];
+  return d.perCredit ? d[level] * (credits ?? 3) : d[level];
+}
+/** 주당 시간이 기본값과 같으면 그 단계, 아니면 'custom'(직접 입력) (FR-03-3) */
+function levelOf(type, hours, credits) {
+  for (const lv of ['low', 'normal', 'high']) if (defaultHours(type, lv, credits) === hours) return lv;
+  return 'custom';
+}
 
 // ─────────────────────────────────────────────
 // 2. 자격증 일정 (팀 공용, F-04)
@@ -65,24 +78,27 @@ const uid = (n) => `a0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const pid = (u, n) => `b0000000-0000-4000-${String(u).padStart(4, '0')}-${String(n).padStart(12, '0')}`;
 export const DEMO_PASSWORD = 'hakgi1234!';
 
+// plans: [계획명, 유형, 시작 주차, 종료 주차, 주당 시간, 학점(수업만)]
+// certs: [회차 id, 주당 학습 시간, 준비 기간(생략 시 회차 기본값)]
 export const users = [
   {
+    // 명세서 4.5 검증 예시와 같은 구성 → 8주차 = 6×5×1.5 + 4 + 8 = 57시간, 57÷50 = 1.14 폭풍
     id: uid(1), email: 'yebo@hakgi.test', display_name: '김예보', persona: '취업 준비생 (3학년) · 시연 시나리오 주인공',
     available_hours: 50,
     plans: [
-      ['운영체제', 'class', 1, 16, 6], ['데이터베이스', 'class', 1, 16, 6], ['컴퓨터네트워크', 'class', 1, 16, 6],
-      ['소프트웨어공학', 'class', 1, 16, 4], ['교양 글쓰기', 'class', 1, 16, 3],
-      ['프로그래밍 학회', 'activity', 1, 16, 4], ['DB 팀 프로젝트', 'project', 6, 10, 4],
+      ['운영체제', 'class', 1, 16, 6, 3], ['데이터베이스', 'class', 1, 16, 6, 3], ['컴퓨터네트워크', 'class', 1, 16, 6, 3],
+      ['소프트웨어공학', 'class', 1, 16, 6, 3], ['알고리즘', 'class', 1, 16, 6, 3],
+      ['프로그래밍 학회', 'activity', 1, 16, 4],
     ],
-    certs: [[cid(2), 8]], // 정보처리기사 4회 필기 → 준비 7~12주차
+    certs: [[cid(2), 8]], // 정보처리기사 4회 필기(11/28, 13주차) → 준비 8~13주차
   },
   {
     id: uid(2), email: 'jiwon@hakgi.test', display_name: '이지원', persona: '대외활동 지원 예정자 (2학년)',
     available_hours: 45,
     plans: [
-      ['경영학원론', 'class', 1, 16, 5], ['마케팅원론', 'class', 1, 16, 5], ['회계원리', 'class', 1, 16, 6],
-      ['통계학', 'class', 1, 16, 6], ['영어회화', 'class', 1, 16, 2],
-      ['사진 동아리', 'activity', 1, 16, 3], ['교내 마케팅 공모전', 'project', 3, 9, 5],
+      ['경영학원론', 'class', 1, 16, 6, 3], ['마케팅원론', 'class', 1, 16, 4.5, 3], ['회계원리', 'class', 1, 16, 6, 3],
+      ['통계학', 'class', 1, 16, 9, 3], ['영어회화', 'class', 1, 16, 2, 1],
+      ['사진 동아리', 'activity', 1, 16, 3], ['교내 마케팅 공모전', 'project', 3, 9, 6],
     ],
     certs: [[cid(14), 5]], // TOEIC 11월
   },
@@ -90,8 +106,8 @@ export const users = [
     id: uid(3), email: 'woonyoung@hakgi.test', display_name: '박운영', persona: '학생회 운영진 (4학년)',
     available_hours: 55,
     plans: [
-      ['졸업 프로젝트', 'project', 1, 16, 10], ['데이터마이닝', 'class', 1, 16, 6],
-      ['정보보호개론', 'class', 1, 16, 6], ['진로설계', 'class', 1, 16, 2],
+      ['졸업 프로젝트', 'project', 1, 16, 10], ['데이터마이닝', 'class', 1, 16, 6, 3],
+      ['정보보호개론', 'class', 1, 16, 6, 3], ['진로설계', 'class', 1, 16, 2, 1],
       ['단과대 학생회', 'activity', 1, 16, 10], ['축제 준비위원회', 'activity', 6, 8, 8],
     ],
     certs: [[cid(5), 6], [cid(6), 6]], // SQLD + ADsP 준비기간이 겹침
@@ -102,37 +118,49 @@ export const users = [
   },
 ];
 
-// 사전 검토(F-06) 시연용: 김예보가 "저장 전"에 넣어보는 계획
-export const previewPlan = { user_id: uid(1), title: '대학생 서포터즈 콘텐츠 제작', type: 'activity', start_week: 9, end_week: 14, hours_per_week: 10 };
+// 사전 검토(F-06) 시연용: 김예보가 "저장 전"에 넣어보는 대외활동 → 폭풍 1주 → 3주 (9, 10주차 추가)
+export const previewPlan = { user_id: uid(1), title: '대외 공모전 출전', type: 'activity', credits: null, load_level: 'custom', start_week: 9, end_week: 10, hours_per_week: 10 };
 
 // ─────────────────────────────────────────────
-// 4. 부담 산출 (제안서 산출 기준을 그대로 구현한 참조 로직)
+// 4. 부담 산출 (명세서 4장을 그대로 구현한 참조 로직)
+//    src/features/forecast/calc.ts 를 만들 때 이 함수와 같은 결과가 나와야 합니다.
 // ─────────────────────────────────────────────
 const DAY = 86400000;
+/** 4.1 week(d) = floor((d − S) / 7) + 1. 1~16 밖이면 학기 범위 밖 */
 export function weekOf(dateStr, semesterStart = SEMESTER.start) {
   return Math.floor((Date.parse(dateStr) - Date.parse(semesterStart)) / (7 * DAY)) + 1;
 }
+/** 4.2 준비 주차 = E−N+1 ~ E (시험 주 포함 N주) 중 1~16주차에 걸친 주 */
+export function prepWeeks(examDate, prepN, semesterStart = SEMESTER.start) {
+  const e = weekOf(examDate, semesterStart);
+  const out = [];
+  for (let w = e - prepN + 1; w <= e; w++) if (w >= 1 && w <= SEMESTER.totalWeeks) out.push(w);
+  return out; // 빈 배열이면 "이번 학기 범위 밖" (FR-04-6)
+}
 const round1 = (n) => Math.round(n * 10) / 10;
 
-export function forecast(available, plans, userCerts) {
+export function forecast(available, plans, userCerts, exam = { midterm: SEMESTER.midtermWeek, final: SEMESTER.finalWeek }) {
   const weeks = [];
   for (let w = 1; w <= SEMESTER.totalWeeks; w++) {
-    const examWeek = w === SEMESTER.midtermWeek || w === SEMESTER.finalWeek;
+    const examWeek = w === exam.midterm || w === exam.final;
     const items = [];
+    let raw = 0;
     for (const p of plans) {
       if (w < p.start_week || w > p.end_week) continue;
-      const h = p.type === 'class' && examWeek ? p.hours_per_week * EXAM_WEIGHT : p.hours_per_week;
-      items.push({ source: 'plan', title: p.title, hours: round1(h) });
+      const weighted = p.type === 'class' && examWeek; // 4.3 m(p,i)
+      const h = weighted ? p.hours_per_week * EXAM_WEIGHT : p.hours_per_week;
+      raw += h;
+      items.push({ source: 'plan', title: p.title, hours: round1(h), examWeighted: weighted });
     }
     for (const uc of userCerts) {
       const c = certificates.find((x) => x.id === uc.certificate_id);
-      const ew = weekOf(c.exam_date);
-      if (w >= ew - c.prep_weeks && w <= ew - 1) items.push({ source: 'certificate', title: `${c.name} 준비`, hours: uc.study_hours });
+      if (!prepWeeks(c.exam_date, uc.prep_weeks).includes(w)) continue;
+      raw += uc.study_hours;
+      items.push({ source: 'certificate', title: `${c.name} 준비`, hours: uc.study_hours, examWeighted: false });
     }
-    const total = round1(items.reduce((s, i) => s + i.hours, 0));
-    const ratio = total / available;
+    const ratio = raw / available; // 4.4 판정은 반올림 전 값으로
     const level = ratio > LEVEL.OVER_ABOVE ? 'over' : ratio >= LEVEL.OK_BELOW ? 'warn' : 'ok';
-    weeks.push({ week: w, isExamWeek: examWeek, total, ratio: round1(ratio * 100), level, items });
+    weeks.push({ week: w, isExamWeek: examWeek, total: round1(raw), ratio: round1(ratio * 100), level, items });
   }
   const count = (l) => weeks.filter((x) => x.level === l).length;
   return { weeks, summary: { over: count('over'), warn: count('warn'), ok: count('ok') } };
@@ -142,10 +170,31 @@ export function forecast(available, plans, userCerts) {
 // 5. 정규화 + 결과 계산
 // ─────────────────────────────────────────────
 const created = '2026-09-01T09:00:00+09:00';
-export const profiles = users.map((u) => ({ user_id: u.id, display_name: u.display_name, available_hours: u.available_hours, semester_start: SEMESTER.start }));
+export const profiles = users.map((u) => ({ user_id: u.id, display_name: u.display_name, available_hours: u.available_hours, semester_start: SEMESTER.start, midterm_week: SEMESTER.midtermWeek, final_week: SEMESTER.finalWeek }));
 export const plans = users.flatMap((u, ui) =>
-  u.plans.map(([title, type, start_week, end_week, hours_per_week], i) => ({ id: pid(ui + 1, i + 1), user_id: u.id, title, type, start_week, end_week, hours_per_week, created_at: created })));
-export const userCertificates = users.flatMap((u) => u.certs.map(([certificate_id, study_hours]) => ({ user_id: u.id, certificate_id, study_hours })));
+  u.plans.map(([title, type, start_week, end_week, hours_per_week, credits = null], i) => ({
+    id: pid(ui + 1, i + 1), user_id: u.id, title, type,
+    credits: type === 'class' ? credits : null,
+    load_level: levelOf(type, hours_per_week, credits),
+    start_week, end_week, hours_per_week, created_at: created,
+  })));
+export const userCertificates = users.flatMap((u) => u.certs.map(([certificate_id, study_hours, prep_weeks]) => ({
+  user_id: u.id, certificate_id, study_hours,
+  prep_weeks: prep_weeks ?? certificates.find((c) => c.id === certificate_id).prep_weeks,
+  notified_at: null,
+})));
+
+// 생성 전 검증: DB 제약(명세서 5장)과 어긋나는 더미가 있으면 바로 실패
+for (const p of plans) {
+  const bad = [];
+  if (p.title.length < 1 || p.title.length > 30) bad.push('계획명 1~30자');
+  if (p.start_week > p.end_week || p.start_week < 1 || p.end_week > 16) bad.push('주차 1~16, 시작 ≤ 종료');
+  if (p.hours_per_week < 0.5 || p.hours_per_week > 60 || (p.hours_per_week * 2) % 1 !== 0) bad.push('주당 시간 0.5~60, 0.5 단위');
+  if (p.type === 'class' && (p.credits == null || p.credits < 1 || p.credits > 4)) bad.push('수업은 학점 1~4');
+  if (bad.length) throw new Error(`plans "${p.title}": ${bad.join(', ')}`);
+}
+for (const u of users) if (u.plans.length > MAX_PLANS) throw new Error(`${u.display_name}: 계획 ${MAX_PLANS}개 초과`);
+for (const c of certificates) if (!Number.isInteger(c.default_study_hours) || c.default_study_hours < 1 || c.default_study_hours > 40) throw new Error(`${c.name}: 기본 학습 시간 1~40 정수`);
 
 const expected = Object.fromEntries(users.map((u) => [u.id, forecast(u.available_hours, plans.filter((p) => p.user_id === u.id), userCertificates.filter((x) => x.user_id === u.id))]));
 const yebo = users[0];
@@ -181,13 +230,13 @@ ${certificates.map((c) => `  (${[c.id, c.name, c.round, c.apply_start, c.apply_e
 on conflict (id) do nothing;
 
 -- 4) 계획
-insert into public.plans (id, user_id, title, type, start_week, end_week, hours_per_week, created_at) values
-${plans.map((p) => `  (${[p.id, p.user_id, p.title, p.type, p.start_week, p.end_week, p.hours_per_week, p.created_at].map(q).join(', ')})`).join(',\n')}
+insert into public.plans (id, user_id, title, type, credits, load_level, start_week, end_week, hours_per_week, created_at) values
+${plans.map((p) => `  (${[p.id, p.user_id, p.title, p.type, p.credits, p.load_level, p.start_week, p.end_week, p.hours_per_week, p.created_at].map(q).join(', ')})`).join(',\n')}
 on conflict (id) do nothing;
 
 -- 5) 사용자 선택 자격증
-insert into public.user_certificates (user_id, certificate_id, study_hours) values
-${userCertificates.map((x) => `  (${[x.user_id, x.certificate_id, x.study_hours].map(q).join(', ')})`).join(',\n')}
+insert into public.user_certificates (user_id, certificate_id, study_hours, prep_weeks) values
+${userCertificates.map((x) => `  (${[x.user_id, x.certificate_id, x.study_hours, x.prep_weeks].map(q).join(', ')})`).join(',\n')}
 on conflict do nothing;
 
 commit;
@@ -199,22 +248,31 @@ const ts = `${header.replace('--', '//')}// 학기예보 프론트 목데이터.
 // \`expectedForecast\`는 산출 로직 단위 테스트의 정답값으로 쓸 수 있습니다.
 
 export type PlanType = 'class' | 'activity' | 'project';
+/** 계획 입력 단계 (F-03): 적음·보통·많음·직접 입력 */
+export type PlanLoadLevel = 'low' | 'normal' | 'high' | 'custom';
+/** 주차 판정 단계 (F-05): 맑음·흐림·폭풍 */
 export type LoadLevel = 'ok' | 'warn' | 'over';
 
-export interface Profile { user_id: string; display_name: string; available_hours: number; semester_start: string }
-export interface Plan { id: string; user_id: string; title: string; type: PlanType; start_week: number; end_week: number; hours_per_week: number; created_at: string }
+export interface Profile { user_id: string; display_name: string; available_hours: number; semester_start: string; midterm_week: number; final_week: number }
+export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: PlanLoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string }
 export type NewPlan = Omit<Plan, 'id' | 'created_at'>;
 export interface Certificate { id: string; name: string; round: string; apply_start: string; apply_end: string; exam_date: string; prep_weeks: number; default_study_hours: number; source_url: string }
-export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number }
-export interface WeekLoadItem { source: 'plan' | 'certificate'; title: string; hours: number }
+export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number; prep_weeks: number; notified_at: string | null }
+export interface WeekLoadItem { source: 'plan' | 'certificate'; title: string; hours: number; examWeighted: boolean }
 export interface WeekLoad { week: number; isExamWeek: boolean; total: number; ratio: number; level: LoadLevel; items: WeekLoadItem[] }
 export interface Forecast { weeks: WeekLoad[]; summary: Record<LoadLevel, number> }
 
 export const SEMESTER = ${j(SEMESTER)} as const;
 export const EXAM_WEIGHT = ${EXAM_WEIGHT};
 export const LEVEL_THRESHOLD = ${j(LEVEL)} as const;
+export const MAX_PLANS = ${MAX_PLANS};
+/** F-03 기본값. 수업은 학점당 시간이라 학점 × 값 (3학점 보통 = 6) */
 export const PLAN_DEFAULTS = ${j(PLAN_DEFAULTS)} as const;
-/** 화면 표시용 날씨 비유 (제안서 8장) */
+export function defaultHours(type: PlanType, level: Exclude<PlanLoadLevel, 'custom'>, credits?: number | null): number {
+  const d = PLAN_DEFAULTS[type];
+  return d.perCredit ? d[level] * (credits ?? 3) : d[level];
+}
+/** 화면 표시용 날씨 비유 (명세서 4.4) */
 export const LEVEL_LABEL: Record<LoadLevel, { text: string; weather: string; color: string }> = {
   ok: { text: '여유', weather: '맑음', color: '#3d8a5a' },
   warn: { text: '주의', weather: '흐림', color: '#c98a1f' },

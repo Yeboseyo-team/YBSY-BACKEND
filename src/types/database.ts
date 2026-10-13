@@ -57,9 +57,11 @@ export type Database = {
       plans: {
         Row: {
           created_at: string
+          credits: number | null
           end_week: number
           hours_per_week: number
           id: string
+          load_level: string
           start_week: number
           title: string
           type: string
@@ -68,9 +70,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credits?: number | null
           end_week: number
           hours_per_week: number
           id?: string
+          load_level?: string
           start_week: number
           title: string
           type: string
@@ -79,16 +83,26 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credits?: number | null
           end_week?: number
           hours_per_week?: number
           id?: string
+          load_level?: string
           start_week?: number
           title?: string
           type?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -127,18 +141,24 @@ export type Database = {
         Row: {
           certificate_id: string
           created_at: string
+          notified_at: string | null
+          prep_weeks: number
           study_hours: number
           user_id: string
         }
         Insert: {
           certificate_id: string
           created_at?: string
+          notified_at?: string | null
+          prep_weeks: number
           study_hours: number
           user_id?: string
         }
         Update: {
           certificate_id?: string
           created_at?: string
+          notified_at?: string | null
+          prep_weeks?: number
           study_hours?: number
           user_id?: string
         }
@@ -149,6 +169,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "certificates"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -296,3 +323,6 @@ export type Profile = Tables<"profiles">
 export type Plan = Tables<"plans">
 export type Certificate = Tables<"certificates">
 export type UserCertificate = Tables<"user_certificates">
+/** plans.type, plans.load_level 은 DB에서 text + check 라서 생성 타입이 string 입니다. 화면에서는 아래 타입으로 좁혀 쓰세요. */
+export type PlanType = "class" | "activity" | "project"
+export type PlanLoadLevel = "low" | "normal" | "high" | "custom"

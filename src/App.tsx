@@ -9,6 +9,7 @@ const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 const HomePage = lazy(() => import("@/pages/HomePage"));
+const DemoPage = lazy(() => import("@/demo/DemoPage"));
 
 export default function App() {
   return (
@@ -29,6 +30,9 @@ export default function App() {
         {/* 메일·소셜 로그인 링크가 돌아오는 곳 (가드 없음) */}
         <Route path="auth/callback" element={<AuthCallbackPage />} />
         <Route path="auth/reset-password" element={<ResetPasswordPage />} />
+
+        {/* 서비스 흐름 확인용 데모 (로그인 없이, 목업 데이터). demo/walkthrough 브랜치 전용 */}
+        <Route path="demo" element={<DemoPage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -1,4 +1,4 @@
-// ⚠ 자동 생성 파일: 스키마를 바꾸면 다시 생성하세요.
+// ⚠ 자동 생성 파일: 스키마를 바꾸면 다시 생성하세요. (2026-10-13 서울 프로젝트 기준)
 //   supabase gen types typescript --project-id hxnaobwybllgdcvnwimo > src/types/database.ts
 // 아래쪽 "편의 타입"은 손으로 추가한 부분이라 재생성 후 다시 붙여 주세요.
 
@@ -37,7 +37,7 @@ export type Database = {
           exam_date: string
           id?: string
           name: string
-          prep_weeks?: number
+          prep_weeks: number
           round: string
           source_url?: string | null
         }
@@ -140,7 +140,6 @@ export type Database = {
       user_certificates: {
         Row: {
           certificate_id: string
-          created_at: string
           notified_at: string | null
           prep_weeks: number
           study_hours: number
@@ -148,15 +147,13 @@ export type Database = {
         }
         Insert: {
           certificate_id: string
-          created_at?: string
           notified_at?: string | null
           prep_weeks: number
-          study_hours: number
+          study_hours?: number
           user_id?: string
         }
         Update: {
           certificate_id?: string
-          created_at?: string
           notified_at?: string | null
           prep_weeks?: number
           study_hours?: number

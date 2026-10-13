@@ -37,12 +37,12 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values ('a0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000005', '{"sub":"a0000000-0000-4000-8000-000000000005","email":"newbie@hakgi.test","email_verified":true}', 'email', now(), now(), now())
 on conflict do nothing;
 
--- 2) 학기 설정 (정새내는 비워 둠 → 온보딩)
-update public.profiles set display_name = '김예보', available_hours = 50, semester_start = '2026-08-31', midterm_week = 8, final_week = 15 where user_id = 'a0000000-0000-4000-8000-000000000001';
-update public.profiles set display_name = '이지원', available_hours = 45, semester_start = '2026-08-31', midterm_week = 8, final_week = 15 where user_id = 'a0000000-0000-4000-8000-000000000002';
-update public.profiles set display_name = '박운영', available_hours = 55, semester_start = '2026-08-31', midterm_week = 8, final_week = 16 where user_id = 'a0000000-0000-4000-8000-000000000003';
-update public.profiles set display_name = '최수강', available_hours = 40, semester_start = '2026-08-31', midterm_week = 8, final_week = 15 where user_id = 'a0000000-0000-4000-8000-000000000004';
-update public.profiles set display_name = '정새내', available_hours = null, semester_start = null, midterm_week = 8, final_week = 15 where user_id = 'a0000000-0000-4000-8000-000000000005';
+-- 2) 학기 설정·개인정보 동의 (정새내는 비워 둠 → 온보딩)
+update public.profiles set display_name = '김예보', available_hours = 50, semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000001';
+update public.profiles set display_name = '이지원', available_hours = 45, semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000002';
+update public.profiles set display_name = '박운영', available_hours = 55, semester_start = '2026-08-31', midterm_week = 8, final_week = 16, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000003';
+update public.profiles set display_name = '최수강', available_hours = 40, semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000004';
+update public.profiles set display_name = '정새내', available_hours = null, semester_start = null, midterm_week = 8, final_week = 15, privacy_agreed_at = null where user_id = 'a0000000-0000-4000-8000-000000000005';
 
 -- 3) 자격증 회차 (공용)
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values

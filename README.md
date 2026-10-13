@@ -32,7 +32,7 @@ cp .env.example .env.local   # 값은 팀 채널에서 공유받기 (개발용 S
 pnpm dev                     # http://localhost:5173
 ```
 
-데모 계정: `yebo@hakgi.test` / `hakgi1234` (나머지는 [docs/DUMMY_DATA.md](./docs/DUMMY_DATA.md))
+로그인은 Google만 씁니다. 로컬에서는 `.env.local`에 `VITE_DEMO_LOGIN=true`를 넣으면 데모 계정(`yebo@hakgi.test` 등)으로 바로 들어갈 수 있습니다 ([docs/DUMMY_DATA.md](./docs/DUMMY_DATA.md))
 
 ## 문서
 

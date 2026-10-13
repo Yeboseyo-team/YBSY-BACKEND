@@ -111,6 +111,7 @@ export type Database = {
           display_name: string | null
           final_week: number
           midterm_week: number
+          privacy_agreed_at: string | null
           semester_start: string | null
           updated_at: string
           user_id: string
@@ -121,6 +122,7 @@ export type Database = {
           display_name?: string | null
           final_week?: number
           midterm_week?: number
+          privacy_agreed_at?: string | null
           semester_start?: string | null
           updated_at?: string
           user_id: string
@@ -131,6 +133,7 @@ export type Database = {
           display_name?: string | null
           final_week?: number
           midterm_week?: number
+          privacy_agreed_at?: string | null
           semester_start?: string | null
           updated_at?: string
           user_id?: string

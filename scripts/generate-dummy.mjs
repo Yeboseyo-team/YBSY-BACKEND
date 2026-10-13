@@ -157,8 +157,11 @@ function forecast(profile, plans, userCerts) {
 // 5. 정규화
 // ─────────────────────────────────────────────
 const created = '2026-09-01T09:00:00+09:00';
+// 개인정보 동의(NFR-LEGAL-1)는 온보딩에서 받으므로, 학기 설정을 마친 사용자만 동의한 상태로 둡니다.
+// DB에서는 트리거가 동의 시각을 서버 시각(now())으로 바꿔 기록합니다.
 const profiles = users.map(({ id, display_name, available_hours, semester_start, midterm_week, final_week }) =>
-  ({ user_id: id, display_name, available_hours, semester_start, midterm_week, final_week }));
+  ({ user_id: id, display_name, available_hours, semester_start, midterm_week, final_week,
+    privacy_agreed_at: available_hours && semester_start ? created : null }));
 const plans = users.flatMap((u) => u.plans.map(([title, type, credits, load_level, start_week, end_week, custom], i) => {
   const hours_per_week = load_level === 'custom' ? custom : defaultHours(type, load_level, credits);
   return { id: pid(u.n, i + 1), user_id: u.id, title, type, credits, load_level, start_week, end_week, hours_per_week, created_at: created, updated_at: created };
@@ -221,8 +224,8 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (${q(u.id)}, ${q(u.id)}, ${q(u.id)}, ${q(JSON.stringify({ sub: u.id, email: u.email, email_verified: true }))}, 'email', now(), now(), now())
 on conflict do nothing;`).join('\n')}
 
--- 2) 학기 설정 (정새내는 비워 둠 → 온보딩)
-${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week} where user_id = ${q(p.user_id)};`).join('\n')}
+-- 2) 학기 설정·개인정보 동의 (정새내는 비워 둠 → 온보딩)
+${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
 
 -- 3) 자격증 회차 (공용)
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values
@@ -253,8 +256,8 @@ export type PlanType = 'class' | 'activity' | 'project';
 export type LoadLevel = 'low' | 'normal' | 'high' | 'custom';
 export type Weather = 'clear' | 'cloudy' | 'storm';
 
-/** 5.1 profiles — available_hours / semester_start 가 null 이면 온보딩 미완료 */
-export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number }
+/** 5.1 profiles — available_hours / semester_start / privacy_agreed_at 중 하나라도 null 이면 온보딩 미완료 */
+export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number; privacy_agreed_at: string | null }
 /** 5.2 plans — credits 는 수업일 때만 */
 export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string; updated_at: string }
 export type PlanInput = Pick<Plan, 'title' | 'type' | 'credits' | 'load_level' | 'start_week' | 'end_week' | 'hours_per_week'>;

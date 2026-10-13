@@ -14,7 +14,7 @@
 
 ## [ ] 0. 실행 확인 (10/14)
 
-`pnpm dev` → 데모 로그인 `yebo@hakgi.test` → 메뉴 "예보", "계획"에 🚧 상자가 보이면 끝.
+`pnpm dev` → 로그인 화면 이메일 칸에 `yebo@hakgi.test` / 비밀번호 `hakgi1234` (프론트 A 1번 이후엔 데모 로그인 버튼) → 메뉴 "예보", "계획"에 🚧 상자가 보이면 끝.
 
 ## [ ] 1. 계획 데이터 불러오기·저장 (F-02, ~10/15)
 
@@ -81,7 +81,7 @@ src/pages/HomePage.tsx 를 부담 예보 화면으로 만들어줘.
 docs/tasks/frontend-jw.md 의 6번 작업을 해줘.
 src/features/preview/PreviewSheet.tsx 를 완성해줘.
 - calc.ts 의 previewForecast, comparePreview 를 써서 '지금'과 '추가했을 때' 그래프를 겹쳐 보여줘.
-- 변화 요약 문구 (예: "폭풍 주가 1개 → 3개로 늘어요")
+- 변화 요약 문구는 comparePreview 가 만든 문장을 그대로 써 (명세서 FR-06-3, 예: "폭풍 1주 → 3주 (9, 10주차 추가)")
 - [추가하기] 누르면 저장, [취소]면 DB에 아무것도 저장하지 않기
 - 계획 등록 화면(3번)의 사전 검토 버튼과 연결해줘.
 - 자격증 화면(프론트 A)도 이 시트를 쓸 거라, props 모양을 바꾸면 끝날 때 알려줘.

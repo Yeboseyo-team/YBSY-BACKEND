@@ -53,7 +53,7 @@ cp .env.example .env.local      # Windows PowerShell: copy .env.example .env.loc
 pnpm dev
 ```
 
-브라우저에서 http://localhost:5173 → 로그인 화면의 **데모 로그인**에서 `yebo@hakgi.test` 선택.
+브라우저에서 http://localhost:5173 → 로그인 화면 이메일 칸에 `yebo@hakgi.test`, 비밀번호 `hakgi1234` 입력. (프론트 A 1번 작업이 끝나면 이메일 칸 대신 **데모 로그인** 버튼이 생겨요)
 위쪽 메뉴(예보·계획·자격증·설정)를 눌러서 🚧 표시가 있는 화면이 나오면 준비 끝이에요.
 서버를 끌 때는 터미널에서 `Ctrl + C`.
 

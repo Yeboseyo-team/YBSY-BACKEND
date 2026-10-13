@@ -63,7 +63,7 @@ src/pages/CertificatesPage.tsx 를 자격증 선택 화면으로 만들어줘. �
 
 ```
 docs/tasks/frontend-ge.md 의 5번 작업을 해줘.
-먼저 git fetch origin && git merge origin/main 으로 프론트 B 의 사전 검토 시트를 받아와.
+먼저 git fetch origin 후 git checkout origin/feature/frontend-jw -- src/features/preview src/features/forecast 로 프론트 B 브랜치에서 사전 검토 시트와 예보 파일만 가져와 (브랜치 전체를 merge 하지 마). 가져온 파일은 고치지 말고 그대로 커밋해.
 자격증 회차를 저장하기 전에 src/features/preview/PreviewSheet.tsx 를 열어 '추가했을 때' 예보를 보여주고, [추가하기]일 때만 저장해줘.
 PreviewSheet 파일 자체는 프론트 B 담당이라 고치지 말고, 바꿔야 하면 나에게 말해줘.
 ```

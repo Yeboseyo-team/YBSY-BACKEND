@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { FullScreenSpinner } from "@/components/FullScreenSpinner";
-import { ProtectedRoute, PublicOnlyRoute } from "@/routes/guards";
+import { AppShell } from "@/components/layout/AppShell";
+import { OnboardingGuard, ProtectedRoute, PublicOnlyRoute } from "@/routes/guards";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const SignUpPage = lazy(() => import("@/pages/SignUpPage"));
@@ -9,6 +10,7 @@ const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage"));
 const HomePage = lazy(() => import("@/pages/HomePage"));
+const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 
 export default function App() {
   return (
@@ -16,7 +18,13 @@ export default function App() {
       <Routes>
         {/* 로그인한 사용자만 */}
         <Route element={<ProtectedRoute />}>
-          <Route index element={<HomePage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
+          {/* 학기 설정을 마친 사용자만 */}
+          <Route element={<OnboardingGuard />}>
+            <Route element={<AppShell />}>
+              <Route index element={<HomePage />} />
+            </Route>
+          </Route>
         </Route>
 
         {/* 로그인하지 않은 사용자만 */}

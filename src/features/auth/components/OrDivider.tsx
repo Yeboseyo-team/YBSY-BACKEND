@@ -1,8 +1,8 @@
-export function OrDivider() {
+export function OrDivider({ label = "또는" }: { label?: string }) {
   return (
-    <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground" role="separator">
+    <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground" role="separator">
       <span className="h-px flex-1 bg-border" />
-      또는
+      {label}
       <span className="h-px flex-1 bg-border" />
     </div>
   );

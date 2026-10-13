@@ -4,7 +4,7 @@ import { useProfile, useSignOut } from "@/features/auth/api";
 
 /**
  * 로그인 후 첫 화면 자리. 지금은 세션이 제대로 유지되는지 확인하는 용도입니다.
- * 이후 부담 예보 화면(F-05)으로 교체하세요.
+ * 이후 부담 예보 화면(F-05, 프론트 B)으로 교체하세요. 상단 메뉴는 AppShell이 그립니다.
  */
 export default function HomePage() {
   const { user, session } = useAuth();
@@ -18,16 +18,7 @@ export default function HomePage() {
     : "-";
 
   return (
-    <div className="min-h-dvh">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-5">
-          <span className="text-lg font-extrabold tracking-tight">학기예보</span>
-          <Button variant="ghost" size="sm" disabled={signOut.isPending} onClick={() => signOut.mutate()}>
-            {signOut.isPending ? "로그아웃하는 중…" : "로그아웃"}
-          </Button>
-        </div>
-      </header>
-
+    <>
       <main className="mx-auto max-w-4xl px-5 py-10">
         <h1 className="text-2xl font-bold tracking-tight">{name}님, 반가워요.</h1>
         <p className="mt-2 text-muted-foreground">여기에 이번 학기 부담 예보가 들어갈 예정입니다.</p>
@@ -50,7 +41,10 @@ export default function HomePage() {
                   : "없음 — 가입 트리거를 확인하세요"}
           </dd>
         </dl>
+        <Button variant="outline" className="mt-6" disabled={signOut.isPending} onClick={() => signOut.mutate()}>
+          {signOut.isPending ? "로그아웃하는 중…" : "로그아웃"}
+        </Button>
       </main>
-    </div>
+    </>
   );
 }

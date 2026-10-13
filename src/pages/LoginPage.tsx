@@ -34,13 +34,13 @@ export default function LoginPage() {
       footer={
         <>
           아직 계정이 없나요?{" "}
-          <Link to="/signup" state={location.state} className="font-semibold text-primary hover:underline">
+          <Link to="/signup" state={location.state} className="font-semibold text-primary underline underline-offset-2">
             회원가입
           </Link>
         </>
       }
     >
-      <form noValidate onSubmit={handleSubmit((v) => signIn.mutate(v))} className="grid gap-5">
+      <form noValidate onSubmit={handleSubmit((v) => signIn.mutate(v))} className="grid gap-4">
         {error ? <FormAlert>{toAuthMessage(error)}</FormAlert> : null}
 
         <Field
@@ -53,19 +53,19 @@ export default function LoginPage() {
           error={errors.email?.message}
           {...register("email")}
         />
-        <div className="grid gap-2">
-          <Field
-            id="password"
-            label="비밀번호"
-            type="password"
-            autoComplete="current-password"
-            error={errors.password?.message}
-            {...register("password")}
-          />
-          <Link to="/forgot-password" className="justify-self-end text-[13px] text-muted-foreground hover:text-foreground hover:underline">
-            비밀번호를 잊었나요?
-          </Link>
-        </div>
+        <Field
+          id="password"
+          label="비밀번호"
+          type="password"
+          autoComplete="current-password"
+          error={errors.password?.message}
+          labelAction={
+            <Link to="/forgot-password" className="text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground">
+              비밀번호를 잊었나요?
+            </Link>
+          }
+          {...register("password")}
+        />
 
         <Button type="submit" disabled={signIn.isPending}>
           {signIn.isPending ? "로그인하는 중…" : "로그인"}

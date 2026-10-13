@@ -1,7 +1,8 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Profile } from "@/types/database";
-import type { ForgotPasswordValues, ResetPasswordValues, SignInValues, SignUpValues } from "./schemas";
+import type { ForgotPasswordValues, ResetPasswordValues, SemesterValues, SignInValues, SignUpValues } from "./schemas";
+import { mondayOf } from "./semester";
 
 const RETURN_TO_KEY = "hakgi:returnTo";
 const origin = () => window.location.origin;
@@ -119,5 +120,29 @@ export function useProfile(userId: string | undefined) {
       if (error) throw error;
       return data;
     },
+  });
+}
+
+/** 학기 설정 저장 (온보딩 FR-01-11, 설정 FR-01-12). 개강일은 그 주의 월요일로 맞춰 저장합니다. */
+export function useUpdateProfile(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: SemesterValues) => {
+      if (!userId) throw new Error("로그인이 필요합니다.");
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({
+          semester_start: mondayOf(values.semesterStart),
+          available_hours: values.availableHours,
+          midterm_week: values.midtermWeek,
+          final_week: values.finalWeek,
+        })
+        .eq("user_id", userId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: profileKeys.detail(userId ?? "anonymous") }),
   });
 }

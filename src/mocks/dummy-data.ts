@@ -7,8 +7,8 @@ export type PlanType = 'class' | 'activity' | 'project';
 export type LoadLevel = 'low' | 'normal' | 'high' | 'custom';
 export type Weather = 'clear' | 'cloudy' | 'storm';
 
-/** 5.1 profiles — available_hours / semester_start 가 null 이면 온보딩 미완료 */
-export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number }
+/** 5.1 profiles — available_hours / semester_start / privacy_agreed_at 중 하나라도 null 이면 온보딩 미완료 */
+export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number; privacy_agreed_at: string | null }
 /** 5.2 plans — credits 는 수업일 때만 */
 export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string; updated_at: string }
 export type PlanInput = Pick<Plan, 'title' | 'type' | 'credits' | 'load_level' | 'start_week' | 'end_week' | 'hours_per_week'>;
@@ -98,7 +98,8 @@ export const profiles: Profile[] = [
     "available_hours": 50,
     "semester_start": "2026-08-31",
     "midterm_week": 8,
-    "final_week": 15
+    "final_week": 15,
+    "privacy_agreed_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000002",
@@ -106,7 +107,8 @@ export const profiles: Profile[] = [
     "available_hours": 45,
     "semester_start": "2026-08-31",
     "midterm_week": 8,
-    "final_week": 15
+    "final_week": 15,
+    "privacy_agreed_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000003",
@@ -114,7 +116,8 @@ export const profiles: Profile[] = [
     "available_hours": 55,
     "semester_start": "2026-08-31",
     "midterm_week": 8,
-    "final_week": 16
+    "final_week": 16,
+    "privacy_agreed_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000004",
@@ -122,7 +125,8 @@ export const profiles: Profile[] = [
     "available_hours": 40,
     "semester_start": "2026-08-31",
     "midterm_week": 8,
-    "final_week": 15
+    "final_week": 15,
+    "privacy_agreed_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000005",
@@ -130,7 +134,8 @@ export const profiles: Profile[] = [
     "available_hours": null,
     "semester_start": null,
     "midterm_week": 8,
-    "final_week": 15
+    "final_week": 15,
+    "privacy_agreed_at": null
   }
 ];
 export const certificates: Certificate[] = [

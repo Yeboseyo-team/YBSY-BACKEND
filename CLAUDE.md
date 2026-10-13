@@ -20,5 +20,9 @@
 - 부담 계산은 src/features/forecast/calc.ts 한 곳에서만
 - 접수 마감 회차 선택 불가, 계획 30개 상한은 DB가 아닌 화면에서 막기
 
-## 데모 계정 (비밀번호 hakgi1234)
+## 로그인
+- 팀 결정(10/13): 로그인은 Google만. 이메일 가입·비밀번호 찾기 화면은 만들지 않음 (docs/AUTH.md)
+- 개인정보 동의는 온보딩에서 받고 profiles.privacy_agreed_at 에 기록. 가용 시간·학기 시작일·동의 중 하나라도 비면 온보딩으로
+
+## 데모 계정 (비밀번호 hakgi1234, VITE_DEMO_LOGIN=true 인 로컬·프리뷰에서만 데모 로그인 버튼으로)
 yebo@hakgi.test(시연 주인공), jiwon@, woonyoung@, empty@(계획 없음), newbie@(온보딩 전)

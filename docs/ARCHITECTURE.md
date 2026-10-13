@@ -21,6 +21,7 @@ erDiagram
     date semester_start "1주차 월요일, null이면 온보딩 전"
     smallint midterm_week "중간고사 주차, 기본 8"
     smallint final_week "기말고사 주차, 기본 15"
+    timestamptz privacy_agreed_at "개인정보 동의 시각, null이면 온보딩 전"
   }
   PLANS {
     uuid id PK

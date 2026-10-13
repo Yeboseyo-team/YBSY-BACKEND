@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>설정 (PC)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2B55B3}a:hover{color:#1E3F8A}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; background: #F5F7FA; color: #17233B; font-family: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', sans-serif">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #DCE2EA">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 10px 32px; box-sizing: border-box; min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 32px">
+      <a href="index.html" style="font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #17233B; text-decoration: none">학기예보</a>
+      <nav aria-label="주요 메뉴" style="display: flex; gap: 4px">
+        <a href="index.html" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px; color: #4A5872; font-size: 15px; text-decoration: none">예보</a>
+        <a href="PcPlanList.html" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px; color: #4A5872; font-size: 15px; text-decoration: none">계획</a>
+        <a href="PcMyCertificates.html" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px; color: #4A5872; font-size: 15px; text-decoration: none">자격증</a>
+      </nav>
+      <div style="margin-left: auto; display: flex; align-items: center">
+        <a href="PcSettings.html" aria-current="page" aria-label="설정" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #E8EDF4; color: #17233B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg></a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1040px; margin: 0 auto; padding: 32px 32px 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+    <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.03em">설정</h1>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+      <section aria-label="내 정보" style="flex: 1 1 240px; max-width: 300px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 20px; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+        <span aria-hidden="true" style="width: 64px; height: 64px; border-radius: 32px; background: #17233B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700">민</span>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 19px; font-weight: 700">김민지</span>
+          <span style="font-size: 14px; color: #4A5872; word-break: break-all">you@university.ac.kr</span>
+          <span style="font-size: 13px; color: #5A6780">이메일로 로그인</span>
+        </div>
+        <a href="PcLogin.html" style="height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid #C9D2DE; border-radius: 12px; color: #A82E27; font-size: 15px; font-weight: 600; text-decoration: none">로그아웃</a>
+      </section>
+
+      <div style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section aria-labelledby="pcs-semester" style="background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 20px; padding: 8px 24px">
+          <h2 id="pcs-semester" style="margin: 0; padding: 16px 0 8px; font-size: 16px; font-weight: 600">학기 설정</h2>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; border-top: 1px solid #EDF0F5">
+            <span style="width: 160px; font-size: 15px; color: #4A5872">개강일</span><span style="flex: 1; font-size: 15px; font-weight: 600">2026년 9월 1일</span>
+            <a href="PcOnboarding.html" style="font-size: 14px; font-weight: 600">변경</a>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; border-top: 1px solid #EDF0F5">
+            <span style="width: 160px; font-size: 15px; color: #4A5872">한 주 가용 시간</span><span style="flex: 1; font-size: 15px; font-weight: 600">50시간</span>
+            <a href="PcOnboarding.html" style="font-size: 14px; font-weight: 600">변경</a>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; border-top: 1px solid #EDF0F5">
+            <span style="width: 160px; font-size: 15px; color: #4A5872">시험 주간</span><span style="flex: 1; font-size: 15px; font-weight: 600">중간 8주차, 기말 15주차</span>
+            <a href="PcOnboarding.html" style="font-size: 14px; font-weight: 600">변경</a>
+          </div>
+        </section>
+
+        <section aria-labelledby="pcs-account" style="background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 20px; padding: 8px 24px">
+          <h2 id="pcs-account" style="margin: 0; padding: 16px 0 8px; font-size: 16px; font-weight: 600">계정</h2>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; border-top: 1px solid #EDF0F5">
+            <span style="width: 160px; font-size: 15px; color: #4A5872">이름</span><span style="flex: 1; font-size: 15px; font-weight: 600">김민지</span>
+            <button type="button" style="padding: 0; border: 0; background: transparent; color: #2B55B3; font: inherit; font-size: 14px; font-weight: 600">변경</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; border-top: 1px solid #EDF0F5">
+            <span style="width: 160px; font-size: 15px; color: #4A5872">비밀번호</span><span style="flex: 1; font-size: 15px; font-weight: 600">8자 이상, 설정됨</span>
+            <a href="PcResetPassword.html" style="font-size: 14px; font-weight: 600">변경</a>
+          </div>
+        </section>
+
+        <section aria-labelledby="pcs-info" style="background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 20px; padding: 8px 24px">
+          <h2 id="pcs-info" style="margin: 0; padding: 16px 0 8px; font-size: 16px; font-weight: 600">안내</h2>
+          <a href="https://www.q-net.or.kr" style="display: flex; align-items: center; min-height: 56px; gap: 8px; border-top: 1px solid #EDF0F5; color: #17233B; text-decoration: none; font-size: 15px">
+            <span style="flex: 1">자격증 일정 출처</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A95A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"></path></svg>
+          </a>
+          <a href="PcPrivacy.html" style="display: flex; align-items: center; min-height: 56px; gap: 8px; border-top: 1px solid #EDF0F5; color: #17233B; text-decoration: none; font-size: 15px">
+            <span style="flex: 1">개인정보처리방침</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A95A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+          </a>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

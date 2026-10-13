@@ -5,6 +5,17 @@
 - 설명은 항상 쉬운 한국어로. 사용자가 맡은 역할은 아래 "담당 구역"과 사용자가 준 프롬프트를 따름
 - 기준 문서: docs/REQUIREMENTS.md (요구사항 명세서 + 팀 결정 변경 이력). 4장 산출 규칙, 5장 데이터, 6장 화면
 
+## 작업 시작할 때 (프론트 팀원은 개발이 처음 — 항상 이 순서)
+- 먼저 `git branch --show-current` 로 브랜치를 보고 담당을 판단: `feature/frontend-ge` = 프론트 A, `feature/frontend-jw` = 프론트 B
+- 할 일 목록: `docs/tasks/frontend-ge.md`, `docs/tasks/frontend-jw.md`. 사용자가 "N번 작업"이라고 하면 이 파일의 해당 항목을 따름. 끝나면 `[ ]` → `[x]`
+- 사용자는 코드를 읽지 않음. 바꾼 내용은 "어느 화면에서 무엇이 달라졌는지, 어떻게 눌러서 확인하는지"로 3줄 이내 설명
+- 한 번에 한 화면·한 기능만. 끝나면 직접 확인할 방법을 알려주고 `/save` 를 권하기
+- 슬래시 커맨드: `/start`(최신화·main 합치기), `/save`(검사·커밋·push), `/pr`(main 으로 PR). 내용은 .claude/commands/
+- 🚧 `ScreenPlaceholder` 가 있는 화면은 아직 안 만든 화면. 실제 화면을 만들면 지우기
+- 화면 주소(라우트)는 src/App.tsx 에 이미 다 연결돼 있음. 프론트 B 는 App.tsx 를 고칠 필요 없음
+- 참고 구현: `origin/feature/frontend-session` 에 먼저 만들어 본 계획·자격증·온보딩 화면이 있음. `git show origin/feature/frontend-session:<경로>` 로 읽고 참고만 하고, 브랜치째 merge 하지 않기 (main 과 충돌 많음)
+- 팀원용 설치·실행 안내: docs/FRONTEND_GUIDE.md
+
 ## 기술
 - React 19 + Vite + TS, Supabase(Auth·Postgres), TanStack Query, React Hook Form + Zod, Tailwind v4 + shadcn/ui, Recharts, Vitest, ESLint, pnpm
 - Supabase 개발 프로젝트: hxnaobwybllgdcvnwimo (서울)

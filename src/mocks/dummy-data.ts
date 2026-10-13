@@ -1,98 +1,93 @@
 // ⚠ 자동 생성 파일: scripts/generate-dummy.mjs 를 수정한 뒤 재생성하세요.
-// 학기예보 프론트 목데이터. Supabase 없이 화면을 먼저 만들 때 사용하세요.
-// `expectedForecast`는 산출 로직 단위 테스트의 정답값으로 쓸 수 있습니다.
+// 학기예보 프론트 목데이터 — 기준: 요구사항 명세서 5장(테이블), 4장(산출 규칙)
+// Supabase 없이 화면을 먼저 만들 때 사용하세요. 실제 연결 후에는 supabase gen types 결과로 타입을 교체합니다.
+// expectedForecast 는 src/features/forecast/calc.ts 단위 테스트의 기대값으로 쓸 수 있습니다 (NFR-MAINT-1).
 
 export type PlanType = 'class' | 'activity' | 'project';
-/** 계획 입력 단계 (F-03): 적음·보통·많음·직접 입력 */
-export type PlanLoadLevel = 'low' | 'normal' | 'high' | 'custom';
-/** 주차 판정 단계 (F-05): 맑음·흐림·폭풍 */
-export type LoadLevel = 'ok' | 'warn' | 'over';
+export type LoadLevel = 'low' | 'normal' | 'high' | 'custom';
+export type Weather = 'clear' | 'cloudy' | 'storm';
 
-export interface Profile { user_id: string; display_name: string; available_hours: number; semester_start: string; midterm_week: number; final_week: number }
-export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: PlanLoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string }
-export type NewPlan = Omit<Plan, 'id' | 'created_at'>;
+/** 5.1 profiles — available_hours / semester_start 가 null 이면 온보딩 미완료 */
+export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number }
+/** 5.2 plans — credits 는 수업일 때만 */
+export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string; updated_at: string }
+export type PlanInput = Pick<Plan, 'title' | 'type' | 'credits' | 'load_level' | 'start_week' | 'end_week' | 'hours_per_week'>;
+/** 5.3 certificates */
 export interface Certificate { id: string; name: string; round: string; apply_start: string; apply_end: string; exam_date: string; prep_weeks: number; default_study_hours: number; source_url: string }
+/** 5.4 user_certificates */
 export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number; prep_weeks: number; notified_at: string | null }
-export interface WeekLoadItem { source: 'plan' | 'certificate'; title: string; hours: number; examWeighted: boolean }
-export interface WeekLoad { week: number; isExamWeek: boolean; total: number; ratio: number; level: LoadLevel; items: WeekLoadItem[] }
-export interface Forecast { weeks: WeekLoad[]; summary: Record<LoadLevel, number> }
 
-export const SEMESTER = {
-  "label": "2026년 2학기",
-  "start": "2026-08-31",
-  "totalWeeks": 16,
-  "midtermWeek": 8,
-  "finalWeek": 15
-} as const;
+export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number }
+export interface WeekForecast { week: number; is_exam_week: boolean; total_hours: number; ratio: number; level: Weather; items: WeekItem[] }
+export interface Forecast { weeks: WeekForecast[]; summary: Record<Weather, number> }
+
+export const TOTAL_WEEKS = 16;
 export const EXAM_WEIGHT = 1.5;
 export const LEVEL_THRESHOLD = {
-  "OK_BELOW": 0.8,
-  "OVER_ABOVE": 1
+  "CLOUDY_FROM": 0.8,
+  "STORM_ABOVE": 1
 } as const;
-export const MAX_PLANS = 30;
-/** F-03 기본값. 수업은 학점당 시간이라 학점 × 값 (3학점 보통 = 6) */
+/** F-03 기본값 (명세서 3장 표, 팀 확정 필요). 수업은 학점당 시간 */
 export const PLAN_DEFAULTS = {
   "class": {
-    "label": "수업",
-    "perCredit": true,
+    "unit": "학점당 시간/주",
     "low": 1.5,
     "normal": 2,
-    "high": 3,
-    "hint": "학점당 시간, 3학점 보통 = 주 6시간"
+    "high": 3
   },
   "activity": {
-    "label": "활동",
-    "perCredit": false,
+    "unit": "시간/주",
     "low": 2,
     "normal": 4,
-    "high": 8,
-    "hint": "동아리·학회·대외활동"
+    "high": 8
   },
   "project": {
-    "label": "프로젝트",
-    "perCredit": false,
+    "unit": "시간/주",
     "low": 3,
     "normal": 6,
-    "high": 10,
-    "hint": "팀 과제·공모전"
+    "high": 10
   }
 } as const;
-export function defaultHours(type: PlanType, level: Exclude<PlanLoadLevel, 'custom'>, credits?: number | null): number {
-  const d = PLAN_DEFAULTS[type];
-  return d.perCredit ? d[level] * (credits ?? 3) : d[level];
-}
-/** 화면 표시용 날씨 비유 (명세서 4.4) */
-export const LEVEL_LABEL: Record<LoadLevel, { text: string; weather: string; color: string }> = {
-  ok: { text: '여유', weather: '맑음', color: '#3d8a5a' },
-  warn: { text: '주의', weather: '흐림', color: '#c98a1f' },
-  over: { text: '과부하', weather: '폭풍', color: '#c0463a' },
+/** 4.4 단계 표시 — 색 + 글자 + 아이콘 (NFR-ACC-1) */
+export const WEATHER_LABEL: Record<Weather, { text: string; level: string; icon: string; color: string }> = {
+  clear: { text: '맑음', level: '여유', icon: '☀️', color: '#3d8a5a' },
+  cloudy: { text: '흐림', level: '주의', icon: '☁️', color: '#c98a1f' },
+  storm: { text: '폭풍', level: '과부하', icon: '⛈️', color: '#c0463a' },
 };
 
-export const DEMO_PASSWORD = 'hakgi1234!';
+/** 데이터가 맞춰진 기준일 (7주차). D-day·접수 마감·현재 주차 테스트에 사용 */
+export const DEMO_TODAY = '2026-10-13';
+export const DEMO_PASSWORD = 'hakgi1234';
 export const demoUsers = [
   {
     "id": "a0000000-0000-4000-8000-000000000001",
     "email": "yebo@hakgi.test",
     "display_name": "김예보",
-    "persona": "취업 준비생 (3학년) · 시연 시나리오 주인공"
+    "persona": "취업 준비생 3학년 · 시연 시나리오 / 4.5 검증 예시"
   },
   {
     "id": "a0000000-0000-4000-8000-000000000002",
     "email": "jiwon@hakgi.test",
     "display_name": "이지원",
-    "persona": "대외활동 지원 예정자 (2학년)"
+    "persona": "대외활동 지원 예정자 2학년 · 직접 입력/학기 밖 준비기간"
   },
   {
     "id": "a0000000-0000-4000-8000-000000000003",
     "email": "woonyoung@hakgi.test",
     "display_name": "박운영",
-    "persona": "학생회 운영진 (4학년)"
+    "persona": "학생회 운영진 4학년 · 기말 16주차 / 경계값 100%"
   },
   {
     "id": "a0000000-0000-4000-8000-000000000004",
     "email": "empty@hakgi.test",
     "display_name": "최수강",
-    "persona": "수강신청 예정자 · 계획 없음 (빈 화면 테스트)"
+    "persona": "학기 설정 완료 · 계획 없음 (FR-05-6 빈 상태)"
+  },
+  {
+    "id": "a0000000-0000-4000-8000-000000000005",
+    "email": "newbie@hakgi.test",
+    "display_name": "정새내",
+    "persona": "가입 직후 · 학기 설정 미완료 (FR-01-11 온보딩)"
   }
 ];
 
@@ -119,7 +114,7 @@ export const profiles: Profile[] = [
     "available_hours": 55,
     "semester_start": "2026-08-31",
     "midterm_week": 8,
-    "final_week": 15
+    "final_week": 16
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000004",
@@ -128,16 +123,24 @@ export const profiles: Profile[] = [
     "semester_start": "2026-08-31",
     "midterm_week": 8,
     "final_week": 15
+  },
+  {
+    "user_id": "a0000000-0000-4000-8000-000000000005",
+    "display_name": "정새내",
+    "available_hours": null,
+    "semester_start": null,
+    "midterm_week": 8,
+    "final_week": 15
   }
 ];
 export const certificates: Certificate[] = [
   {
     "id": "c0000000-0000-4000-8000-000000000001",
     "name": "정보처리기사",
-    "round": "2026년 정기 3회 실기",
-    "apply_start": "2026-09-22",
-    "apply_end": "2026-09-25",
-    "exam_date": "2026-11-01",
+    "round": "2026년 정기 3회 필기",
+    "apply_start": "2026-07-21",
+    "apply_end": "2026-07-24",
+    "exam_date": "2026-08-09",
     "prep_weeks": 6,
     "default_study_hours": 8,
     "source_url": "https://www.q-net.or.kr"
@@ -216,7 +219,7 @@ export const certificates: Certificate[] = [
     "apply_end": "2026-11-06",
     "exam_date": "2026-11-21",
     "prep_weeks": 4,
-    "default_study_hours": 7,
+    "default_study_hours": 8,
     "source_url": "https://license.korcham.net"
   },
   {
@@ -244,7 +247,7 @@ export const certificates: Certificate[] = [
   {
     "id": "c0000000-0000-4000-8000-000000000011",
     "name": "리눅스마스터 2급",
-    "round": "2026년 2차 1급·2급",
+    "round": "2026년 2차",
     "apply_start": "2026-10-26",
     "apply_end": "2026-11-02",
     "exam_date": "2026-12-12",
@@ -282,7 +285,7 @@ export const certificates: Certificate[] = [
     "apply_end": "2026-10-30",
     "exam_date": "2026-11-15",
     "prep_weeks": 4,
-    "default_study_hours": 6,
+    "default_study_hours": 8,
     "source_url": "https://exam.toeic.co.kr"
   },
   {
@@ -311,9 +314,9 @@ export const certificates: Certificate[] = [
     "id": "c0000000-0000-4000-8000-000000000017",
     "name": "전산회계 1급",
     "round": "제124회",
-    "apply_start": "2026-10-29",
-    "apply_end": "2026-11-04",
-    "exam_date": "2026-12-05",
+    "apply_start": "2026-11-19",
+    "apply_end": "2026-11-25",
+    "exam_date": "2026-12-26",
     "prep_weeks": 5,
     "default_study_hours": 6,
     "source_url": "https://license.kacpta.or.kr"
@@ -326,7 +329,7 @@ export const certificates: Certificate[] = [
     "apply_end": "2026-10-22",
     "exam_date": "2026-11-28",
     "prep_weeks": 6,
-    "default_study_hours": 7,
+    "default_study_hours": 8,
     "source_url": "https://www.q-net.or.kr"
   },
   {
@@ -363,7 +366,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0001-000000000002",
@@ -375,7 +379,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0001-000000000003",
@@ -387,7 +392,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0001-000000000004",
@@ -399,7 +405,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0001-000000000005",
@@ -411,7 +418,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0001-000000000006",
@@ -423,7 +431,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 4,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000001",
@@ -435,7 +444,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000002",
@@ -447,7 +457,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 4.5,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000003",
@@ -459,31 +470,34 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000004",
     "user_id": "a0000000-0000-4000-8000-000000000002",
-    "title": "통계학",
+    "title": "경영통계",
     "type": "class",
     "credits": 3,
-    "load_level": "high",
+    "load_level": "normal",
     "start_week": 1,
     "end_week": 16,
-    "hours_per_week": 9,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "hours_per_week": 6,
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000005",
     "user_id": "a0000000-0000-4000-8000-000000000002",
-    "title": "영어회화",
+    "title": "비즈니스 영어회화",
     "type": "class",
-    "credits": 1,
-    "load_level": "normal",
+    "credits": 2,
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
-    "hours_per_week": 2,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "hours_per_week": 3,
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000006",
@@ -491,11 +505,12 @@ export const plans: Plan[] = [
     "title": "사진 동아리",
     "type": "activity",
     "credits": null,
-    "load_level": "custom",
+    "load_level": "low",
     "start_week": 1,
     "end_week": 16,
-    "hours_per_week": 3,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "hours_per_week": 2,
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0002-000000000007",
@@ -507,7 +522,8 @@ export const plans: Plan[] = [
     "start_week": 3,
     "end_week": 9,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0003-000000000001",
@@ -519,7 +535,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 10,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0003-000000000002",
@@ -531,7 +548,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0003-000000000003",
@@ -543,7 +561,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0003-000000000004",
@@ -555,7 +574,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 2,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0003-000000000005",
@@ -567,7 +587,8 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 10,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   },
   {
     "id": "b0000000-0000-4000-0003-000000000006",
@@ -579,7 +600,8 @@ export const plans: Plan[] = [
     "start_week": 6,
     "end_week": 8,
     "hours_per_week": 8,
-    "created_at": "2026-09-01T09:00:00+09:00"
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
   }
 ];
 export const userCertificates: UserCertificate[] = [
@@ -593,8 +615,15 @@ export const userCertificates: UserCertificate[] = [
   {
     "user_id": "a0000000-0000-4000-8000-000000000002",
     "certificate_id": "c0000000-0000-4000-8000-000000000014",
-    "study_hours": 5,
+    "study_hours": 6,
     "prep_weeks": 4,
+    "notified_at": null
+  },
+  {
+    "user_id": "a0000000-0000-4000-8000-000000000002",
+    "certificate_id": "c0000000-0000-4000-8000-000000000017",
+    "study_hours": 6,
+    "prep_weeks": 5,
     "notified_at": null
   },
   {
@@ -602,21 +631,20 @@ export const userCertificates: UserCertificate[] = [
     "certificate_id": "c0000000-0000-4000-8000-000000000005",
     "study_hours": 6,
     "prep_weeks": 4,
-    "notified_at": null
+    "notified_at": "2026-10-13T09:00:00+09:00"
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000003",
     "certificate_id": "c0000000-0000-4000-8000-000000000006",
     "study_hours": 6,
-    "prep_weeks": 4,
+    "prep_weeks": 3,
     "notified_at": null
   }
 ];
 
 /** F-06 사전 검토 시연용 (김예보가 저장 전에 입력해 보는 계획) */
-export const previewPlan: NewPlan = {
-  "user_id": "a0000000-0000-4000-8000-000000000001",
-  "title": "대외 공모전 출전",
+export const previewPlan: PlanInput = {
+  "title": "대학생 서포터즈 1차 미션",
   "type": "activity",
   "credits": null,
   "load_level": "custom",
@@ -625,3180 +653,3615 @@ export const previewPlan: NewPlan = {
   "hours_per_week": 10
 };
 
-/** 사용자별 예상 예보 (참조 산출 로직 결과) */
+/** 학기 설정을 마친 사용자별 예상 예보 (명세서 4장 규칙) */
 export const expectedForecast: Record<string, Forecast> = {
   "a0000000-0000-4000-8000-000000000001": {
     "weeks": [
       {
         "week": 1,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 2,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 3,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 4,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 5,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 6,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 7,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 8,
-        "isExamWeek": true,
-        "total": 57,
-        "ratio": 114,
-        "level": "over",
+        "is_exam_week": true,
+        "total_hours": 57,
+        "ratio": 1.14,
+        "level": "storm",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           },
           {
             "source": "certificate",
             "title": "정보처리기사 준비",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 9,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 84,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           },
           {
             "source": "certificate",
             "title": "정보처리기사 준비",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 10,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 84,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           },
           {
             "source": "certificate",
             "title": "정보처리기사 준비",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 11,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 84,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           },
           {
             "source": "certificate",
             "title": "정보처리기사 준비",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 12,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 84,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           },
           {
             "source": "certificate",
             "title": "정보처리기사 준비",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 13,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 84,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           },
           {
             "source": "certificate",
             "title": "정보처리기사 준비",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 14,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 15,
-        "isExamWeek": true,
-        "total": 49,
-        "ratio": 98,
-        "level": "warn",
+        "is_exam_week": true,
+        "total_hours": 49,
+        "ratio": 0.98,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       },
       {
         "week": 16,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 68,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "운영체제",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "데이터베이스",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "알고리즘",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
-            "hours": 4,
-            "examWeighted": false
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4
           }
         ]
       }
     ],
     "summary": {
-      "over": 1,
-      "warn": 6,
-      "ok": 9
+      "storm": 1,
+      "cloudy": 6,
+      "clear": 9
     }
   },
   "a0000000-0000-4000-8000-000000000002": {
     "weeks": [
       {
         "week": 1,
-        "isExamWeek": false,
-        "total": 30.5,
-        "ratio": 67.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 27.5,
+        "ratio": 0.611,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           }
         ]
       },
       {
         "week": 2,
-        "isExamWeek": false,
-        "total": 30.5,
-        "ratio": 67.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 27.5,
+        "ratio": 0.611,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           }
         ]
       },
       {
         "week": 3,
-        "isExamWeek": false,
-        "total": 36.5,
-        "ratio": 81.1,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 4,
-        "isExamWeek": false,
-        "total": 36.5,
-        "ratio": 81.1,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 5,
-        "isExamWeek": false,
-        "total": 36.5,
-        "ratio": 81.1,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 6,
-        "isExamWeek": false,
-        "total": 36.5,
-        "ratio": 81.1,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 7,
-        "isExamWeek": false,
-        "total": 36.5,
-        "ratio": 81.1,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 8,
-        "isExamWeek": true,
-        "total": 55.3,
-        "ratio": 122.8,
-        "level": "over",
+        "is_exam_week": true,
+        "total_hours": 52.3,
+        "ratio": 1.161,
+        "level": "storm",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 6.8,
-            "examWeighted": true
+            "base_hours": 4.5,
+            "weighted": true,
+            "hours": 6.8
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 13.5,
-            "examWeighted": true
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 3,
-            "examWeighted": true
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": true,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "certificate",
             "title": "TOEIC 준비",
-            "hours": 5,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 9,
-        "isExamWeek": false,
-        "total": 41.5,
-        "ratio": 92.2,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 39.5,
+        "ratio": 0.878,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "certificate",
             "title": "TOEIC 준비",
-            "hours": 5,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 10,
-        "isExamWeek": false,
-        "total": 35.5,
-        "ratio": 78.9,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "certificate",
             "title": "TOEIC 준비",
-            "hours": 5,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 11,
-        "isExamWeek": false,
-        "total": 35.5,
-        "ratio": 78.9,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "certificate",
             "title": "TOEIC 준비",
-            "hours": 5,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 12,
-        "isExamWeek": false,
-        "total": 30.5,
-        "ratio": 67.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 27.5,
+        "ratio": 0.611,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           }
         ]
       },
       {
         "week": 13,
-        "isExamWeek": false,
-        "total": 30.5,
-        "ratio": 67.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 14,
-        "isExamWeek": false,
-        "total": 30.5,
-        "ratio": 67.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 15,
-        "isExamWeek": true,
-        "total": 44.3,
-        "ratio": 98.3,
-        "level": "warn",
+        "is_exam_week": true,
+        "total_hours": 46.3,
+        "ratio": 1.028,
+        "level": "storm",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 6.8,
-            "examWeighted": true
+            "base_hours": 4.5,
+            "weighted": true,
+            "hours": 6.8
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 13.5,
-            "examWeighted": true
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 3,
-            "examWeighted": true
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": true,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 16,
-        "isExamWeek": false,
-        "total": 30.5,
-        "ratio": 67.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 33.5,
+        "ratio": 0.744,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "경영학원론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "마케팅원론",
-            "hours": 4.5,
-            "examWeighted": false
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
           },
           {
             "source": "plan",
             "title": "회계원리",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "통계학",
-            "hours": 9,
-            "examWeighted": false
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
-            "title": "영어회화",
-            "hours": 2,
-            "examWeighted": false
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "사진 동아리",
-            "hours": 3,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       }
     ],
     "summary": {
-      "over": 1,
-      "warn": 7,
-      "ok": 8
+      "storm": 2,
+      "cloudy": 1,
+      "clear": 13
     }
   },
   "a0000000-0000-4000-8000-000000000003": {
     "weeks": [
       {
         "week": 1,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 2,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 3,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 4,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 5,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 6,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 76.4,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.764,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "축제 준비위원회",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 7,
-        "isExamWeek": false,
-        "total": 42,
-        "ratio": 76.4,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 42,
+        "ratio": 0.764,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "축제 준비위원회",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 8,
-        "isExamWeek": true,
-        "total": 55,
-        "ratio": 100,
-        "level": "warn",
+        "is_exam_week": true,
+        "total_hours": 55,
+        "ratio": 1,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 3,
-            "examWeighted": true
+            "base_hours": 2,
+            "weighted": true,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "축제 준비위원회",
-            "hours": 8,
-            "examWeighted": false
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           },
           {
             "source": "certificate",
             "title": "SQLD 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 9,
-        "isExamWeek": false,
-        "total": 46,
-        "ratio": 83.6,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 40,
+        "ratio": 0.727,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "certificate",
             "title": "SQLD 준비",
-            "hours": 6,
-            "examWeighted": false
-          },
-          {
-            "source": "certificate",
-            "title": "ADsP 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 10,
-        "isExamWeek": false,
-        "total": 46,
-        "ratio": 83.6,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 46,
+        "ratio": 0.836,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "certificate",
             "title": "SQLD 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "certificate",
             "title": "ADsP 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 11,
-        "isExamWeek": false,
-        "total": 46,
-        "ratio": 83.6,
-        "level": "warn",
+        "is_exam_week": false,
+        "total_hours": 46,
+        "ratio": 0.836,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "certificate",
             "title": "SQLD 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "certificate",
             "title": "ADsP 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 12,
-        "isExamWeek": false,
-        "total": 40,
-        "ratio": 72.7,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 40,
+        "ratio": 0.727,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "certificate",
             "title": "ADsP 준비",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 13,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 14,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 15,
-        "isExamWeek": true,
-        "total": 41,
-        "ratio": 74.5,
-        "level": "ok",
+        "is_exam_week": false,
+        "total_hours": 34,
+        "ratio": 0.618,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 9,
-            "examWeighted": true
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 3,
-            "examWeighted": true
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       },
       {
         "week": 16,
-        "isExamWeek": false,
-        "total": 34,
-        "ratio": 61.8,
-        "level": "ok",
+        "is_exam_week": true,
+        "total_hours": 41,
+        "ratio": 0.745,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
             "title": "졸업 프로젝트",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "정보보호개론",
-            "hours": 6,
-            "examWeighted": false
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
           },
           {
             "source": "plan",
             "title": "진로설계",
-            "hours": 2,
-            "examWeighted": false
+            "base_hours": 2,
+            "weighted": true,
+            "hours": 3
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
-            "hours": 10,
-            "examWeighted": false
+            "base_hours": 10,
+            "weighted": false,
+            "hours": 10
           }
         ]
       }
     ],
     "summary": {
-      "over": 0,
-      "warn": 4,
-      "ok": 12
+      "storm": 0,
+      "cloudy": 3,
+      "clear": 13
     }
   },
   "a0000000-0000-4000-8000-000000000004": {
     "weeks": [
       {
         "week": 1,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 2,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 3,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 4,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 5,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 6,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 7,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 8,
-        "isExamWeek": true,
-        "total": 0,
+        "is_exam_week": true,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 9,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 10,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 11,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 12,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 13,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 14,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 15,
-        "isExamWeek": true,
-        "total": 0,
+        "is_exam_week": true,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       },
       {
         "week": 16,
-        "isExamWeek": false,
-        "total": 0,
+        "is_exam_week": false,
+        "total_hours": 0,
         "ratio": 0,
-        "level": "ok",
+        "level": "clear",
         "items": []
       }
     ],
     "summary": {
-      "over": 0,
-      "warn": 0,
-      "ok": 16
+      "storm": 0,
+      "cloudy": 0,
+      "clear": 16
     }
   }
 };
-/** 김예보 + previewPlan 적용 시 예상 예보 */
+/** 김예보 + previewPlan 적용 시 예보 */
 export const expectedForecastWithPreview: Forecast = {
   "weeks": [
     {
       "week": 1,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 2,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 3,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 4,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 5,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 6,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 7,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 8,
-      "isExamWeek": true,
-      "total": 57,
-      "ratio": 114,
-      "level": "over",
+      "is_exam_week": true,
+      "total_hours": 57,
+      "ratio": 1.14,
+      "level": "storm",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         },
         {
           "source": "certificate",
           "title": "정보처리기사 준비",
-          "hours": 8,
-          "examWeighted": false
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 9,
-      "isExamWeek": false,
-      "total": 52,
-      "ratio": 104,
-      "level": "over",
+      "is_exam_week": false,
+      "total_hours": 52,
+      "ratio": 1.04,
+      "level": "storm",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         },
         {
           "source": "plan",
-          "title": "대외 공모전 출전",
-          "hours": 10,
-          "examWeighted": false
+          "title": "대학생 서포터즈 1차 미션",
+          "base_hours": 10,
+          "weighted": false,
+          "hours": 10
         },
         {
           "source": "certificate",
           "title": "정보처리기사 준비",
-          "hours": 8,
-          "examWeighted": false
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 10,
-      "isExamWeek": false,
-      "total": 52,
-      "ratio": 104,
-      "level": "over",
+      "is_exam_week": false,
+      "total_hours": 52,
+      "ratio": 1.04,
+      "level": "storm",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         },
         {
           "source": "plan",
-          "title": "대외 공모전 출전",
-          "hours": 10,
-          "examWeighted": false
+          "title": "대학생 서포터즈 1차 미션",
+          "base_hours": 10,
+          "weighted": false,
+          "hours": 10
         },
         {
           "source": "certificate",
           "title": "정보처리기사 준비",
-          "hours": 8,
-          "examWeighted": false
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 11,
-      "isExamWeek": false,
-      "total": 42,
-      "ratio": 84,
-      "level": "warn",
+      "is_exam_week": false,
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         },
         {
           "source": "certificate",
           "title": "정보처리기사 준비",
-          "hours": 8,
-          "examWeighted": false
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 12,
-      "isExamWeek": false,
-      "total": 42,
-      "ratio": 84,
-      "level": "warn",
+      "is_exam_week": false,
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         },
         {
           "source": "certificate",
           "title": "정보처리기사 준비",
-          "hours": 8,
-          "examWeighted": false
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 13,
-      "isExamWeek": false,
-      "total": 42,
-      "ratio": 84,
-      "level": "warn",
+      "is_exam_week": false,
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         },
         {
           "source": "certificate",
           "title": "정보처리기사 준비",
-          "hours": 8,
-          "examWeighted": false
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 14,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 15,
-      "isExamWeek": true,
-      "total": 49,
-      "ratio": 98,
-      "level": "warn",
+      "is_exam_week": true,
+      "total_hours": 49,
+      "ratio": 0.98,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 9,
-          "examWeighted": true
+          "base_hours": 6,
+          "weighted": true,
+          "hours": 9
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     },
     {
       "week": 16,
-      "isExamWeek": false,
-      "total": 34,
-      "ratio": 68,
-      "level": "ok",
+      "is_exam_week": false,
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
           "title": "운영체제",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "데이터베이스",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "알고리즘",
-          "hours": 6,
-          "examWeighted": false
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
-          "hours": 4,
-          "examWeighted": false
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4
         }
       ]
     }
   ],
   "summary": {
-    "over": 3,
-    "warn": 4,
-    "ok": 9
+    "storm": 3,
+    "cloudy": 4,
+    "clear": 9
   }
+};
+/** FR-06-3 변화 요약 기대값 */
+export const expectedPreviewDiff = {
+  "storm_before": 1,
+  "storm_after": 3,
+  "new_storm_weeks": [
+    9,
+    10
+  ],
+  "message": "폭풍 1주 → 3주 (9, 10주차 추가)"
 };

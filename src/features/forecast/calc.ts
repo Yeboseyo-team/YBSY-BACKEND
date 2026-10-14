@@ -199,3 +199,74 @@ export function previewForecast(input: ForecastInput, draftPlans: ForecastPlan[]
   const after = calculateForecast({ ...input, plans: [...input.plans, ...draftPlans] });
   return { before, after, diff: comparePreview(before, after) };
 }
+
+// ── 자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07) ──────
+// 팀 결정(10/14): F-07 마감 알림은 이메일 대신 화면 안 알림(홈 배너 + D-day)으로 합니다.
+// 날짜는 모두 한국 시간 기준 "YYYY-MM-DD" 문자열로 다룹니다.
+
+/** 홈 배너에 띄울 "접수 마감 임박" 기준 (오늘 포함 며칠 안) */
+export const DEADLINE_ALERT_DAYS = 7;
+
+export type DeadlineCertificate = Pick<
+  Certificate,
+  "id" | "name" | "round" | "apply_start" | "apply_end" | "exam_date" | "source_url"
+>;
+
+/** upcoming 접수 전 / open 접수 중 / closed 접수 마감(선택 불가, FR-04-2) */
+export type ApplyStatus = "upcoming" | "open" | "closed";
+
+export interface DeadlineAlert {
+  certificate: DeadlineCertificate;
+  status: ApplyStatus;
+  /** 접수 마감까지 남은 날 (0 = 오늘 마감) */
+  apply_dday: number;
+  /** 시험까지 남은 날 */
+  exam_dday: number;
+}
+
+/** 지금 한국 날짜 "YYYY-MM-DD". 화면에서는 인자 없이 부르면 됩니다. */
+export function todayInKorea(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(now);
+}
+
+/** today 에서 date 까지 남은 날. 지난 날짜면 음수 (D-day 표시용, FR-04-4) */
+export function daysUntil(date: string, today: string): number {
+  return Math.round((Date.parse(date) - Date.parse(today)) / 86_400_000);
+}
+
+/** 회차의 접수 상태. 마감일 당일까지는 접수 중입니다. */
+export function applyStatus(certificate: Pick<Certificate, "apply_start" | "apply_end">, today: string): ApplyStatus {
+  if (today < certificate.apply_start) return "upcoming";
+  if (today > certificate.apply_end) return "closed";
+  return "open";
+}
+
+/** "D-3", 당일은 "D-day", 지났으면 null */
+export function formatDday(days: number): string | null {
+  if (days < 0) return null;
+  return days === 0 ? "D-day" : `D-${days}`;
+}
+
+/**
+ * 내가 고른 회차 중 접수 마감이 withinDays 일 안에 남은 것 (홈 배너, F-07 화면 알림).
+ * 이미 마감된 회차는 빼고, 마감이 가까운 순서로 돌려줍니다.
+ */
+export function upcomingDeadlines(
+  userCertificates: Pick<UserCertificate, "certificate_id">[],
+  certificates: DeadlineCertificate[],
+  today: string,
+  withinDays: number = DEADLINE_ALERT_DAYS,
+): DeadlineAlert[] {
+  const certById = new Map(certificates.map((c) => [c.id, c]));
+  return userCertificates
+    .map((uc) => certById.get(uc.certificate_id))
+    .filter((c): c is DeadlineCertificate => c !== undefined)
+    .map((certificate) => ({
+      certificate,
+      status: applyStatus(certificate, today),
+      apply_dday: daysUntil(certificate.apply_end, today),
+      exam_dday: daysUntil(certificate.exam_date, today),
+    }))
+    .filter((a) => a.apply_dday >= 0 && a.apply_dday <= withinDays)
+    .sort((a, b) => a.apply_dday - b.apply_dday);
+}

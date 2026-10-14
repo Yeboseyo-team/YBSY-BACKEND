@@ -143,9 +143,9 @@ export const certificates: Certificate[] = [
     "id": "c0000000-0000-4000-8000-000000000001",
     "name": "정보처리기사",
     "round": "2026년 정기 3회 필기",
-    "apply_start": "2026-07-21",
-    "apply_end": "2026-07-24",
-    "exam_date": "2026-08-09",
+    "apply_start": "2026-07-20",
+    "apply_end": "2026-07-23",
+    "exam_date": "2026-08-07",
     "prep_weeks": 6,
     "default_study_hours": 8,
     "source_url": "https://www.q-net.or.kr"
@@ -153,10 +153,10 @@ export const certificates: Certificate[] = [
   {
     "id": "c0000000-0000-4000-8000-000000000002",
     "name": "정보처리기사",
-    "round": "2026년 정기 4회 필기",
-    "apply_start": "2026-10-19",
-    "apply_end": "2026-10-22",
-    "exam_date": "2026-11-28",
+    "round": "2026년 정기 3회 실기",
+    "apply_start": "2026-09-21",
+    "apply_end": "2026-09-28",
+    "exam_date": "2026-10-24",
     "prep_weeks": 6,
     "default_study_hours": 8,
     "source_url": "https://www.q-net.or.kr"
@@ -164,10 +164,10 @@ export const certificates: Certificate[] = [
   {
     "id": "c0000000-0000-4000-8000-000000000003",
     "name": "정보처리기사",
-    "round": "2027년 정기 1회 필기",
-    "apply_start": "2027-01-12",
-    "apply_end": "2027-01-15",
-    "exam_date": "2027-02-20",
+    "round": "2027년 정기 1회 필기 (예정)",
+    "apply_start": "2027-01-11",
+    "apply_end": "2027-01-14",
+    "exam_date": "2027-01-29",
     "prep_weeks": 6,
     "default_study_hours": 8,
     "source_url": "https://www.q-net.or.kr"
@@ -175,19 +175,41 @@ export const certificates: Certificate[] = [
   {
     "id": "c0000000-0000-4000-8000-000000000004",
     "name": "정보처리산업기사",
-    "round": "2026년 정기 4회 필기",
-    "apply_start": "2026-10-19",
-    "apply_end": "2026-10-22",
-    "exam_date": "2026-11-28",
+    "round": "2026년 정기 3회 필기",
+    "apply_start": "2026-07-20",
+    "apply_end": "2026-07-23",
+    "exam_date": "2026-08-07",
     "prep_weeks": 5,
     "default_study_hours": 6,
     "source_url": "https://www.q-net.or.kr"
   },
   {
     "id": "c0000000-0000-4000-8000-000000000005",
+    "name": "정보처리산업기사",
+    "round": "2026년 정기 3회 실기",
+    "apply_start": "2026-09-21",
+    "apply_end": "2026-09-28",
+    "exam_date": "2026-10-24",
+    "prep_weeks": 5,
+    "default_study_hours": 6,
+    "source_url": "https://www.q-net.or.kr"
+  },
+  {
+    "id": "c0000000-0000-4000-8000-000000000006",
     "name": "SQLD",
     "round": "제62회",
-    "apply_start": "2026-10-05",
+    "apply_start": "2026-07-20",
+    "apply_end": "2026-07-24",
+    "exam_date": "2026-08-22",
+    "prep_weeks": 4,
+    "default_study_hours": 6,
+    "source_url": "https://www.dataq.or.kr"
+  },
+  {
+    "id": "c0000000-0000-4000-8000-000000000007",
+    "name": "SQLD",
+    "round": "제63회",
+    "apply_start": "2026-10-12",
     "apply_end": "2026-10-16",
     "exam_date": "2026-11-14",
     "prep_weeks": 4,
@@ -195,166 +217,89 @@ export const certificates: Certificate[] = [
     "source_url": "https://www.dataq.or.kr"
   },
   {
-    "id": "c0000000-0000-4000-8000-000000000006",
+    "id": "c0000000-0000-4000-8000-000000000008",
     "name": "ADsP",
-    "round": "제51회",
-    "apply_start": "2026-10-12",
-    "apply_end": "2026-10-23",
-    "exam_date": "2026-11-21",
+    "round": "제50회",
+    "apply_start": "2026-07-06",
+    "apply_end": "2026-07-10",
+    "exam_date": "2026-08-08",
     "prep_weeks": 4,
     "default_study_hours": 6,
     "source_url": "https://www.dataq.or.kr"
   },
   {
-    "id": "c0000000-0000-4000-8000-000000000007",
+    "id": "c0000000-0000-4000-8000-000000000009",
+    "name": "ADsP",
+    "round": "제51회",
+    "apply_start": "2026-09-28",
+    "apply_end": "2026-10-02",
+    "exam_date": "2026-10-31",
+    "prep_weeks": 4,
+    "default_study_hours": 6,
+    "source_url": "https://www.dataq.or.kr"
+  },
+  {
+    "id": "c0000000-0000-4000-8000-000000000010",
     "name": "빅데이터분석기사",
     "round": "제13회 필기",
-    "apply_start": "2026-09-07",
-    "apply_end": "2026-09-11",
-    "exam_date": "2026-10-10",
+    "apply_start": "2026-08-03",
+    "apply_end": "2026-08-07",
+    "exam_date": "2026-09-05",
     "prep_weeks": 6,
     "default_study_hours": 8,
     "source_url": "https://www.dataq.or.kr"
   },
   {
-    "id": "c0000000-0000-4000-8000-000000000008",
-    "name": "컴퓨터활용능력 1급",
-    "round": "2026년 상시 11월",
-    "apply_start": "2026-10-26",
-    "apply_end": "2026-11-06",
-    "exam_date": "2026-11-21",
-    "prep_weeks": 4,
-    "default_study_hours": 8,
-    "source_url": "https://license.korcham.net"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000009",
-    "name": "컴퓨터활용능력 2급",
-    "round": "2026년 상시 10월",
-    "apply_start": "2026-09-28",
-    "apply_end": "2026-10-09",
-    "exam_date": "2026-10-24",
-    "prep_weeks": 3,
-    "default_study_hours": 5,
-    "source_url": "https://license.korcham.net"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000010",
-    "name": "정보보안기사",
-    "round": "제28회 필기",
-    "apply_start": "2026-08-17",
-    "apply_end": "2026-08-21",
-    "exam_date": "2026-09-19",
-    "prep_weeks": 8,
-    "default_study_hours": 10,
-    "source_url": "https://www.kisq.or.kr"
-  },
-  {
     "id": "c0000000-0000-4000-8000-000000000011",
-    "name": "리눅스마스터 2급",
-    "round": "2026년 2차",
+    "name": "빅데이터분석기사",
+    "round": "제13회 실기",
     "apply_start": "2026-10-26",
-    "apply_end": "2026-11-02",
-    "exam_date": "2026-12-12",
-    "prep_weeks": 4,
-    "default_study_hours": 5,
-    "source_url": "https://www.ihd.or.kr"
+    "apply_end": "2026-10-30",
+    "exam_date": "2026-11-28",
+    "prep_weeks": 6,
+    "default_study_hours": 8,
+    "source_url": "https://www.dataq.or.kr"
   },
   {
     "id": "c0000000-0000-4000-8000-000000000012",
-    "name": "네트워크관리사 2급",
-    "round": "제84회 필기",
-    "apply_start": "2026-10-05",
-    "apply_end": "2026-10-09",
-    "exam_date": "2026-11-08",
-    "prep_weeks": 3,
-    "default_study_hours": 5,
-    "source_url": "https://www.icqa.or.kr"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000013",
     "name": "한국사능력검정시험 심화",
-    "round": "제79회",
-    "apply_start": "2026-09-29",
-    "apply_end": "2026-10-06",
-    "exam_date": "2026-10-31",
+    "round": "제80회",
+    "apply_start": "2026-09-15",
+    "apply_end": "2026-09-22",
+    "exam_date": "2026-10-17",
     "prep_weeks": 4,
     "default_study_hours": 5,
     "source_url": "https://www.historyexam.go.kr"
   },
   {
-    "id": "c0000000-0000-4000-8000-000000000014",
-    "name": "TOEIC",
-    "round": "2026년 11월 정기",
-    "apply_start": "2026-09-28",
-    "apply_end": "2026-10-30",
-    "exam_date": "2026-11-15",
-    "prep_weeks": 4,
-    "default_study_hours": 8,
-    "source_url": "https://exam.toeic.co.kr"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000015",
-    "name": "TOEIC Speaking",
-    "round": "2026년 11월",
-    "apply_start": "2026-10-12",
-    "apply_end": "2026-11-05",
-    "exam_date": "2026-11-08",
-    "prep_weeks": 2,
-    "default_study_hours": 4,
-    "source_url": "https://exam.toeic.co.kr"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000016",
-    "name": "OPIc",
-    "round": "2026년 12월",
-    "apply_start": "2026-11-02",
-    "apply_end": "2026-12-01",
-    "exam_date": "2026-12-05",
-    "prep_weeks": 3,
-    "default_study_hours": 4,
-    "source_url": "https://www.opic.or.kr"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000017",
+    "id": "c0000000-0000-4000-8000-000000000013",
     "name": "전산회계 1급",
-    "round": "제124회",
-    "apply_start": "2026-11-19",
-    "apply_end": "2026-11-25",
-    "exam_date": "2026-12-26",
+    "round": "제128회",
+    "apply_start": "2026-08-27",
+    "apply_end": "2026-09-02",
+    "exam_date": "2026-10-03",
     "prep_weeks": 5,
     "default_study_hours": 6,
     "source_url": "https://license.kacpta.or.kr"
   },
   {
-    "id": "c0000000-0000-4000-8000-000000000018",
-    "name": "사회조사분석사 2급",
-    "round": "2026년 정기 4회 필기",
-    "apply_start": "2026-10-19",
-    "apply_end": "2026-10-22",
-    "exam_date": "2026-11-28",
-    "prep_weeks": 6,
-    "default_study_hours": 8,
-    "source_url": "https://www.q-net.or.kr"
+    "id": "c0000000-0000-4000-8000-000000000014",
+    "name": "전산회계 1급",
+    "round": "제129회",
+    "apply_start": "2026-11-05",
+    "apply_end": "2026-11-11",
+    "exam_date": "2026-12-05",
+    "prep_weeks": 5,
+    "default_study_hours": 6,
+    "source_url": "https://license.kacpta.or.kr"
   },
   {
-    "id": "c0000000-0000-4000-8000-000000000019",
-    "name": "GTQ 1급",
-    "round": "제155회",
-    "apply_start": "2026-10-19",
-    "apply_end": "2026-10-26",
-    "exam_date": "2026-11-14",
-    "prep_weeks": 3,
-    "default_study_hours": 5,
-    "source_url": "https://license.kpc.or.kr"
-  },
-  {
-    "id": "c0000000-0000-4000-8000-000000000020",
+    "id": "c0000000-0000-4000-8000-000000000015",
     "name": "유통관리사 2급",
-    "round": "2026년 3회",
-    "apply_start": "2026-10-12",
-    "apply_end": "2026-10-19",
-    "exam_date": "2026-11-07",
+    "round": "2026년 2회",
+    "apply_start": "2026-07-30",
+    "apply_end": "2026-08-05",
+    "exam_date": "2026-08-22",
     "prep_weeks": 4,
     "default_study_hours": 5,
     "source_url": "https://license.korcham.net"
@@ -618,29 +563,36 @@ export const userCertificates: UserCertificate[] = [
     "notified_at": null
   },
   {
-    "user_id": "a0000000-0000-4000-8000-000000000002",
-    "certificate_id": "c0000000-0000-4000-8000-000000000014",
-    "study_hours": 6,
-    "prep_weeks": 4,
+    "user_id": "a0000000-0000-4000-8000-000000000001",
+    "certificate_id": "c0000000-0000-4000-8000-000000000007",
+    "study_hours": 8,
+    "prep_weeks": 3,
     "notified_at": null
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000002",
-    "certificate_id": "c0000000-0000-4000-8000-000000000017",
-    "study_hours": 6,
+    "certificate_id": "c0000000-0000-4000-8000-000000000014",
+    "study_hours": 5,
     "prep_weeks": 5,
     "notified_at": null
   },
   {
-    "user_id": "a0000000-0000-4000-8000-000000000003",
-    "certificate_id": "c0000000-0000-4000-8000-000000000005",
-    "study_hours": 6,
-    "prep_weeks": 4,
-    "notified_at": "2026-10-13T09:00:00+09:00"
+    "user_id": "a0000000-0000-4000-8000-000000000002",
+    "certificate_id": "c0000000-0000-4000-8000-000000000003",
+    "study_hours": 8,
+    "prep_weeks": 8,
+    "notified_at": null
   },
   {
     "user_id": "a0000000-0000-4000-8000-000000000003",
-    "certificate_id": "c0000000-0000-4000-8000-000000000006",
+    "certificate_id": "c0000000-0000-4000-8000-000000000007",
+    "study_hours": 6,
+    "prep_weeks": 4,
+    "notified_at": null
+  },
+  {
+    "user_id": "a0000000-0000-4000-8000-000000000003",
+    "certificate_id": "c0000000-0000-4000-8000-000000000011",
     "study_hours": 6,
     "prep_weeks": 3,
     "notified_at": null
@@ -767,9 +719,9 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 3,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -812,15 +764,22 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 4,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -863,15 +822,22 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 5,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -914,15 +880,22 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 6,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -965,15 +938,22 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
       {
         "week": 7,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 42,
+        "ratio": 0.84,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -1016,6 +996,13 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       },
@@ -1128,7 +1115,7 @@ export const expectedForecast: Record<string, Forecast> = {
           },
           {
             "source": "certificate",
-            "title": "정보처리기사 준비",
+            "title": "SQLD 준비",
             "base_hours": 8,
             "weighted": false,
             "hours": 8
@@ -1186,7 +1173,7 @@ export const expectedForecast: Record<string, Forecast> = {
           },
           {
             "source": "certificate",
-            "title": "정보처리기사 준비",
+            "title": "SQLD 준비",
             "base_hours": 8,
             "weighted": false,
             "hours": 8
@@ -1244,7 +1231,7 @@ export const expectedForecast: Record<string, Forecast> = {
           },
           {
             "source": "certificate",
-            "title": "정보처리기사 준비",
+            "title": "SQLD 준비",
             "base_hours": 8,
             "weighted": false,
             "hours": 8
@@ -1254,9 +1241,9 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 12,
         "is_exam_week": false,
-        "total_hours": 42,
-        "ratio": 0.84,
-        "level": "cloudy",
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
@@ -1299,22 +1286,15 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
-          },
-          {
-            "source": "certificate",
-            "title": "정보처리기사 준비",
-            "base_hours": 8,
-            "weighted": false,
-            "hours": 8
           }
         ]
       },
       {
         "week": 13,
         "is_exam_week": false,
-        "total_hours": 42,
-        "ratio": 0.84,
-        "level": "cloudy",
+        "total_hours": 34,
+        "ratio": 0.68,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
@@ -1357,13 +1337,6 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4
-          },
-          {
-            "source": "certificate",
-            "title": "정보처리기사 준비",
-            "base_hours": 8,
-            "weighted": false,
-            "hours": 8
           }
         ]
       },
@@ -1523,8 +1496,8 @@ export const expectedForecast: Record<string, Forecast> = {
     ],
     "summary": {
       "storm": 1,
-      "cloudy": 6,
-      "clear": 9
+      "cloudy": 9,
+      "clear": 6
     }
   },
   "a0000000-0000-4000-8000-000000000002": {
@@ -1924,419 +1897,6 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 8,
         "is_exam_week": true,
-        "total_hours": 52.3,
-        "ratio": 1.161,
-        "level": "storm",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": true,
-            "hours": 9
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": true,
-            "hours": 6.8
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": true,
-            "hours": 9
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": true,
-            "hours": 9
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": true,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          },
-          {
-            "source": "plan",
-            "title": "교내 마케팅 공모전",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "certificate",
-            "title": "TOEIC 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          }
-        ]
-      },
-      {
-        "week": 9,
-        "is_exam_week": false,
-        "total_hours": 39.5,
-        "ratio": 0.878,
-        "level": "cloudy",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": false,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": false,
-            "hours": 3
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          },
-          {
-            "source": "plan",
-            "title": "교내 마케팅 공모전",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "certificate",
-            "title": "TOEIC 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          }
-        ]
-      },
-      {
-        "week": 10,
-        "is_exam_week": false,
-        "total_hours": 33.5,
-        "ratio": 0.744,
-        "level": "clear",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": false,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": false,
-            "hours": 3
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          },
-          {
-            "source": "certificate",
-            "title": "TOEIC 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          }
-        ]
-      },
-      {
-        "week": 11,
-        "is_exam_week": false,
-        "total_hours": 33.5,
-        "ratio": 0.744,
-        "level": "clear",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": false,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": false,
-            "hours": 3
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          },
-          {
-            "source": "certificate",
-            "title": "TOEIC 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          }
-        ]
-      },
-      {
-        "week": 12,
-        "is_exam_week": false,
-        "total_hours": 27.5,
-        "ratio": 0.611,
-        "level": "clear",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": false,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": false,
-            "hours": 3
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          }
-        ]
-      },
-      {
-        "week": 13,
-        "is_exam_week": false,
-        "total_hours": 33.5,
-        "ratio": 0.744,
-        "level": "clear",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": false,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": false,
-            "hours": 3
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          },
-          {
-            "source": "certificate",
-            "title": "전산회계 1급 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          }
-        ]
-      },
-      {
-        "week": 14,
-        "is_exam_week": false,
-        "total_hours": 33.5,
-        "ratio": 0.744,
-        "level": "clear",
-        "items": [
-          {
-            "source": "plan",
-            "title": "경영학원론",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "마케팅원론",
-            "base_hours": 4.5,
-            "weighted": false,
-            "hours": 4.5
-          },
-          {
-            "source": "plan",
-            "title": "회계원리",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "경영통계",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "plan",
-            "title": "비즈니스 영어회화",
-            "base_hours": 3,
-            "weighted": false,
-            "hours": 3
-          },
-          {
-            "source": "plan",
-            "title": "사진 동아리",
-            "base_hours": 2,
-            "weighted": false,
-            "hours": 2
-          },
-          {
-            "source": "certificate",
-            "title": "전산회계 1급 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          }
-        ]
-      },
-      {
-        "week": 15,
-        "is_exam_week": true,
         "total_hours": 46.3,
         "ratio": 1.028,
         "level": "storm",
@@ -2384,8 +1944,8 @@ export const expectedForecast: Record<string, Forecast> = {
             "hours": 2
           },
           {
-            "source": "certificate",
-            "title": "전산회계 1급 준비",
+            "source": "plan",
+            "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
             "hours": 6
@@ -2393,7 +1953,7 @@ export const expectedForecast: Record<string, Forecast> = {
         ]
       },
       {
-        "week": 16,
+        "week": 9,
         "is_exam_week": false,
         "total_hours": 33.5,
         "ratio": 0.744,
@@ -2442,19 +2002,425 @@ export const expectedForecast: Record<string, Forecast> = {
             "hours": 2
           },
           {
-            "source": "certificate",
-            "title": "전산회계 1급 준비",
+            "source": "plan",
+            "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
             "hours": 6
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "is_exam_week": false,
+        "total_hours": 32.5,
+        "ratio": 0.722,
+        "level": "clear",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 5,
+            "weighted": false,
+            "hours": 5
+          }
+        ]
+      },
+      {
+        "week": 11,
+        "is_exam_week": false,
+        "total_hours": 32.5,
+        "ratio": 0.722,
+        "level": "clear",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 5,
+            "weighted": false,
+            "hours": 5
+          }
+        ]
+      },
+      {
+        "week": 12,
+        "is_exam_week": false,
+        "total_hours": 32.5,
+        "ratio": 0.722,
+        "level": "clear",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 5,
+            "weighted": false,
+            "hours": 5
+          }
+        ]
+      },
+      {
+        "week": 13,
+        "is_exam_week": false,
+        "total_hours": 32.5,
+        "ratio": 0.722,
+        "level": "clear",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 5,
+            "weighted": false,
+            "hours": 5
+          }
+        ]
+      },
+      {
+        "week": 14,
+        "is_exam_week": false,
+        "total_hours": 32.5,
+        "ratio": 0.722,
+        "level": "clear",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "전산회계 1급 준비",
+            "base_hours": 5,
+            "weighted": false,
+            "hours": 5
+          }
+        ]
+      },
+      {
+        "week": 15,
+        "is_exam_week": true,
+        "total_hours": 48.3,
+        "ratio": 1.072,
+        "level": "storm",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": true,
+            "hours": 6.8
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": true,
+            "hours": 9
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": true,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
+          }
+        ]
+      },
+      {
+        "week": 16,
+        "is_exam_week": false,
+        "total_hours": 35.5,
+        "ratio": 0.789,
+        "level": "clear",
+        "items": [
+          {
+            "source": "plan",
+            "title": "경영학원론",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "마케팅원론",
+            "base_hours": 4.5,
+            "weighted": false,
+            "hours": 4.5
+          },
+          {
+            "source": "plan",
+            "title": "회계원리",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "경영통계",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
+          },
+          {
+            "source": "plan",
+            "title": "비즈니스 영어회화",
+            "base_hours": 3,
+            "weighted": false,
+            "hours": 3
+          },
+          {
+            "source": "plan",
+            "title": "사진 동아리",
+            "base_hours": 2,
+            "weighted": false,
+            "hours": 2
+          },
+          {
+            "source": "certificate",
+            "title": "정보처리기사 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
           }
         ]
       }
     ],
     "summary": {
       "storm": 2,
-      "cloudy": 1,
-      "clear": 13
+      "cloudy": 0,
+      "clear": 14
     }
   },
   "a0000000-0000-4000-8000-000000000003": {
@@ -2893,9 +2859,9 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 10,
         "is_exam_week": false,
-        "total_hours": 46,
-        "ratio": 0.836,
-        "level": "cloudy",
+        "total_hours": 40,
+        "ratio": 0.727,
+        "level": "clear",
         "items": [
           {
             "source": "plan",
@@ -2935,13 +2901,6 @@ export const expectedForecast: Record<string, Forecast> = {
           {
             "source": "certificate",
             "title": "SQLD 준비",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6
-          },
-          {
-            "source": "certificate",
-            "title": "ADsP 준비",
             "base_hours": 6,
             "weighted": false,
             "hours": 6
@@ -2999,7 +2958,7 @@ export const expectedForecast: Record<string, Forecast> = {
           },
           {
             "source": "certificate",
-            "title": "ADsP 준비",
+            "title": "빅데이터분석기사 준비",
             "base_hours": 6,
             "weighted": false,
             "hours": 6
@@ -3050,7 +3009,7 @@ export const expectedForecast: Record<string, Forecast> = {
           },
           {
             "source": "certificate",
-            "title": "ADsP 준비",
+            "title": "빅데이터분석기사 준비",
             "base_hours": 6,
             "weighted": false,
             "hours": 6
@@ -3060,8 +3019,8 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 13,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.618,
+        "total_hours": 40,
+        "ratio": 0.727,
         "level": "clear",
         "items": [
           {
@@ -3098,6 +3057,13 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10
+          },
+          {
+            "source": "certificate",
+            "title": "빅데이터분석기사 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
@@ -3236,8 +3202,8 @@ export const expectedForecast: Record<string, Forecast> = {
     ],
     "summary": {
       "storm": 0,
-      "cloudy": 3,
-      "clear": 13
+      "cloudy": 2,
+      "clear": 14
     }
   },
   "a0000000-0000-4000-8000-000000000004": {
@@ -3486,9 +3452,9 @@ export const expectedForecastWithPreview: Forecast = {
     {
       "week": 3,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -3531,15 +3497,22 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
+        },
+        {
+          "source": "certificate",
+          "title": "정보처리기사 준비",
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 4,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -3582,15 +3555,22 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
+        },
+        {
+          "source": "certificate",
+          "title": "정보처리기사 준비",
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 5,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -3633,15 +3613,22 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
+        },
+        {
+          "source": "certificate",
+          "title": "정보처리기사 준비",
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 6,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -3684,15 +3671,22 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
+        },
+        {
+          "source": "certificate",
+          "title": "정보처리기사 준비",
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
     {
       "week": 7,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 42,
+      "ratio": 0.84,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -3735,6 +3729,13 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
+        },
+        {
+          "source": "certificate",
+          "title": "정보처리기사 준비",
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
         }
       ]
     },
@@ -3854,7 +3855,7 @@ export const expectedForecastWithPreview: Forecast = {
         },
         {
           "source": "certificate",
-          "title": "정보처리기사 준비",
+          "title": "SQLD 준비",
           "base_hours": 8,
           "weighted": false,
           "hours": 8
@@ -3919,7 +3920,7 @@ export const expectedForecastWithPreview: Forecast = {
         },
         {
           "source": "certificate",
-          "title": "정보처리기사 준비",
+          "title": "SQLD 준비",
           "base_hours": 8,
           "weighted": false,
           "hours": 8
@@ -3977,7 +3978,7 @@ export const expectedForecastWithPreview: Forecast = {
         },
         {
           "source": "certificate",
-          "title": "정보처리기사 준비",
+          "title": "SQLD 준비",
           "base_hours": 8,
           "weighted": false,
           "hours": 8
@@ -3987,9 +3988,9 @@ export const expectedForecastWithPreview: Forecast = {
     {
       "week": 12,
       "is_exam_week": false,
-      "total_hours": 42,
-      "ratio": 0.84,
-      "level": "cloudy",
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
@@ -4032,22 +4033,15 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
-        },
-        {
-          "source": "certificate",
-          "title": "정보처리기사 준비",
-          "base_hours": 8,
-          "weighted": false,
-          "hours": 8
         }
       ]
     },
     {
       "week": 13,
       "is_exam_week": false,
-      "total_hours": 42,
-      "ratio": 0.84,
-      "level": "cloudy",
+      "total_hours": 34,
+      "ratio": 0.68,
+      "level": "clear",
       "items": [
         {
           "source": "plan",
@@ -4090,13 +4084,6 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4
-        },
-        {
-          "source": "certificate",
-          "title": "정보처리기사 준비",
-          "base_hours": 8,
-          "weighted": false,
-          "hours": 8
         }
       ]
     },
@@ -4256,8 +4243,8 @@ export const expectedForecastWithPreview: Forecast = {
   ],
   "summary": {
     "storm": 3,
-    "cloudy": 4,
-    "clear": 9
+    "cloudy": 7,
+    "clear": 6
   }
 };
 /** FR-06-3 변화 요약 기대값 */

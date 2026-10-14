@@ -32,8 +32,9 @@ docs/tasks/frontend-ge.md 의 1번 작업을 해줘.
 
 ```
 docs/tasks/frontend-ge.md 의 2번 작업을 해줘.
-1) src/routes/guards.tsx 에 가드를 추가해줘: 로그인했지만 가용 시간·학기 시작일·개인정보 동의 중 하나라도 비어 있으면 /onboarding 으로 보내기. 판단은 src/features/forecast/calc.ts 의 isSemesterReady 와 profiles.privacy_agreed_at 을 써. App.tsx 의 TODO 위치에 연결.
+1) src/routes/guards.tsx 에 가드를 추가해줘: 로그인했지만 가용 시간·학기 시작일·개인정보 동의 중 하나라도 비어 있으면 /onboarding 으로 보내기. 판단은 src/features/auth/onboarding.ts 의 isOnboardingDone(profile) 하나로 (백엔드가 만들어 둠). 프로필은 src/features/auth/api.ts 의 useProfile(user.id). App.tsx 의 TODO 위치에 연결.
 2) src/pages/OnboardingPage.tsx 를 완성해줘: 주당 가용 시간, 학기 시작일, 중간·기말 주차, 개인정보 수집·이용 동의(필수). 저장하면 profiles 에 기록하고 홈(/)으로.
+   저장은 src/features/auth/profile-api.ts 의 useUpdateProfile() 로 mutate({ available_hours, semester_start, midterm_week, final_week, agree_privacy: true }). 학기 시작일은 훅이 그 주 월요일로 바꿔 저장하고, 동의 시각은 서버가 기록해. 오류 문구는 toProfileMessage.
 - 디자인: docs/design-pc/PcOnboarding.html
 - 참고: origin/feature/frontend-session 의 src/features/auth/components/SemesterForm.tsx, semester.ts (git show 로 읽기)
 - 데모 계정 newbie@hakgi.test(온보딩 전)로 들어가면 온보딩이 뜨는지 확인해줘.
@@ -50,7 +51,11 @@ src/pages/AuthCallbackPage.tsx 가 Google 로그인 후 처리 중 표시, 실�
 
 ```
 docs/tasks/frontend-ge.md 의 4번 작업을 해줘.
-src/pages/CertificatesPage.tsx 를 자격증 선택 화면으로 만들어줘. 데이터 훅은 src/features/certificates/api.ts 에.
+src/pages/CertificatesPage.tsx 를 자격증 선택 화면으로 만들어줘.
+데이터 훅은 src/features/certificates/api.ts 에 백엔드가 만들어 둠 (고치지 말고 가져다 써):
+useCertificates()(전체 회차), useMyCertificates()(내가 고른 회차), useAddCertificate()(고르기, 마감 회차는 거부), useUpdateMyCertificate()(준비 기간·학습 시간 수정), useRemoveMyCertificate()(해제), 오류 문구 toCertificateMessage.
+검색·묶기는 src/features/certificates/search.ts 의 searchCertificates(certificates, 검색어, todayInKorea()) — 이름별 묶음, 회차마다 status·selectable·apply_dday·exam_dday 가 들어 있어.
+학기 범위 표시는 calc.ts 의 certificatePrepRange(시험일, 준비 주수, profile.semester_start) 의 coverage("out" 이면 "이번 학기 범위 밖").
 - 디자인: docs/design-pc/PcCertificate.html, PcMyCertificates.html
 - 자격증 검색, 회차별 접수 기간·시험일, D-day(접수 마감 D-n·시험 D-n: calc.ts 의 daysUntil·formatDday, 오늘은 todayInKorea()), 준비 기간·주당 학습 시간, 출처 링크(source_url)
 - 회차를 고르면 user_certificates 에 저장, 내가 고른 자격증 목록과 삭제
@@ -73,6 +78,7 @@ PreviewSheet 파일 자체는 프론트 B 담당이라 고치지 말고, 바꿔�
 ```
 docs/tasks/frontend-ge.md 의 6번 작업을 해줘.
 src/pages/SettingsPage.tsx 에 학기 설정 수정(가용 시간·시작일·시험 주차), 이름 수정, 로그아웃을 만들어줘. 온보딩 폼을 재사용해.
+저장은 src/features/auth/profile-api.ts 의 useUpdateProfile() (바꾼 값만 넘기면 돼, display_name 도 가능). 로그아웃은 src/features/auth/api.ts 의 useSignOut.
 디자인: docs/design-pc/PcSettings.html
 ```
 

@@ -109,6 +109,22 @@ flowchart LR
 
 트리거 전용 함수(`handle_new_user`, `set_updated_at`, `stamp_privacy_agreed_at`)는 API로 직접 호출하지 못하게 실행 권한을 막아 두었습니다(`20261013090859_harden_functions.sql`, `20261013103836_privacy_consent.sql`).
 
+### 비밀 키 점검 (NFR-SEC-2, 2026-10-14 — 통과)
+
+| 검사 | 결과 |
+|---|---|
+| 빌드 결과물(`dist`)에 secret 키(`sb_secret_…`), service_role JWT, Google 클라이언트 보안 비밀번호(`GOCSPX-…`), AI API 키(`sk-ant-…`) | 0건. `sb_secret_` 글자는 supabase-js 가 키 종류를 구분하는 코드에만 있음 (실제 키 아님) |
+| 빌드 결과물의 Supabase 키 | publishable 키 하나만 (환경변수 `VITE_SUPABASE_PUBLISHABLE_KEY`) |
+| 데모 비밀번호(`hakgi1234`) | 운영 빌드에 없음 (`VITE_DEMO_LOGIN` 이 꺼진 빌드 기준) |
+| GitHub 모든 브랜치·커밋 기록(46개)의 비밀 키 모양 문자열 | 0건 |
+| 커밋된 `.env` 파일 | `.env.example` 만 (값 비어 있음). `.env.local` 은 `.gitignore` 로 막힘 |
+
+### 로그인 링크 보안 (NFR-SEC-4)
+
+- supabase-js 를 `flowType: "pkce"` 로 사용 (`src/lib/supabase.ts`). 로그인 결과 `code` 는 요청한 브라우저에서만 세션으로 바꿀 수 있어요.
+- 돌아올 주소는 `window.location.origin` 기준 `/auth/callback` 이고, Supabase Redirect URLs 에 등록한 주소(로컬 `http://localhost:5173/**`, 운영 `https://ybsy.vercel.app/**`, 프리뷰 `https://*-winwater1.vercel.app/**`)로만 돌아와요.
+- Google OAuth 리디렉션 URI 는 Supabase 콜백(`https://hxnaobwybllgdcvnwimo.supabase.co/auth/v1/callback`) 하나만 등록.
+
 ## 4. 화면에서 막아야 하는 것
 
 DB는 아래 두 가지를 막지 않습니다. 마감일이 지나면 시드가 실패하기 때문이며, 화면에서 처리합니다.

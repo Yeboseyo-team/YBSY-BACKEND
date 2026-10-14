@@ -52,9 +52,9 @@ src/pages/AuthCallbackPage.tsx 가 Google 로그인 후 처리 중 표시, 실�
 docs/tasks/frontend-ge.md 의 4번 작업을 해줘.
 src/pages/CertificatesPage.tsx 를 자격증 선택 화면으로 만들어줘. 데이터 훅은 src/features/certificates/api.ts 에.
 - 디자인: docs/design-pc/PcCertificate.html, PcMyCertificates.html
-- 자격증 검색, 회차별 접수 기간·시험일, D-day, 준비 기간·주당 학습 시간, 출처 링크(source_url)
+- 자격증 검색, 회차별 접수 기간·시험일, D-day(접수 마감 D-n·시험 D-n: calc.ts 의 daysUntil·formatDday, 오늘은 todayInKorea()), 준비 기간·주당 학습 시간, 출처 링크(source_url)
 - 회차를 고르면 user_certificates 에 저장, 내가 고른 자격증 목록과 삭제
-- 접수 마감된 회차는 선택 못 하게 (화면에서 막기)
+- 접수 마감된 회차는 선택 못 하게 (화면에서 막기). 판정은 calc.ts 의 applyStatus(회차, todayInKorea()) 가 "closed" 인지로
 - 타입은 src/types/database.ts 의 Certificate, UserCertificate 를 써.
 - 참고: origin/feature/frontend-session 의 src/features/certificates/, src/pages/CertificateSearchPage.tsx
 ```

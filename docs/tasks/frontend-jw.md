@@ -72,6 +72,7 @@ src/pages/HomePage.tsx 를 부담 예보 화면으로 만들어줘.
 - 디자인: docs/design-pc/index.html (계획 없으면 PcEmptyMain.html, 실패하면 PcLoadError.html)
 - 요약 문구 (예: "폭풍 2주 · 흐림 3주"), 16주 막대그래프(Recharts), 맑음·흐림·폭풍 색 구분, 가용 시간 점선
 - 막대를 누르면 그 주의 상세 내역(무엇이 몇 시간인지)
+- 그래프 위에 접수 마감 알림 배너 (F-07, 팀 결정: 이메일 대신 화면 알림): calc.ts 의 upcomingDeadlines(내 user_certificates, certificates, todayInKorea()) 결과가 있으면 "SQLD 제62회 접수 마감 D-3" 처럼 마감이 가까운 순서로 보여주고 [접수하러 가기]는 source_url 로. D-day 글자는 formatDday 사용. 없으면 배너 숨김. 데모 계정 woonyoung@hakgi.test(박운영)는 SQLD(10/16 접수 마감)가 마감 전까지 떠야 해 (오늘 날짜로 계산하므로 D-숫자는 날마다 바뀜).
 - 데모 계정 yebo@hakgi.test 로 확인했을 때 명세서 4.5 검증 예시와 숫자가 맞는지 확인해줘.
 ```
 

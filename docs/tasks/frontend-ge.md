@@ -84,3 +84,15 @@ docs/tasks/frontend-ge.md 의 7번 작업을 해줘.
 - 상단 메뉴(src/components/layout/AppShell.tsx)를 docs/design-pc/index.html 상단과 맞추고 휴대폰 폭(390px)에서도 깨지지 않게
 - 마지막으로 pnpm lint, typecheck, test, build 가 모두 통과하는지 확인해줘.
 ```
+
+## [ ] 8. (선택) 회차 추천 표시 (F-09, 10/18 이후, 필수 기능을 다 끝낸 뒤)
+
+```
+docs/tasks/frontend-ge.md 의 8번 작업을 해줘.
+자격증 화면에서 회차를 고를 때 "폭풍이 가장 적은 회차" 추천을 보여줘.
+- 계산은 src/features/forecast/calc.ts 의 recommendRounds({ profile, plans, userCertificates, certificates, name, today: todayInKorea() }) 만 써. 화면에서 따로 계산하지 마.
+- 결과는 폭풍 주차가 적은 순서야. 회차마다 "이 회차로 준비하면 폭풍 n주"를 함께 표시하고(FR-09-1), 지금 고른 회차(is_current)는 "현재 선택"으로 표시해.
+- prep_range.coverage 가 "out" 이면 "이번 학기 범위 밖이라 부담이 없어요" 같은 설명을 붙여줘.
+- 디자인: docs/design-pc/PcRoundSuggest.html
+- 데모 계정 yebo@hakgi.test 로 정보처리기사를 보면 "2027년 정기 1회 필기 (예정)로 미루면 폭풍 1주 → 0주"가 나와야 해.
+```

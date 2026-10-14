@@ -199,3 +199,132 @@ export function previewForecast(input: ForecastInput, draftPlans: ForecastPlan[]
   const after = calculateForecast({ ...input, plans: [...input.plans, ...draftPlans] });
   return { before, after, diff: comparePreview(before, after) };
 }
+
+// ── 자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07) ──────
+// 팀 결정(10/14): F-07 마감 알림은 이메일 대신 화면 안 알림(홈 배너 + D-day)으로 합니다.
+// 날짜는 모두 한국 시간 기준 "YYYY-MM-DD" 문자열로 다룹니다.
+
+/** 홈 배너에 띄울 "접수 마감 임박" 기준 (오늘 포함 며칠 안) */
+export const DEADLINE_ALERT_DAYS = 7;
+
+export type DeadlineCertificate = Pick<
+  Certificate,
+  "id" | "name" | "round" | "apply_start" | "apply_end" | "exam_date" | "source_url"
+>;
+
+/** upcoming 접수 전 / open 접수 중 / closed 접수 마감(선택 불가, FR-04-2) */
+export type ApplyStatus = "upcoming" | "open" | "closed";
+
+export interface DeadlineAlert {
+  certificate: DeadlineCertificate;
+  status: ApplyStatus;
+  /** 접수 마감까지 남은 날 (0 = 오늘 마감) */
+  apply_dday: number;
+  /** 시험까지 남은 날 */
+  exam_dday: number;
+}
+
+/** 지금 한국 날짜 "YYYY-MM-DD". 화면에서는 인자 없이 부르면 됩니다. */
+export function todayInKorea(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(now);
+}
+
+/** today 에서 date 까지 남은 날. 지난 날짜면 음수 (D-day 표시용, FR-04-4) */
+export function daysUntil(date: string, today: string): number {
+  return Math.round((Date.parse(date) - Date.parse(today)) / 86_400_000);
+}
+
+/** 회차의 접수 상태. 마감일 당일까지는 접수 중입니다. */
+export function applyStatus(certificate: Pick<Certificate, "apply_start" | "apply_end">, today: string): ApplyStatus {
+  if (today < certificate.apply_start) return "upcoming";
+  if (today > certificate.apply_end) return "closed";
+  return "open";
+}
+
+/** "D-3", 당일은 "D-day", 지났으면 null */
+export function formatDday(days: number): string | null {
+  if (days < 0) return null;
+  return days === 0 ? "D-day" : `D-${days}`;
+}
+
+/**
+ * 내가 고른 회차 중 접수 마감이 withinDays 일 안에 남은 것 (홈 배너, F-07 화면 알림).
+ * 이미 마감된 회차는 빼고, 마감이 가까운 순서로 돌려줍니다.
+ */
+export function upcomingDeadlines(
+  userCertificates: Pick<UserCertificate, "certificate_id">[],
+  certificates: DeadlineCertificate[],
+  today: string,
+  withinDays: number = DEADLINE_ALERT_DAYS,
+): DeadlineAlert[] {
+  const certById = new Map(certificates.map((c) => [c.id, c]));
+  return userCertificates
+    .map((uc) => certById.get(uc.certificate_id))
+    .filter((c): c is DeadlineCertificate => c !== undefined)
+    .map((certificate) => ({
+      certificate,
+      status: applyStatus(certificate, today),
+      apply_dday: daysUntil(certificate.apply_end, today),
+      exam_dday: daysUntil(certificate.exam_date, today),
+    }))
+    .filter((a) => a.apply_dday >= 0 && a.apply_dday <= withinDays)
+    .sort((a, b) => a.apply_dday - b.apply_dday);
+}
+
+// ── 시험 회차 추천 (F-09, FR-09-1) ────────────────────
+// 같은 자격증의 다른 회차로 바꿨을 때의 예보를 계산해 폭풍 주차가 적은 순서로 돌려줍니다.
+// 접수가 끝난 회차는 고를 수 없어 빼고, 이미 고른 회차는 비교용으로 남깁니다.
+
+export type RoundCertificate = DeadlineCertificate & Pick<Certificate, "prep_weeks" | "default_study_hours">;
+
+export interface RoundRecommendation {
+  certificate: RoundCertificate;
+  status: ApplyStatus;
+  /** 이 회차로 준비하면 학기 전체 폭풍 주차 수 */
+  storm_weeks: number;
+  /** 지금 고른 회차인지 */
+  is_current: boolean;
+  /** 이 회차의 준비 주차 (학기 범위 밖 여부 포함) */
+  prep_range: CertificatePrepRange;
+}
+
+export interface RecommendRoundsInput extends Omit<ForecastInput, "certificates"> {
+  certificates: RoundCertificate[];
+  /** 추천할 자격증 이름 (예: "정보처리기사") */
+  name: string;
+  /** 오늘 날짜 "YYYY-MM-DD" (todayInKorea()) */
+  today: string;
+}
+
+/**
+ * 폭풍 주차가 적은 회차부터 정렬해 돌려줍니다. 같으면 시험일이 빠른 회차가 먼저입니다.
+ * 이미 고른 회차가 있으면 그 준비 기간·주당 학습 시간을 다른 회차에도 똑같이 적용해 공정하게 비교하고,
+ * 없으면 회차별 기본값을 씁니다. 학기 설정 전이면 calculateForecast 와 같이 에러를 냅니다.
+ */
+export function recommendRounds({ name, today, ...input }: RecommendRoundsInput): RoundRecommendation[] {
+  const certById = new Map(input.certificates.map((c) => [c.id, c]));
+  const current = input.userCertificates.find((uc) => certById.get(uc.certificate_id)?.name === name);
+  const others = input.userCertificates.filter((uc) => uc !== current);
+  const semesterStart = input.profile.semester_start ?? today;
+
+  return input.certificates
+    .filter((c) => c.name === name)
+    .map((certificate) => ({ certificate, status: applyStatus(certificate, today), is_current: certificate.id === current?.certificate_id }))
+    .filter((c) => c.is_current || c.status !== "closed")
+    .map(({ certificate, status, is_current }) => {
+      const prep_weeks = current?.prep_weeks ?? certificate.prep_weeks;
+      const study_hours = current?.study_hours ?? certificate.default_study_hours;
+      const forecast = calculateForecast({
+        ...input,
+        userCertificates: [...others, { certificate_id: certificate.id, prep_weeks, study_hours }],
+      });
+      return {
+        certificate,
+        status,
+        is_current,
+        storm_weeks: forecast.summary.storm,
+        prep_range: certificatePrepRange(certificate.exam_date, prep_weeks, semesterStart),
+      };
+    })
+    .sort((a, b) => a.storm_weeks - b.storm_weeks || a.certificate.exam_date.localeCompare(b.certificate.exam_date));
+}

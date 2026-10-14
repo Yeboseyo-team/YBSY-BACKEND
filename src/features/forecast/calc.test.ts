@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEMO_TODAY,
   certificates,
   demoUsers,
   expectedForecast,
@@ -11,13 +12,19 @@ import {
   userCertificates,
 } from "@/mocks/dummy-data";
 import {
+  applyStatus,
   calculateForecast,
   certificatePrepRange,
   comparePreview,
+  daysUntil,
+  formatDday,
   isSemesterReady,
   levelOf,
   previewForecast,
+  recommendRounds,
   semesterWeekOf,
+  todayInKorea,
+  upcomingDeadlines,
   weekOf,
   type ForecastInput,
 } from "./calc";
@@ -42,6 +49,7 @@ function inputOf(userId: string): ForecastInput {
 }
 
 const yebo = userIdOf("yebo@hakgi.test");
+const jiwon = userIdOf("jiwon@hakgi.test");
 const woonyoung = userIdOf("woonyoung@hakgi.test");
 const empty = userIdOf("empty@hakgi.test");
 const newbie = userIdOf("newbie@hakgi.test");
@@ -138,11 +146,13 @@ describe("경계값과 예외", () => {
     expect(forecast.weeks.every((w) => w.total_hours === 0 && w.items.length === 0)).toBe(true);
   });
 
-  it("준비 기간 일부만 학기 안이면 그 주차만 반영 (전산회계 1급 13~17주 → 13~16)", () => {
-    const cert = certificates.find((c) => c.name === "전산회계 1급")!;
-    const range = certificatePrepRange(cert.exam_date, cert.prep_weeks, SEMESTER_START);
+  it("준비 기간 일부만 학기 안이면 그 주차만 반영 (이지원: 정보처리기사 2027년 1회, 준비 8주 → 15~22주 중 15·16주)", () => {
+    const cert = certificates.find((c) => c.name === "정보처리기사" && c.round.startsWith("2027년"))!;
+    const mine = userCertificates.find((uc) => uc.user_id === jiwon && uc.certificate_id === cert.id)!;
+    const range = certificatePrepRange(cert.exam_date, mine.prep_weeks, SEMESTER_START);
     expect(range.coverage).toBe("partial");
-    expect(range.weeks).toEqual([13, 14, 15, 16]);
+    expect(range.from_week).toBe(15);
+    expect(range.weeks).toEqual([15, 16]);
   });
 
   it("계획이 없는 사용자 → 전부 0, 맑음", () => {
@@ -161,5 +171,83 @@ describe("경계값과 예외", () => {
     const input = inputOf(newbie);
     expect(isSemesterReady(input.profile)).toBe(false);
     expect(() => calculateForecast(input)).toThrow();
+  });
+});
+
+describe("자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07 화면 알림)", () => {
+  const certOf = (name: string, roundPrefix = "") =>
+    certificates.find((c) => c.name === name && c.round.startsWith(roundPrefix))!;
+
+  it("한국 날짜: UTC 10/13 16:00 은 한국 10/14", () => {
+    expect(todayInKorea(new Date("2026-10-13T16:00:00Z"))).toBe("2026-10-14");
+    expect(todayInKorea(new Date("2026-10-13T14:59:00Z"))).toBe("2026-10-13");
+  });
+
+  it("D-day: 남은 날 계산과 표시", () => {
+    expect(daysUntil("2026-10-16", DEMO_TODAY)).toBe(3);
+    expect(daysUntil(DEMO_TODAY, DEMO_TODAY)).toBe(0);
+    expect(daysUntil("2026-10-10", DEMO_TODAY)).toBe(-3);
+    expect(formatDday(3)).toBe("D-3");
+    expect(formatDday(0)).toBe("D-day");
+    expect(formatDday(-1)).toBeNull();
+  });
+
+  it("접수 상태: 마감 지난 회차는 closed(선택 불가), 마감일 당일은 open", () => {
+    expect(applyStatus(certOf("정보처리기사", "2026년 정기 3회"), DEMO_TODAY)).toBe("closed");
+    expect(applyStatus(certOf("빅데이터분석기사", "제13회 실기"), DEMO_TODAY)).toBe("upcoming");
+    expect(applyStatus(certOf("SQLD", "제63회"), DEMO_TODAY)).toBe("open");
+    expect(applyStatus(certOf("SQLD", "제63회"), "2026-10-16")).toBe("open");
+    expect(applyStatus(certOf("SQLD", "제63회"), "2026-10-17")).toBe("closed");
+  });
+
+  it("홈 배너: 박운영은 SQLD 63회 접수 마감 D-3 하나만 (빅데이터 실기는 D-17 이라 7일 밖)", () => {
+    const mine = userCertificates.filter((uc) => uc.user_id === woonyoung);
+    const alerts = upcomingDeadlines(mine, certificates, DEMO_TODAY);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].certificate.name).toBe("SQLD");
+    expect(alerts[0].apply_dday).toBe(3);
+    expect(alerts[0].status).toBe("open");
+
+    const within20 = upcomingDeadlines(mine, certificates, DEMO_TODAY, 20);
+    expect(within20.map((a) => [a.certificate.name, a.apply_dday])).toEqual([["SQLD", 3], ["빅데이터분석기사", 17]]);
+  });
+
+  it("발표일(10/27): 박운영 홈에 빅데이터분석기사 실기 접수 마감 D-3 배너", () => {
+    const mine = userCertificates.filter((uc) => uc.user_id === woonyoung);
+    const alerts = upcomingDeadlines(mine, certificates, "2026-10-27");
+    expect(alerts.map((a) => [a.certificate.name, a.apply_dday, a.status])).toEqual([["빅데이터분석기사", 3, "open"]]);
+  });
+
+  it("마감이 지난 회차와 고른 자격증이 없는 사용자는 알림 없음", () => {
+    expect(upcomingDeadlines(userCertificates.filter((uc) => uc.user_id === woonyoung), certificates, "2026-10-31")).toEqual([]);
+    expect(upcomingDeadlines([], certificates, DEMO_TODAY)).toEqual([]);
+  });
+});
+
+describe("시험 회차 추천 (F-09, FR-09-1)", () => {
+  it("김예보 정보처리기사: 2027년 1회로 미루면 폭풍 1주 → 0주. 접수 끝난 3회 필기는 제외, 지금 고른 3회 실기는 비교용으로 남김", () => {
+    const recs = recommendRounds({ ...inputOf(yebo), certificates, name: "정보처리기사", today: DEMO_TODAY });
+    expect(recs.map((r) => [r.certificate.round, r.storm_weeks, r.status, r.is_current])).toEqual([
+      ["2027년 정기 1회 필기 (예정)", 0, "upcoming", false],
+      ["2026년 정기 3회 실기", 1, "closed", true],
+    ]);
+    expect(recs[0].prep_range.coverage).toBe("out");
+  });
+
+  it("지금 고른 회차의 준비 기간·학습 시간을 다른 회차에도 똑같이 적용", () => {
+    // 이지원은 2027년 1회를 준비 8주로 늘려 둠 → 같은 8주로 비교
+    const recs = recommendRounds({ ...inputOf(jiwon), certificates, name: "정보처리기사", today: DEMO_TODAY });
+    const current = recs.find((r) => r.is_current)!;
+    expect(current.certificate.round).toBe("2027년 정기 1회 필기 (예정)");
+    expect(current.prep_range.weeks).toEqual([15, 16]);
+  });
+
+  it("아직 고르지 않은 자격증은 회차 기본값으로 비교 (최수강 · 빅데이터분석기사: 접수 전인 13회 실기만)", () => {
+    const recs = recommendRounds({ ...inputOf(empty), certificates, name: "빅데이터분석기사", today: DEMO_TODAY });
+    expect(recs.map((r) => [r.certificate.round, r.storm_weeks, r.is_current])).toEqual([["제13회 실기", 0, false]]);
+  });
+
+  it("고를 수 있는 회차가 없으면 빈 목록", () => {
+    expect(recommendRounds({ ...inputOf(empty), certificates, name: "유통관리사 2급", today: DEMO_TODAY })).toEqual([]);
   });
 });

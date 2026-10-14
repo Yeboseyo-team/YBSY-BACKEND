@@ -21,6 +21,7 @@ import {
   isSemesterReady,
   levelOf,
   previewForecast,
+  recommendRounds,
   semesterWeekOf,
   todayInKorea,
   upcomingDeadlines,
@@ -220,5 +221,33 @@ describe("자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07 화면 
   it("마감이 지난 회차와 고른 자격증이 없는 사용자는 알림 없음", () => {
     expect(upcomingDeadlines(userCertificates.filter((uc) => uc.user_id === woonyoung), certificates, "2026-10-31")).toEqual([]);
     expect(upcomingDeadlines([], certificates, DEMO_TODAY)).toEqual([]);
+  });
+});
+
+describe("시험 회차 추천 (F-09, FR-09-1)", () => {
+  it("김예보 정보처리기사: 2027년 1회로 미루면 폭풍 1주 → 0주. 접수 끝난 3회 필기는 제외, 지금 고른 3회 실기는 비교용으로 남김", () => {
+    const recs = recommendRounds({ ...inputOf(yebo), certificates, name: "정보처리기사", today: DEMO_TODAY });
+    expect(recs.map((r) => [r.certificate.round, r.storm_weeks, r.status, r.is_current])).toEqual([
+      ["2027년 정기 1회 필기 (예정)", 0, "upcoming", false],
+      ["2026년 정기 3회 실기", 1, "closed", true],
+    ]);
+    expect(recs[0].prep_range.coverage).toBe("out");
+  });
+
+  it("지금 고른 회차의 준비 기간·학습 시간을 다른 회차에도 똑같이 적용", () => {
+    // 이지원은 2027년 1회를 준비 8주로 늘려 둠 → 같은 8주로 비교
+    const recs = recommendRounds({ ...inputOf(jiwon), certificates, name: "정보처리기사", today: DEMO_TODAY });
+    const current = recs.find((r) => r.is_current)!;
+    expect(current.certificate.round).toBe("2027년 정기 1회 필기 (예정)");
+    expect(current.prep_range.weeks).toEqual([15, 16]);
+  });
+
+  it("아직 고르지 않은 자격증은 회차 기본값으로 비교 (최수강 · 빅데이터분석기사: 접수 전인 13회 실기만)", () => {
+    const recs = recommendRounds({ ...inputOf(empty), certificates, name: "빅데이터분석기사", today: DEMO_TODAY });
+    expect(recs.map((r) => [r.certificate.round, r.storm_weeks, r.is_current])).toEqual([["제13회 실기", 0, false]]);
+  });
+
+  it("고를 수 있는 회차가 없으면 빈 목록", () => {
+    expect(recommendRounds({ ...inputOf(empty), certificates, name: "유통관리사 2급", today: DEMO_TODAY })).toEqual([]);
   });
 });

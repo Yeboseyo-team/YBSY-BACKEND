@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEMO_TODAY,
   certificates,
   demoUsers,
   expectedForecast,
@@ -11,13 +12,18 @@ import {
   userCertificates,
 } from "@/mocks/dummy-data";
 import {
+  applyStatus,
   calculateForecast,
   certificatePrepRange,
   comparePreview,
+  daysUntil,
+  formatDday,
   isSemesterReady,
   levelOf,
   previewForecast,
   semesterWeekOf,
+  todayInKorea,
+  upcomingDeadlines,
   weekOf,
   type ForecastInput,
 } from "./calc";
@@ -161,5 +167,49 @@ describe("경계값과 예외", () => {
     const input = inputOf(newbie);
     expect(isSemesterReady(input.profile)).toBe(false);
     expect(() => calculateForecast(input)).toThrow();
+  });
+});
+
+describe("자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07 화면 알림)", () => {
+  const certOf = (name: string, roundPrefix = "") =>
+    certificates.find((c) => c.name === name && c.round.startsWith(roundPrefix))!;
+
+  it("한국 날짜: UTC 10/13 16:00 은 한국 10/14", () => {
+    expect(todayInKorea(new Date("2026-10-13T16:00:00Z"))).toBe("2026-10-14");
+    expect(todayInKorea(new Date("2026-10-13T14:59:00Z"))).toBe("2026-10-13");
+  });
+
+  it("D-day: 남은 날 계산과 표시", () => {
+    expect(daysUntil("2026-10-16", DEMO_TODAY)).toBe(3);
+    expect(daysUntil(DEMO_TODAY, DEMO_TODAY)).toBe(0);
+    expect(daysUntil("2026-10-10", DEMO_TODAY)).toBe(-3);
+    expect(formatDday(3)).toBe("D-3");
+    expect(formatDday(0)).toBe("D-day");
+    expect(formatDday(-1)).toBeNull();
+  });
+
+  it("접수 상태: 마감 지난 회차는 closed(선택 불가), 마감일 당일은 open", () => {
+    expect(applyStatus(certOf("정보처리기사", "2026년 정기 3회"), DEMO_TODAY)).toBe("closed");
+    expect(applyStatus(certOf("정보처리기사", "2026년 정기 4회"), DEMO_TODAY)).toBe("upcoming");
+    expect(applyStatus(certOf("SQLD"), DEMO_TODAY)).toBe("open");
+    expect(applyStatus(certOf("SQLD"), "2026-10-16")).toBe("open");
+    expect(applyStatus(certOf("SQLD"), "2026-10-17")).toBe("closed");
+  });
+
+  it("홈 배너: 박운영은 SQLD 접수 마감 D-3 하나만 (ADsP 는 D-10 이라 7일 밖)", () => {
+    const mine = userCertificates.filter((uc) => uc.user_id === woonyoung);
+    const alerts = upcomingDeadlines(mine, certificates, DEMO_TODAY);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].certificate.name).toBe("SQLD");
+    expect(alerts[0].apply_dday).toBe(3);
+    expect(alerts[0].status).toBe("open");
+
+    const within14 = upcomingDeadlines(mine, certificates, DEMO_TODAY, 14);
+    expect(within14.map((a) => [a.certificate.name, a.apply_dday])).toEqual([["SQLD", 3], ["ADsP", 10]]);
+  });
+
+  it("마감이 지난 회차와 고른 자격증이 없는 사용자는 알림 없음", () => {
+    expect(upcomingDeadlines(userCertificates.filter((uc) => uc.user_id === woonyoung), certificates, "2026-10-24")).toEqual([]);
+    expect(upcomingDeadlines([], certificates, DEMO_TODAY)).toEqual([]);
   });
 });

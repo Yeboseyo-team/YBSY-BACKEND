@@ -48,6 +48,7 @@ function inputOf(userId: string): ForecastInput {
 }
 
 const yebo = userIdOf("yebo@hakgi.test");
+const jiwon = userIdOf("jiwon@hakgi.test");
 const woonyoung = userIdOf("woonyoung@hakgi.test");
 const empty = userIdOf("empty@hakgi.test");
 const newbie = userIdOf("newbie@hakgi.test");
@@ -144,11 +145,13 @@ describe("경계값과 예외", () => {
     expect(forecast.weeks.every((w) => w.total_hours === 0 && w.items.length === 0)).toBe(true);
   });
 
-  it("준비 기간 일부만 학기 안이면 그 주차만 반영 (전산회계 1급 13~17주 → 13~16)", () => {
-    const cert = certificates.find((c) => c.name === "전산회계 1급")!;
-    const range = certificatePrepRange(cert.exam_date, cert.prep_weeks, SEMESTER_START);
+  it("준비 기간 일부만 학기 안이면 그 주차만 반영 (이지원: 정보처리기사 2027년 1회, 준비 8주 → 15~22주 중 15·16주)", () => {
+    const cert = certificates.find((c) => c.name === "정보처리기사" && c.round.startsWith("2027년"))!;
+    const mine = userCertificates.find((uc) => uc.user_id === jiwon && uc.certificate_id === cert.id)!;
+    const range = certificatePrepRange(cert.exam_date, mine.prep_weeks, SEMESTER_START);
     expect(range.coverage).toBe("partial");
-    expect(range.weeks).toEqual([13, 14, 15, 16]);
+    expect(range.from_week).toBe(15);
+    expect(range.weeks).toEqual([15, 16]);
   });
 
   it("계획이 없는 사용자 → 전부 0, 맑음", () => {
@@ -190,13 +193,13 @@ describe("자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07 화면 
 
   it("접수 상태: 마감 지난 회차는 closed(선택 불가), 마감일 당일은 open", () => {
     expect(applyStatus(certOf("정보처리기사", "2026년 정기 3회"), DEMO_TODAY)).toBe("closed");
-    expect(applyStatus(certOf("정보처리기사", "2026년 정기 4회"), DEMO_TODAY)).toBe("upcoming");
-    expect(applyStatus(certOf("SQLD"), DEMO_TODAY)).toBe("open");
-    expect(applyStatus(certOf("SQLD"), "2026-10-16")).toBe("open");
-    expect(applyStatus(certOf("SQLD"), "2026-10-17")).toBe("closed");
+    expect(applyStatus(certOf("빅데이터분석기사", "제13회 실기"), DEMO_TODAY)).toBe("upcoming");
+    expect(applyStatus(certOf("SQLD", "제63회"), DEMO_TODAY)).toBe("open");
+    expect(applyStatus(certOf("SQLD", "제63회"), "2026-10-16")).toBe("open");
+    expect(applyStatus(certOf("SQLD", "제63회"), "2026-10-17")).toBe("closed");
   });
 
-  it("홈 배너: 박운영은 SQLD 접수 마감 D-3 하나만 (ADsP 는 D-10 이라 7일 밖)", () => {
+  it("홈 배너: 박운영은 SQLD 63회 접수 마감 D-3 하나만 (빅데이터 실기는 D-17 이라 7일 밖)", () => {
     const mine = userCertificates.filter((uc) => uc.user_id === woonyoung);
     const alerts = upcomingDeadlines(mine, certificates, DEMO_TODAY);
     expect(alerts).toHaveLength(1);
@@ -204,12 +207,18 @@ describe("자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07 화면 
     expect(alerts[0].apply_dday).toBe(3);
     expect(alerts[0].status).toBe("open");
 
-    const within14 = upcomingDeadlines(mine, certificates, DEMO_TODAY, 14);
-    expect(within14.map((a) => [a.certificate.name, a.apply_dday])).toEqual([["SQLD", 3], ["ADsP", 10]]);
+    const within20 = upcomingDeadlines(mine, certificates, DEMO_TODAY, 20);
+    expect(within20.map((a) => [a.certificate.name, a.apply_dday])).toEqual([["SQLD", 3], ["빅데이터분석기사", 17]]);
+  });
+
+  it("발표일(10/27): 박운영 홈에 빅데이터분석기사 실기 접수 마감 D-3 배너", () => {
+    const mine = userCertificates.filter((uc) => uc.user_id === woonyoung);
+    const alerts = upcomingDeadlines(mine, certificates, "2026-10-27");
+    expect(alerts.map((a) => [a.certificate.name, a.apply_dday, a.status])).toEqual([["빅데이터분석기사", 3, "open"]]);
   });
 
   it("마감이 지난 회차와 고른 자격증이 없는 사용자는 알림 없음", () => {
-    expect(upcomingDeadlines(userCertificates.filter((uc) => uc.user_id === woonyoung), certificates, "2026-10-24")).toEqual([]);
+    expect(upcomingDeadlines(userCertificates.filter((uc) => uc.user_id === woonyoung), certificates, "2026-10-31")).toEqual([]);
     expect(upcomingDeadlines([], certificates, DEMO_TODAY)).toEqual([]);
   });
 });

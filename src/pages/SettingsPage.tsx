@@ -70,7 +70,7 @@ function AccountCard({ profile, email }: { profile: Profile; email?: string }) {
         <p className="truncate text-sm text-muted-foreground">{email}</p>
         <p className="mt-1 text-[13px] text-muted-foreground">Google 계정으로 로그인 중</p>
       </div>
-      <div className="grid gap-2">
+      <div className="grid w-full gap-2 sm:w-auto">
         <Button variant="outline" disabled={signOut.isPending} onClick={() => signOut.mutate()}>
           <LogOut aria-hidden="true" />
           {signOut.isPending ? "로그아웃하는 중…" : "로그아웃"}
@@ -227,7 +227,7 @@ function Section({ title, notice, children }: { title: string; notice?: string; 
 function Row({ label, onEdit, children }: { label: string; onEdit?: () => void; children: ReactNode }) {
   return (
     <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3">
-      <span className="w-32 shrink-0 text-sm text-muted-foreground">{label}</span>
+      <span className="w-28 shrink-0 text-sm text-muted-foreground sm:w-32">{label}</span>
       <span className="min-w-0 flex-1 text-[15px]">{children}</span>
       {onEdit ? (
         <Button variant="ghost" size="sm" onClick={onEdit} aria-label={`${label} 변경`}>

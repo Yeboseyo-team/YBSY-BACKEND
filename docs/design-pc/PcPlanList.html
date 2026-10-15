@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>계획 목록 (PC)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2B55B3}a:hover{color:#1E3F8A}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; background: #F5F7FA; color: #17233B; font-family: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', sans-serif">
+
+  <header style="background: #FFFFFF; border-bottom: 1px solid #DCE2EA">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 10px 32px; box-sizing: border-box; min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 32px">
+      <a href="index.html" style="font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #17233B; text-decoration: none">학기예보</a>
+      <nav aria-label="주요 메뉴" style="display: flex; gap: 4px">
+        <a href="index.html" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px; color: #4A5872; font-size: 15px; text-decoration: none">예보</a>
+        <a href="PcPlanList.html" aria-current="page" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px; background: #E8EDF4; color: #17233B; font-size: 15px; font-weight: 600; text-decoration: none">계획</a>
+        <a href="PcMyCertificates.html" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px; color: #4A5872; font-size: 15px; text-decoration: none">자격증</a>
+      </nav>
+      <div style="margin-left: auto; display: flex; align-items: center">
+        <a href="PcSettings.html" aria-label="설정" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #17233B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></svg></a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1200px; margin: 0 auto; padding: 32px 32px 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.03em">계획</h1>
+        <p style="margin: 0; font-size: 15px; color: #4A5872">계획 7개, 한 주 평균 38.9시간이에요.</p>
+      </div>
+      <a href="PcPlan.html" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 18px; border-radius: 12px; background: #17233B; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        계획 추가
+      </a>
+    </div>
+
+    <div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 20px">
+      <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 15px">
+        <thead>
+          <tr style="text-align: left; font-size: 13px; color: #5A6780">
+            <th scope="col" style="padding: 16px 24px; font-weight: 600; border-bottom: 1px solid #DCE2EA">계획</th>
+            <th scope="col" style="padding: 16px 12px; font-weight: 600; border-bottom: 1px solid #DCE2EA; width: 96px">유형</th>
+            <th scope="col" style="padding: 16px 12px; font-weight: 600; border-bottom: 1px solid #DCE2EA; width: 38%">기간 (1~16주)</th>
+            <th scope="col" style="padding: 16px 12px; font-weight: 600; border-bottom: 1px solid #DCE2EA; width: 96px; text-align: right">한 주</th>
+            <th scope="col" style="padding: 16px 24px 16px 12px; font-weight: 600; border-bottom: 1px solid #DCE2EA; width: 104px; text-align: right"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">관리</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">자료구조</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #E8EDF4; color: #17233B">수업</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 0%; width: 100%; background: #9AA6BA"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">1~16주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">6시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="자료구조 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="자료구조 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">컴퓨터네트워크</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #E8EDF4; color: #17233B">수업</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 0%; width: 100%; background: #9AA6BA"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">1~16주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">6시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="컴퓨터네트워크 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="컴퓨터네트워크 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">데이터베이스</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #E8EDF4; color: #17233B">수업</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 0%; width: 100%; background: #9AA6BA"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">1~16주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">6시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="데이터베이스 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="데이터베이스 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">알고리즘</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #E8EDF4; color: #17233B">수업</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 0%; width: 100%; background: #9AA6BA"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">1~16주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">6시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="알고리즘 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="알고리즘 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">소프트웨어공학</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #E8EDF4; color: #17233B">수업</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 0%; width: 100%; background: #9AA6BA"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">1~16주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">6시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="소프트웨어공학 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="소프트웨어공학 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">학회 활동</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #FDF1DD; color: #8A5200">활동</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 0%; width: 100%; background: #9AA6BA"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">1~16주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">4시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="학회 활동 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="학회 활동 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+            <tr>
+              <th scope="row" style="padding: 14px 24px; text-align: left; font-weight: 600; border-bottom: 1px solid #EDF0F5">정보처리기사 준비</th>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5"><span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; background: #E6EEFC; color: #2B55B3">자격증</span></td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span style="flex: 1; position: relative; height: 8px; border-radius: 4px; background: #EDF0F5"><span style="position: absolute; top: 0; bottom: 0; border-radius: 4px; left: 12.5%; width: 37.5%; background: #3F6FD8"></span></span>
+                  <span style="width: 56px; font-size: 13px; color: #4A5872">3~8주</span>
+                </div>
+              </td>
+              <td style="padding: 14px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums">8시간</td>
+              <td style="padding: 8px 20px 8px 12px; border-bottom: 1px solid #EDF0F5; text-align: right; white-space: nowrap">
+                <a href="PcPlanEdit.html" aria-label="정보처리기사 준비 수정" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg></a>
+                <a href="PcDeleteConfirm.html" aria-label="정보처리기사 준비 삭제" style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; color: #4A5872"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></a>
+              </td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin: 0; font-size: 13px; color: #5A6780">자격증 준비는 자격증 메뉴에서 고른 회차로 자동으로 들어와요. 기간과 공부 시간은 자격증 화면에서 바꿀 수 있어요.</p>
+  </main>
+</div>
+</body>
+</html>

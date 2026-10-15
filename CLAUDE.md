@@ -26,9 +26,14 @@
 |---|---|---|---|
 | 프론트 A | feature/frontend-ge | 앱 뼈대·라우트·가드, 레이아웃, 로그인·인증 처리·온보딩(S-01, S-06, S-07), 설정(S-12), 개인정보처리방침, 404, 자격증 선택(S-10) | package.json 등 루트 설정, src/App.tsx, src/main.tsx, src/routes, src/lib, src/components/layout, src/features/{auth,settings,certificates}, 해당 src/pages |
 | 프론트 B | feature/frontend-jw | 부담 예보(S-08), 계획 목록·등록(S-09), 사전 검토 시트(S-11) | src/features/{forecast,plans,preview}, src/pages/{HomePage,PlansPage,PlanNewPage,PlanEditPage} |
-| 백엔드 | feature/* (작업별) | DB·RLS, 더미데이터, Supabase·Google·Vercel 설정, 선택 기능 F-07~F-09 | supabase/, scripts/, src/types/database.ts, src/mocks/(생성 파일), src/features/auth/demo.ts, docs/ |
+| 백엔드 | feature/backend | DB·RLS, 더미데이터, 데이터 훅, Supabase·Google·Vercel 설정, 선택 기능 F-07~F-09 | supabase/, scripts/, src/types/database.ts, src/mocks/(생성 파일), src/features/auth/demo.ts, docs/, 아래 "데이터 훅" 파일들 |
 - src/components/ui (shadcn 공용 컴포넌트)는 누구나 추가 가능. 기존 컴포넌트를 바꿀 땐 사용자에게 알리기
 - src/features/forecast/calc.ts 는 B 폴더에 있지만 모두가 쓰는 산출 모듈. 고칠 땐 테스트 전부 통과 + 사용자에게 알리기
+- **데이터 훅 (백엔드가 만듦, 10/14)**: 화면은 supabase 를 직접 부르지 말고 아래 훅만 씀. 각 폴더에 있어도 백엔드 파일이라 고치지 말고, 바꿔야 하면 사용자에게 말하기
+  - `src/features/plans/api.ts`(계획 목록·추가·수정·삭제), `src/features/plans/defaults.ts`(F-03 기본 시간, 유형별 묶기, 30개 상한)
+  - `src/features/certificates/api.ts`(회차·내 자격증 고르기·수정·해제), `src/features/certificates/search.ts`(검색·회차 상태·D-day)
+  - `src/features/auth/profile-api.ts`(학기 설정·이름·동의 저장), `src/features/auth/onboarding.ts`(온보딩 완료 판정)
+  - `src/features/forecast/api.ts`(예보 화면 데이터 한 번에: useForecastData)
 
 ## 브랜치·병합
 - main이 팀 기준점. main에 직접 push·머지 금지

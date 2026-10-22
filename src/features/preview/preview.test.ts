@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { certificates, demoUsers, expectedPreviewDiff, plans, previewPlan, profiles, userCertificates } from "@/mocks/dummy-data";
 import { calculateForecast } from "@/features/forecast/calc";
-import { buildPreview, levelChanges, previewHeadline, type PreviewInput } from "./preview";
+import type { ForecastInput } from "@/features/forecast/calc";
+import { buildPreview, levelChanges, previewHeadline } from "./preview";
 
-function inputOf(email: string): PreviewInput {
+function inputOf(email: string): ForecastInput {
   const userId = demoUsers.find((u) => u.email === email)!.id;
   return {
     profile: profiles.find((p) => p.user_id === userId)!,
@@ -26,7 +27,9 @@ describe("사전 검토 계산 (F-06)", () => {
   it("계획 수정은 그 계획을 바꿔서 비교하고, 같은 값이면 그대로", () => {
     const first = yebo.plans[0];
     const result = buildPreview(yebo, { kind: "plan", plan: first, replacePlanId: first.id });
-    expect(result.after).toEqual(result.before);
+    // 고친 계획은 목록 끝으로 가서 항목 순서만 달라짐 → 주차별 시간·단계로 비교
+    const totals = (f: typeof result.after) => f.weeks.map((w) => [w.total_hours, w.level]);
+    expect(totals(result.after)).toEqual(totals(result.before));
     expect(previewHeadline(first.title, result, "edit")).toBe("바꿔도 날씨 단계는 그대로예요");
   });
 

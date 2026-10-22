@@ -1,11 +1,10 @@
 // 사전 검토 (S-11, F-06) — 저장하지 않은 계획·자격증 회차를 더했을 때의 예보를 계산하고 문구를 만듭니다.
 // 계산은 calc.ts 의 함수만 쓰고, 서버는 부르지 않습니다 (FR-06-1, NFR-PERF-2).
 import {
-  calculateForecast,
-  comparePreview,
-  previewForecast,
+  previewDraft,
   type Forecast,
   type ForecastCertificate,
+  type ForecastDraft,
   type ForecastInput,
   type ForecastPlan,
   type PreviewDiff,
@@ -29,33 +28,27 @@ export type PreviewDraft =
       replaceCertificateId?: string;
     };
 
-/** 화면에서 받는 예보 입력. plans 에 id 가 있으면 계획 수정 비교에 씁니다. */
-export type PreviewInput = Omit<ForecastInput, "plans"> & { plans: (ForecastPlan & { id?: string })[] };
-
 export interface PreviewResult {
   before: Forecast;
   after: Forecast;
   diff: PreviewDiff;
 }
 
-export function buildPreview(input: PreviewInput, draft: PreviewDraft): PreviewResult {
-  if (draft.kind === "plan" && !draft.replacePlanId) return previewForecast(input, [draft.plan]);
-
-  const before = calculateForecast(input);
-  const after =
+/** 시트의 draft 를 calc.ts 의 previewDraft 입력으로 바꿔 계산합니다 */
+export function buildPreview(input: ForecastInput, draft: PreviewDraft): PreviewResult {
+  const change: ForecastDraft =
     draft.kind === "plan"
-      ? calculateForecast({ ...input, plans: input.plans.map((p) => (p.id === draft.replacePlanId ? draft.plan : p)) })
-      : calculateForecast({
-          ...input,
-          userCertificates: [
-            ...input.userCertificates.filter(
-              (uc) => uc.certificate_id !== draft.certificate.id && uc.certificate_id !== draft.replaceCertificateId,
-            ),
-            { certificate_id: draft.certificate.id, prep_weeks: draft.prep_weeks, study_hours: draft.study_hours },
-          ],
-          certificates: [...input.certificates.filter((c) => c.id !== draft.certificate.id), draft.certificate],
-        });
-  return { before, after, diff: comparePreview(before, after) };
+      ? { addPlans: [draft.plan], removePlanIds: draft.replacePlanId ? [draft.replacePlanId] : [] }
+      : {
+          addCertificates: [{ certificate_id: draft.certificate.id, prep_weeks: draft.prep_weeks, study_hours: draft.study_hours }],
+          removeCertificateIds: draft.replaceCertificateId ? [draft.replaceCertificateId] : [],
+        };
+  // 회차 정보가 input 에 없으면(예: 목록에 아직 없는 회차) 같이 넣어 줌
+  const certificates =
+    draft.kind === "certificate" && !input.certificates.some((c) => c.id === draft.certificate.id)
+      ? [...input.certificates, draft.certificate]
+      : input.certificates;
+  return previewDraft({ ...input, certificates }, change);
 }
 
 /** 받침에 따라 조사 고르기. 한글로 안 끝나면 "을(를)" 처럼 둘 다 */

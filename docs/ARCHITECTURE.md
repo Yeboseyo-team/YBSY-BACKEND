@@ -125,12 +125,19 @@ flowchart LR
 - 돌아올 주소는 `window.location.origin` 기준 `/auth/callback` 이고, Supabase Redirect URLs 에 등록한 주소(로컬 `http://localhost:5173/**`, 운영 `https://ybsy.vercel.app/**`, 프리뷰 `https://*-winwater1.vercel.app/**`)로만 돌아와요.
 - Google OAuth 리디렉션 URI 는 Supabase 콜백(`https://hxnaobwybllgdcvnwimo.supabase.co/auth/v1/callback`) 하나만 등록.
 
+### 권한·가입 강화 (2026-10-22)
+
+| 항목 | 내용 |
+|---|---|
+| 테이블 권한 | 로그인 안 함(anon): 자격증 회차 조회만 (깨우기 워크플로용, RLS 로 결과는 빈 목록). 나머지 테이블은 권한 자체가 없음(401). 로그인(authenticated): TRUNCATE·REFERENCES·TRIGGER 회수, 회차 쓰기 회수, 프로필 추가·삭제 회수 |
+| 가입 | Before User Created 훅 `hook_google_only_signup` 으로 Google·데모 계정(@hakgi.test)만 허용 (대시보드 연결 필요, docs/AUTH.md 6번) |
+| 계획 30개 | DB 트리거 `plans_limit` 이 31번째 추가를 거부 (SQLSTATE P0030) |
+| 시험 | 평소 기능(계획·자격증·프로필 읽기·쓰기) 정상, 회차 추가·TRUNCATE·프로필 삭제·31번째 계획·비로그인 계획 조회/추가 모두 거부 — 15개 항목 통과 후 롤백 |
+
 ## 4. 화면에서 막아야 하는 것
 
-DB는 아래 두 가지를 막지 않습니다. 마감일이 지나면 시드가 실패하기 때문이며, 화면에서 처리합니다.
-
-- 접수 마감된 회차 선택 불가 (FR-04-2)
-- 사용자당 계획 30개 상한 (FR-02-5)
+- 접수 마감된 회차 선택 불가 (FR-04-2) — DB에서 막으면 마감일이 지난 뒤 시드가 실패하므로 화면(`applyStatus`)과 `useAddCertificate` 에서 막습니다.
+- 사용자당 계획 30개 상한 (FR-02-5) — 화면에서 먼저 막고(`canAddPlan`), 2026-10-22부터 DB 트리거도 한 번 더 막습니다.
 
 ## 5. 환경
 

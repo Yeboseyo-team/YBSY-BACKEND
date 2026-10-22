@@ -286,6 +286,14 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
           <PreviewSheet
             open={previewOpen}
             title={`${group.name} ${round.certificate.round}`}
+            draft={{
+              kind: "certificate",
+              certificate: round.certificate,
+              study_hours: studyHours,
+              prep_weeks: prepWeeks,
+              replaceCertificateId: current?.certificate.id,
+            }}
+            confirmLabel={current ? "이 회차로 바꾸기" : "추가하기"}
             onCancel={() => setPreviewOpen(false)}
             onConfirm={() => {
               setPreviewOpen(false);

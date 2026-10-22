@@ -1,13 +1,16 @@
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { toPlanMessage, useCreatePlan, usePlans } from "@/features/plans/api";
+import { toPlanMessage, useCreatePlan, usePlans, type PlanInput } from "@/features/plans/api";
 import { PlanForm } from "@/features/plans/components/PlanForm";
 import { canAddPlan, MAX_PLANS } from "@/features/plans/defaults";
+import { PreviewSheet } from "@/features/preview/PreviewSheet";
+import type { PreviewDraft } from "@/features/preview/preview";
 
 /**
  * S-09 계획 등록 (경로 /plans/new) — 담당: 프론트 B (feature/frontend-jw)
- * 폼은 PlanForm (수정 화면과 같이 씀). 사전 검토 버튼은 6번 작업에서 연결해요.
+ * 폼은 PlanForm (수정 화면과 같이 씀). [사전 검토]를 누르면 PreviewSheet 로 추가했을 때의 예보를 보여 줘요 (F-06).
  */
 export default function PlanNewPage() {
   const navigate = useNavigate();
@@ -15,6 +18,15 @@ export default function PlanNewPage() {
   const createPlan = useCreatePlan();
   // 30개 상한은 화면에서 먼저 막아요 (FR-02-5)
   const full = plans.data ? !canAddPlan(plans.data.length) : false;
+  // 사전 검토 중인 입력값. null 이면 시트 닫힘. 취소하면 아무것도 저장하지 않아요.
+  const [previewing, setPreviewing] = useState<PlanInput | null>(null);
+  const draft = useMemo<PreviewDraft | null>(() => (previewing ? { kind: "plan", plan: previewing } : null), [previewing]);
+
+  const save = (values: PlanInput) =>
+    createPlan.mutate(values, {
+      onSuccess: () => navigate("/plans"),
+      onError: () => setPreviewing(null),
+    });
 
   return (
     <PageContainer>
@@ -41,9 +53,19 @@ export default function PlanNewPage() {
           isPending={createPlan.isPending}
           errorMessage={createPlan.error ? toPlanMessage(createPlan.error) : null}
           disabled={full}
-          onSubmit={(values) => createPlan.mutate(values, { onSuccess: () => navigate("/plans") })}
+          onSubmit={save}
+          onPreview={setPreviewing}
         />
       </div>
+
+      <PreviewSheet
+        open={previewing !== null}
+        title={previewing?.title ?? ""}
+        draft={draft}
+        isPending={createPlan.isPending}
+        onCancel={() => setPreviewing(null)}
+        onConfirm={() => previewing && save(previewing)}
+      />
     </PageContainer>
   );
 }

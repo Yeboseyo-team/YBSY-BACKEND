@@ -64,7 +64,7 @@ useCertificates()(전체 회차), useMyCertificates()(내가 고른 회차), use
 - 참고: origin/feature/frontend-session 의 src/features/certificates/, src/pages/CertificateSearchPage.tsx
 ```
 
-## [ ] 5. 자격증에 사전 검토 연결 (F-06, ~10/17, 프론트 B 6번이 끝난 뒤)
+## [x] 5. 자격증에 사전 검토 연결 (F-06, ~10/17, 프론트 B 6번이 끝난 뒤)
 
 ```
 docs/tasks/frontend-ge.md 의 5번 작업을 해줘.

@@ -73,7 +73,10 @@ src/pages/HomePage.tsx 를 부담 예보 화면으로 만들어줘.
 - 데모 계정 yebo@hakgi.test 로 확인했을 때 명세서 4.5 검증 예시와 숫자가 맞는지 확인해줘.
 ```
 
-## [ ] 6. 사전 검토 시트 (S-11, F-06, ~10/17) ★ 우리 서비스만의 차별점
+## [x] 6. 사전 검토 시트 (S-11, F-06, ~10/17) ★ 우리 서비스만의 차별점
+
+> 10/22 ge 브랜치에서 시트를 완성했어요 (`src/features/preview/PreviewSheet.tsx`, `preview.ts`). 남은 것: 계획 등록 화면(3번)을 만들 때 아래처럼 연결하기.
+> `<PreviewSheet open title={제목} draft={{ kind: "plan", plan: 폼 값 }} onConfirm={저장} onCancel={닫기} pending={저장 중} />` — 계획 수정(4번)이면 `draft` 에 `replacePlanId: 계획 id`, 확인 버튼 글자는 `confirmLabel="수정하기"`.
 
 ```
 docs/tasks/frontend-jw.md 의 6번 작업을 해줘.

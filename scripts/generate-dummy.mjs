@@ -221,8 +221,9 @@ const row = (vals) => `  (${vals.map(q).join(', ')})`;
 const header = '-- ⚠ 자동 생성 파일: scripts/generate-dummy.mjs 를 수정한 뒤 재생성하세요.\n';
 
 const sql = `${header}-- 학기예보 시드 (명세서 5.6). supabase db reset 시 자동 실행, 여러 번 실행해도 같은 결과.
--- 데모 계정 비밀번호: ${DEMO_PASSWORD}   ※ 로컬·개발 프로젝트 전용. 운영 프로젝트에는 3)번 자격증만 적용하세요.
--- 자격증 일정은 더미입니다. 실제 배포 전 공식 공고로 교체하세요.
+-- 데모 계정 비밀번호: ${DEMO_PASSWORD}   ※ 운영 사이트도 같은 프로젝트를 씁니다(팀 결정 10/14).
+-- 자격증 일정은 2026-10-14 시행 기관 공고 기준입니다. 2027년 회차는 "(예정)" 예상값입니다.
+-- 데모 계정 데이터만 처음 상태로 되돌리려면 supabase/reset-demo.sql 을 실행하세요.
 
 begin;
 
@@ -256,6 +257,38 @@ on conflict do nothing;
 commit;
 `;
 writeFileSync(join(root, 'supabase/seed.sql'), sql);
+
+// 데모 계정(*@hakgi.test) 데이터만 처음 상태로 되돌리는 SQL. 시연 전(10/19) 팀원 테스트 흔적을 지울 때 실행합니다.
+// - 실제 사용자(Google 로그인) 데이터와 계정은 건드리지 않습니다.
+// - 개인정보 동의 시각은 트리거가 한 번 기록되면 바꾸지 못하게 막으므로, 이 작업 동안만 트리거를 끕니다.
+const demoIds = users.map((u) => q(u.id)).join(', ');
+const resetSql = `${header}-- 데모 계정 데이터 되돌리기. Supabase SQL Editor 에서 통째로 실행하세요. 여러 번 실행해도 같은 결과.
+-- 지우는 것: 데모 계정 5명의 계획·자격증 선택 / 다시 넣는 것: 학기 설정·동의, 계획, 자격증 선택, 공용 자격증 회차
+-- 건드리지 않는 것: 실제 사용자(Google 로그인) 계정과 데이터
+
+begin;
+
+delete from public.user_certificates where user_id in (${demoIds});
+delete from public.plans where user_id in (${demoIds});
+
+alter table public.profiles disable trigger profiles_privacy_agreed_at;
+${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
+alter table public.profiles enable trigger profiles_privacy_agreed_at;
+
+insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values
+${certificates.map((c) => row([c.id, c.name, c.round, c.apply_start, c.apply_end, c.exam_date, c.prep_weeks, c.default_study_hours, c.source_url])).join(',\n')}
+on conflict (id) do update set name = excluded.name, round = excluded.round, apply_start = excluded.apply_start, apply_end = excluded.apply_end,
+  exam_date = excluded.exam_date, prep_weeks = excluded.prep_weeks, default_study_hours = excluded.default_study_hours, source_url = excluded.source_url;
+
+insert into public.plans (id, user_id, title, type, credits, load_level, start_week, end_week, hours_per_week, created_at, updated_at) values
+${plans.map((p) => row([p.id, p.user_id, p.title, p.type, p.credits, p.load_level, p.start_week, p.end_week, p.hours_per_week, p.created_at, p.updated_at])).join(',\n')};
+
+insert into public.user_certificates (user_id, certificate_id, study_hours, prep_weeks, notified_at) values
+${userCertificates.map((x) => row([x.user_id, x.certificate_id, x.study_hours, x.prep_weeks, x.notified_at])).join(',\n')};
+
+commit;
+`;
+writeFileSync(join(root, 'supabase/reset-demo.sql'), resetSql);
 
 const j = (v) => JSON.stringify(v, null, 2);
 const ts = `${header.replace('--', '//')}// 학기예보 프론트 목데이터 — 기준: 요구사항 명세서 5장(테이블), 4장(산출 규칙)

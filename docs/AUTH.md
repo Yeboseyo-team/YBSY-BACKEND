@@ -75,7 +75,7 @@ await supabase.from("profiles").update({
 
 - `.env.local`(로컬)과 Vercel **Preview** 환경변수에만 `VITE_DEMO_LOGIN=true`. **Production에는 넣지 않습니다.**
 - `src/features/auth/demo.ts`: `DEMO_LOGIN_ENABLED`, `demoAccounts`(이메일·이름·용도), `useDemoSignIn()`
-- 데모 계정 비밀번호 로그인을 위해 Supabase의 **Email provider는 켜 둡니다.** 화면에 이메일 가입이 없을 뿐, API로 이메일 가입을 직접 호출하는 것까지 막지는 않습니다 (인증 메일 확인은 필요). 개발 기간 동안 감수하는 부분입니다.
+- 데모 계정 비밀번호 로그인을 위해 Supabase의 **Email provider는 켜 둡니다.** 대신 **가입은 Google과 데모 계정(@hakgi.test)만** 되도록 Auth Hook 으로 막아요 (아래 "6. 이메일 가입 막기", 10/22).
 
 ## 프론트 담당에게 넘길 할 일 (Google 전용 전환)
 
@@ -144,3 +144,13 @@ pnpm dev                     # http://localhost:5173
 3. 새로고침, 브라우저 껐다 켜기 → 로그인 유지
 4. 로그아웃 → `/`로 가면 `/login`으로 이동, 로그인 후 원래 화면으로 복귀
 5. 데모 로그인(`newbie@hakgi.test`) → 온보딩으로 이동 / (`yebo@hakgi.test`) → 홈 바로 이동
+
+### 6. 이메일 가입 막기 (Auth Hook, 2026-10-22)
+
+화면에 이메일 가입이 없어도 Email provider 가 켜져 있으면 API 로 이메일 가입을 할 수 있어요 (실제로 옛 운영 화면에서 이메일 가입자 2명이 생겼어요).
+Supabase **Before User Created** 훅으로 계정이 만들어지기 직전에 검사해서 **Google 가입과 데모 계정(@hakgi.test)만** 통과시켜요.
+
+- DB 함수: `public.hook_google_only_signup` (`supabase/migrations/20261022054446_google_only_signup_hook.sql`, 개발 DB 적용 완료)
+- 시험: Google 가입·데모 이메일은 허용, 이메일(gmail·학교 메일)·전화·익명·`hakgi.test.evil.com` 같은 흉내 도메인은 403 거부
+- **대시보드에서 연결해야 동작해요:** Authentication → **Auth Hooks** → **Before User Created** → Add hook → Hook type **Postgres** → Schema `public`, Function `hook_google_only_signup` → 켜기(Enabled) → Save
+- 이미 만들어진 계정에는 영향 없고, 로그인도 그대로 돼요. 시드는 `auth.users` 에 직접 넣어서 훅을 거치지 않아요.

@@ -91,7 +91,7 @@ docs/tasks/frontend-ge.md 의 7번 작업을 해줘.
 - 마지막으로 pnpm lint, typecheck, test, build 가 모두 통과하는지 확인해줘.
 ```
 
-## [ ] 8. (선택) 회차 추천 표시 (F-09, 10/18 이후, 필수 기능을 다 끝낸 뒤)
+## [x] 8. (선택) 회차 추천 표시 (F-09, 10/18 이후, 필수 기능을 다 끝낸 뒤)
 
 ```
 docs/tasks/frontend-ge.md 의 8번 작업을 해줘.

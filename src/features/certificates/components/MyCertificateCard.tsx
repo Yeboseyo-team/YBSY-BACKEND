@@ -130,6 +130,9 @@ export function MyCertificateCard({ mine, certificate, semesterStart, today, cur
           <Button variant="outline" onClick={startEdit}>
             회차·시간 바꾸기
           </Button>
+          <Button asChild variant="outline">
+            <Link to={`/certificates?view=suggest&name=${encodeURIComponent(certificate.name)}`}>회차 추천</Link>
+          </Button>
           <Button
             variant="ghost"
             className="text-storm hover:text-storm"

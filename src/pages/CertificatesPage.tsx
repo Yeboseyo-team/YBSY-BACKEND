@@ -11,6 +11,7 @@ import { FormAlert } from "@/features/auth/components/FormAlert";
 import { useCertificates, useMyCertificates } from "@/features/certificates/api";
 import { CertificatePicker } from "@/features/certificates/components/CertificatePicker";
 import { MyCertificateCard } from "@/features/certificates/components/MyCertificateCard";
+import { RoundSuggest } from "@/features/certificates/components/RoundSuggest";
 import { semesterWeekOf, todayInKorea } from "@/features/forecast/calc";
 import type { Certificate } from "@/types/database";
 
@@ -18,11 +19,13 @@ import type { Certificate } from "@/types/database";
  * S-10 자격증 선택 (경로 /certificates) — 담당: 프론트 A
  * - 기본: 내가 고른 회차 목록 (PcMyCertificates) — 준비 기간·시간 바꾸기, 선택 해제
  * - ?view=add: 검색·회차 선택 (PcCertificate) — 접수 마감 회차 선택 불가, 사전 검토 후 추가 (F-04, F-06)
+ * - ?view=suggest&name=…: 폭풍이 가장 적은 회차 추천 (PcRoundSuggest, F-09)
  */
 export default function CertificatesPage() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const adding = params.get("view") === "add";
+  const suggestName = params.get("view") === "suggest" ? params.get("name") : null;
   const [notice, setNotice] = useState<string | null>(null);
 
   const profile = useProfile(user?.id);
@@ -30,6 +33,27 @@ export default function CertificatesPage() {
   const mine = useMyCertificates();
   const queries = [profile, certificates, mine];
   const today = todayInKorea();
+
+  if (suggestName) {
+    return (
+      <PageContainer>
+        <PageHeader
+          title={`${suggestName}, 어느 회차가 좋을까요?`}
+          description="폭풍 주가 가장 적은 회차를 먼저 보여 드려요."
+          back={{ to: "/certificates", label: "내 자격증" }}
+        />
+        <RoundSuggest
+          key={suggestName}
+          name={suggestName}
+          onChanged={(message) => {
+            setNotice(message);
+            setParams({}, { replace: false });
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      </PageContainer>
+    );
+  }
 
   const header = adding ? (
     <PageHeader

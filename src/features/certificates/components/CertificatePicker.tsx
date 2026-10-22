@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
 import { Check, ExternalLink, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -194,7 +195,17 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
       ) : null}
 
       <fieldset className="grid gap-2">
-        <legend className="mb-2 text-sm font-medium">회차</legend>
+        <legend className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 text-sm font-medium">
+          회차
+          {group.rounds.filter((r) => r.selectable || mineIds.has(r.certificate.id)).length > 1 ? (
+            <Link
+              to={`/certificates?view=suggest&name=${encodeURIComponent(group.name)}`}
+              className="text-[13px] font-medium text-primary hover:underline"
+            >
+              폭풍이 가장 적은 회차 보기
+            </Link>
+          ) : null}
+        </legend>
         {group.rounds.map((r) => {
           const isMine = mineIds.has(r.certificate.id);
           const disabled = !r.selectable || isMine;

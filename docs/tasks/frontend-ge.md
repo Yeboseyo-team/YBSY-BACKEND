@@ -68,9 +68,13 @@ useCertificates()(전체 회차), useMyCertificates()(내가 고른 회차), use
 
 ```
 docs/tasks/frontend-ge.md 의 5번 작업을 해줘.
-먼저 git fetch origin 후 git checkout origin/feature/frontend-jw -- src/features/preview src/features/forecast 로 프론트 B 브랜치에서 사전 검토 시트와 예보 파일만 가져와 (브랜치 전체를 merge 하지 마). 가져온 파일은 고치지 말고 그대로 커밋해.
-자격증 회차를 저장하기 전에 src/features/preview/PreviewSheet.tsx 를 열어 '추가했을 때' 예보를 보여주고, [추가하기]일 때만 저장해줘.
-PreviewSheet 파일 자체는 프론트 B 담당이라 고치지 말고, 바꿔야 하면 나에게 말해줘.
+먼저 /start 로 main 을 받아와 (B 의 사전 검토 시트는 main 으로 들어와요. jw 브랜치에서 파일을 직접 가져오지 마).
+자격증 회차를 저장하기 전에 src/features/preview/PreviewSheet.tsx 를 열어 '바꿨을 때' 예보를 보여주고, [추가하기]일 때만 저장해줘.
+- 계산은 calc.ts 의 previewDraft(useForecastData().input, 바꿀 내용) 하나로 (백엔드가 만들어 둠, 화면에서 따로 계산하지 마). 돌려주는 값은 { before, after, diff }.
+  · 처음 고르기: { addCertificates: [{ certificate_id, prep_weeks, study_hours }] }
+  · 회차 바꾸기: { removeCertificateIds: [예전 회차 id], addCertificates: [새 회차] }
+  · 준비 기간·학습 시간 수정 미리 보기: { addCertificates: [{ 같은 certificate_id, 새 prep_weeks, 새 study_hours }] } (이미 고른 회차면 바꿔서 계산)
+- PreviewSheet 파일 자체는 프론트 B 담당이라 고치지 말고, 계산 결과를 넘길 props 가 없거나 바꿔야 하면 나에게 말해줘.
 ```
 
 ## [x] 6. 설정 (S-12, ~10/16)

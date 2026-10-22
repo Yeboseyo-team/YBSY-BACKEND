@@ -18,7 +18,10 @@ export type Weather = "clear" | "cloudy" | "storm";
 /** 예보에 필요한 학기 설정. 온보딩 전(null)이면 예보를 낼 수 없습니다. */
 export type ForecastProfile = Pick<Profile, "available_hours" | "semester_start" | "midterm_week" | "final_week">;
 /** 저장된 계획과 저장 전 계획(사전 검토) 모두 받을 수 있도록 필요한 필드만 씁니다. */
-export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_week" | "hours_per_week">;
+export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_week" | "hours_per_week"> & {
+  /** 저장된 계획이면 id (사전 검토에서 "이 계획을 바꾸면"을 계산할 때 씀) */
+  id?: string;
+};
 export type ForecastUserCertificate = Pick<UserCertificate, "certificate_id" | "study_hours" | "prep_weeks">;
 export type ForecastCertificate = Pick<Certificate, "id" | "name" | "exam_date">;
 
@@ -197,6 +200,39 @@ export function comparePreview(before: Forecast, after: Forecast): PreviewDiff {
 export function previewForecast(input: ForecastInput, draftPlans: ForecastPlan[]) {
   const before = calculateForecast(input);
   const after = calculateForecast({ ...input, plans: [...input.plans, ...draftPlans] });
+  return { before, after, diff: comparePreview(before, after) };
+}
+
+/** 저장하기 전에 바꿔 볼 내용 (사전 검토, F-06). 필요한 것만 넣으면 됩니다. */
+export interface ForecastDraft {
+  /** 새로 넣을 계획 (계획 등록) */
+  addPlans?: ForecastPlan[];
+  /** 빼고 계산할 저장된 계획 id. 계획 수정이면 [원래 계획 id] + addPlans 에 고친 값 */
+  removePlanIds?: string[];
+  /** 새로 고를 자격증 회차 (input.certificates 에 그 회차가 있어야 해요). 이미 고른 회차면 이 값으로 바꿔 계산 */
+  addCertificates?: ForecastUserCertificate[];
+  /** 빼고 계산할 자격증 회차 id. 회차 바꾸기면 [예전 회차 id] + addCertificates 에 새 회차 */
+  removeCertificateIds?: string[];
+}
+
+/**
+ * 계획·자격증을 저장하기 전에 "바꾸면 예보가 어떻게 되는지" 계산합니다 (F-06, FR-06-1).
+ * 계획 등록·수정, 자격증 고르기·회차 바꾸기를 모두 이 함수 하나로 계산하고, DB 에는 아무것도 저장하지 않아요.
+ * 예) 자격증 고르기:   previewDraft(input, { addCertificates: [{ certificate_id, prep_weeks, study_hours }] })
+ *     회차 바꾸기:     previewDraft(input, { removeCertificateIds: [예전 id], addCertificates: [새 회차] })
+ *     계획 수정:       previewDraft(input, { removePlanIds: [plan.id], addPlans: [고친 값] })
+ * 돌려주는 값은 previewForecast 와 같아요: { before, after, diff }
+ */
+export function previewDraft(input: ForecastInput, draft: ForecastDraft) {
+  const removePlans = new Set(draft.removePlanIds ?? []);
+  const addCerts = draft.addCertificates ?? [];
+  const replacedCerts = new Set([...(draft.removeCertificateIds ?? []), ...addCerts.map((uc) => uc.certificate_id)]);
+  const before = calculateForecast(input);
+  const after = calculateForecast({
+    ...input,
+    plans: [...input.plans.filter((p) => !(p.id && removePlans.has(p.id))), ...(draft.addPlans ?? [])],
+    userCertificates: [...input.userCertificates.filter((uc) => !replacedCerts.has(uc.certificate_id)), ...addCerts],
+  });
   return { before, after, diff: comparePreview(before, after) };
 }
 

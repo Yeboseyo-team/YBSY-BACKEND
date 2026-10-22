@@ -184,7 +184,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      hook_google_only_signup: { Args: { event: Json }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

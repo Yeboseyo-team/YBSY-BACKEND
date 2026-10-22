@@ -24,7 +24,7 @@
   - 30개가 차 있으면 추가가 `PlanLimitError` 로 막혀요. 수업이 아니면 학점은 자동으로 비워져요.
 - `src/features/plans/defaults.ts`: `defaultHoursPerWeek(유형, 단계, 학점)`(F-03), `groupPlansByType(plans)`(FR-02-2), `canAddPlan(개수)`·`MAX_PLANS`, `PLAN_TYPE_LABEL`·`LOAD_LEVEL_LABEL`(화면 글자)
 
-## [ ] 2. 계획 목록 화면 (S-09, ~10/15)
+## [x] 2. 계획 목록 화면 (S-09, ~10/15)
 
 ```
 docs/tasks/frontend-jw.md 의 2번 작업을 해줘.

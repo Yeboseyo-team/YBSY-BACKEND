@@ -22,8 +22,12 @@ describe("runPreview (F-06)", () => {
 
   it("수정할 계획을 같은 값으로 바꾸면 예보가 그대로다", () => {
     const target = yebo.plans[0] as (typeof plans)[number];
-    const { before, after } = runPreview(yebo, { kind: "plan", plan: target, replacePlanId: target.id });
-    expect(after).toEqual(before);
+    const { before, after, diff } = runPreview(yebo, { kind: "plan", plan: target, replacePlanId: target.id });
+    // 주차별 내역 순서는 바뀔 수 있어서 시간·단계·요약만 비교
+    const shape = (f: typeof before) => f.weeks.map((w) => [w.total_hours, w.level]);
+    expect(shape(after)).toEqual(shape(before));
+    expect(after.summary).toEqual(before.summary);
+    expect(diff.new_storm_weeks).toEqual([]);
   });
 
   it("이미 고른 자격증 회차를 같은 값으로 미리 보면 예보가 그대로다", () => {

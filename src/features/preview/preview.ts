@@ -1,8 +1,7 @@
-// 사전 검토 계산 (F-06) — 저장하지 않은 계획·자격증을 더했을 때의 예보. 서버 호출 없이 calc.ts 만 씁니다 (NFR-PERF-2).
+// 사전 검토 (F-06) — 시트가 넘겨받는 draft 를 calc.ts 의 previewDraft 입력으로 바꿔 줍니다.
+// 계산 자체는 calc.ts 한 곳에서만 해요. 서버 호출 없음 (NFR-PERF-2).
 import {
-  calculateForecast,
-  comparePreview,
-  previewForecast,
+  previewDraft,
   type Forecast,
   type ForecastCertificate,
   type ForecastInput,
@@ -32,28 +31,25 @@ export interface PreviewResult {
   diff: PreviewDiff;
 }
 
-/** input.plans 에는 실제 Plan 행이 들어 있어서 id 로 바꿀 계획을 찾을 수 있어요. 순서는 그대로 둬요. */
-function replacePlan(plans: ForecastPlan[], id: string, next: ForecastPlan): ForecastPlan[] {
-  return plans.map((p) => ((p as ForecastPlan & { id?: string }).id === id ? next : p));
-}
-
 export function runPreview(input: ForecastInput, draft: PreviewDraft): PreviewResult {
   if (draft.kind === "plan") {
-    if (!draft.replacePlanId) return previewForecast(input, [draft.plan]);
-    const before = calculateForecast(input);
-    const after = calculateForecast({ ...input, plans: replacePlan(input.plans, draft.replacePlanId, draft.plan) });
-    return { before, after, diff: comparePreview(before, after) };
+    return previewDraft(input, {
+      addPlans: [draft.plan],
+      removePlanIds: draft.replacePlanId ? [draft.replacePlanId] : [],
+    });
   }
 
-  const before = calculateForecast(input);
-  const userCertificates = input.userCertificates
-    .filter((uc) => uc.certificate_id !== draft.certificate.id && uc.certificate_id !== draft.replaceCertificateId)
-    .concat({ certificate_id: draft.certificate.id, study_hours: draft.study_hours, prep_weeks: draft.prep_weeks });
+  // previewDraft 는 input.certificates 에 그 회차가 있어야 해서, 없으면 넣어 줘요.
   const certificates = input.certificates.some((c) => c.id === draft.certificate.id)
     ? input.certificates
     : [...input.certificates, draft.certificate];
-  const after = calculateForecast({ ...input, userCertificates, certificates });
-  return { before, after, diff: comparePreview(before, after) };
+  return previewDraft(
+    { ...input, certificates },
+    {
+      addCertificates: [{ certificate_id: draft.certificate.id, study_hours: draft.study_hours, prep_weeks: draft.prep_weeks }],
+      removeCertificateIds: draft.replaceCertificateId ? [draft.replaceCertificateId] : [],
+    },
+  );
 }
 
 /** 가장 바쁜 주의 시간 */

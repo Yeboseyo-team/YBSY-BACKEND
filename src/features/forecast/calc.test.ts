@@ -20,6 +20,7 @@ import {
   formatDday,
   isSemesterReady,
   levelOf,
+  previewDraft,
   previewForecast,
   recommendRounds,
   semesterWeekOf,
@@ -249,5 +250,54 @@ describe("시험 회차 추천 (F-09, FR-09-1)", () => {
 
   it("고를 수 있는 회차가 없으면 빈 목록", () => {
     expect(recommendRounds({ ...inputOf(empty), certificates, name: "유통관리사 2급", today: DEMO_TODAY })).toEqual([]);
+  });
+});
+
+describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (previewDraft, F-06)", () => {
+  const SQLD63 = "c0000000-0000-4000-8000-000000000007";
+  const BIGDATA_PRACTICAL = "c0000000-0000-4000-8000-000000000011"; // 시험 11/28 = 13주차
+  const hours = (f: { weeks: { total_hours: number }[] }, week: number) => f.weeks[week - 1].total_hours;
+
+  it("자격증 고르기: 김예보가 빅데이터분석기사 실기(준비 6주, 주 10시간)를 고르면 9·10·11주차가 새로 폭풍", () => {
+    const { before, after, diff } = previewDraft(inputOf(yebo), {
+      addCertificates: [{ certificate_id: BIGDATA_PRACTICAL, prep_weeks: 6, study_hours: 10 }],
+    });
+    expect(hours(before, 9)).toBe(42);
+    expect(hours(after, 9)).toBe(52);
+    expect(hours(after, 13)).toBe(44);
+    expect(diff.message).toBe("폭풍 1주 → 4주 (9, 10, 11주차 추가)");
+  });
+
+  it("회차 바꾸기: SQLD 63회(9~11주)를 빼고 빅데이터 실기(준비 3주 → 11~13주)를 넣음", () => {
+    const { after } = previewDraft(inputOf(yebo), {
+      removeCertificateIds: [SQLD63],
+      addCertificates: [{ certificate_id: BIGDATA_PRACTICAL, prep_weeks: 3, study_hours: 8 }],
+    });
+    expect([hours(after, 9), hours(after, 10), hours(after, 11), hours(after, 12), hours(after, 13)]).toEqual([34, 34, 42, 42, 42]);
+    expect(after.weeks.flatMap((w) => w.items).some((i) => i.title === "SQLD 준비")).toBe(false);
+  });
+
+  it("이미 고른 회차를 다시 넣으면 두 번 더하지 않고 새 값으로 바꿔 계산 (준비 시간 수정 미리 보기)", () => {
+    const { after } = previewDraft(inputOf(yebo), {
+      addCertificates: [{ certificate_id: SQLD63, prep_weeks: 3, study_hours: 12 }],
+    });
+    expect(hours(after, 9)).toBe(46); // 34 + 12 (8시간이 남아 있으면 54)
+  });
+
+  it("계획 수정: 프로그래밍 학회를 주 4시간 → 20시간으로 바꾸면 원래 계획은 빼고 계산", () => {
+    const input = inputOf(yebo);
+    const club = plans.find((p) => p.user_id === yebo && p.title === "프로그래밍 학회")!;
+    const { after } = previewDraft(input, { removePlanIds: [club.id], addPlans: [{ ...club, hours_per_week: 20 }] });
+    expect(hours(after, 8)).toBe(73); // 수업 45 + 학회 20 + 정보처리기사 8
+    expect(hours(after, 1)).toBe(50);
+    expect(after.weeks[0].level).toBe("cloudy"); // 정확히 100%
+  });
+
+  it("계획 추가만 하면 previewForecast 와 같은 결과, 입력값은 바뀌지 않음", () => {
+    const input = inputOf(yebo);
+    const snapshot = JSON.stringify(input);
+    expect(previewDraft(input, { addPlans: [previewPlan] })).toEqual(previewForecast(input, [previewPlan]));
+    expect(previewDraft(input, {}).diff.message).toBe("폭풍 1주 → 1주");
+    expect(JSON.stringify(input)).toBe(snapshot);
   });
 });

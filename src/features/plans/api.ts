@@ -32,6 +32,7 @@ export function toPlanMessage(error: unknown): string {
   if (error instanceof PlanLimitError) return error.message;
   if (error instanceof TypeError) return "서버에 연결하지 못했어요. 인터넷 연결을 확인하세요.";
   const code = (error as { code?: string } | null)?.code;
+  if (code === "P0030") return new PlanLimitError().message; // DB 의 30개 상한 트리거 (plans_limit)
   if (code === "23514") return "입력값을 확인하세요. 계획명 1~30자, 주차 1~16(시작 ≤ 종료), 주당 시간 0.5~60(0.5 단위), 학점은 수업만 1~4예요.";
   return "계획을 저장하지 못했어요. 잠시 뒤 다시 시도하세요.";
 }

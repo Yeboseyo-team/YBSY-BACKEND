@@ -89,28 +89,59 @@ flowchart LR
 | certificates | 로그인 사용자 전체 | 불가 (대시보드·시드) | 불가 | 불가 |
 | user_certificates | 본인 | 본인 | 본인 | 본인 |
 
-확인 결과 (2026-10-13, 서울 프로젝트, NFR-SEC-1):
+확인 결과 (2026-10-13 밤, 서울 프로젝트, NFR-SEC-1 — **20개 모두 통과**):
 
-| 시도 | 결과 |
+방법: DB 안에서 앱과 같은 방식(`authenticated`/`anon` 역할 + 로그인 토큰의 사용자 id)으로 김예보 로그인 상태를 만들어 박운영 데이터에 접근. 시험 후 전부 롤백하고 박운영 데이터(계획 6건·이름·자격증 선택 2건)가 그대로인 것까지 확인.
+
+| # | 김예보로 로그인한 상태에서 시도 | 결과 |
+|---|---|---|
+| 1 | 박운영 계획을 **id로 직접 요청** (명세서 확인 방법) | 0건 |
+| 2~5 | 박운영 계획·자격증 선택 조회 / 내 계획·프로필 조회 | 0건 / 내 계획 6건·프로필 1건만 |
+| 6 | 자격증 회차 조회 (공용) | 20건 전부 |
+| 7~10 | 박운영 계획·프로필 수정, 계획·자격증 선택 삭제 | 모두 0건 처리 |
+| 11 | 자격증 회차 수정 | 0건 |
+| 12 | 박운영 이름으로 계획 추가 | 거부 (RLS) |
+| 13 | 내 계획의 주인을 박운영으로 바꾸기 | 거부 (RLS) |
+| 14 | 박운영 이름으로 자격증 선택 추가 | 거부 (RLS) |
+| 15 | 자격증 회차 추가 | 거부 (RLS) |
+| 16 | 프로필 직접 추가 (가입 트리거만 가능) | 거부 (RLS) |
+| 17~20 | **비로그인** 계획·프로필·자격증 선택·자격증 회차 조회 | 모두 0건 |
+
+트리거 전용 함수(`handle_new_user`, `set_updated_at`, `stamp_privacy_agreed_at`)는 API로 직접 호출하지 못하게 실행 권한을 막아 두었습니다(`20261013090859_harden_functions.sql`, `20261013103836_privacy_consent.sql`).
+
+### 비밀 키 점검 (NFR-SEC-2, 2026-10-14 — 통과)
+
+| 검사 | 결과 |
 |---|---|
-| 김예보가 박운영 계획 조회 | 0건 |
-| 김예보가 박운영 계획 수정 | 0건 바뀜 |
-| 김예보가 박운영 자격증 선택 삭제 | 0건 삭제 |
-| 박운영이 김예보 계획 조회 | 0건 |
-| 비로그인 자격증·계획·프로필 조회 | 0건 |
+| 빌드 결과물(`dist`)에 secret 키(`sb_secret_…`), service_role JWT, Google 클라이언트 보안 비밀번호(`GOCSPX-…`), AI API 키(`sk-ant-…`) | 0건. `sb_secret_` 글자는 supabase-js 가 키 종류를 구분하는 코드에만 있음 (실제 키 아님) |
+| 빌드 결과물의 Supabase 키 | publishable 키 하나만 (환경변수 `VITE_SUPABASE_PUBLISHABLE_KEY`) |
+| 데모 비밀번호(`hakgi1234`) | 운영 빌드에 없음 (`VITE_DEMO_LOGIN` 이 꺼진 빌드 기준) |
+| GitHub 모든 브랜치·커밋 기록(46개)의 비밀 키 모양 문자열 | 0건 |
+| 커밋된 `.env` 파일 | `.env.example` 만 (값 비어 있음). `.env.local` 은 `.gitignore` 로 막힘 |
 
-트리거 전용 함수(`handle_new_user`, `set_updated_at`)는 API로 직접 호출하지 못하게 실행 권한을 막아 두었습니다(`20261013090859_harden_functions.sql`).
+### 로그인 링크 보안 (NFR-SEC-4)
+
+- supabase-js 를 `flowType: "pkce"` 로 사용 (`src/lib/supabase.ts`). 로그인 결과 `code` 는 요청한 브라우저에서만 세션으로 바꿀 수 있어요.
+- 돌아올 주소는 `window.location.origin` 기준 `/auth/callback` 이고, Supabase Redirect URLs 에 등록한 주소(로컬 `http://localhost:5173/**`, 운영 `https://ybsy.vercel.app/**`, 프리뷰 `https://*-winwater1.vercel.app/**`)로만 돌아와요.
+- Google OAuth 리디렉션 URI 는 Supabase 콜백(`https://hxnaobwybllgdcvnwimo.supabase.co/auth/v1/callback`) 하나만 등록.
+
+### 권한·가입 강화 (2026-10-22)
+
+| 항목 | 내용 |
+|---|---|
+| 테이블 권한 | 로그인 안 함(anon): 자격증 회차 조회만 (깨우기 워크플로용, RLS 로 결과는 빈 목록). 나머지 테이블은 권한 자체가 없음(401). 로그인(authenticated): TRUNCATE·REFERENCES·TRIGGER 회수, 회차 쓰기 회수, 프로필 추가·삭제 회수 |
+| 가입 | Before User Created 훅 `hook_google_only_signup` 으로 Google·데모 계정(@hakgi.test)만 허용 (대시보드 연결 필요, docs/AUTH.md 6번) |
+| 계획 30개 | DB 트리거 `plans_limit` 이 31번째 추가를 거부 (SQLSTATE P0030) |
+| 시험 | 평소 기능(계획·자격증·프로필 읽기·쓰기) 정상, 회차 추가·TRUNCATE·프로필 삭제·31번째 계획·비로그인 계획 조회/추가 모두 거부 — 15개 항목 통과 후 롤백 |
 
 ## 4. 화면에서 막아야 하는 것
 
-DB는 아래 두 가지를 막지 않습니다. 마감일이 지나면 시드가 실패하기 때문이며, 화면에서 처리합니다.
-
-- 접수 마감된 회차 선택 불가 (FR-04-2)
-- 사용자당 계획 30개 상한 (FR-02-5)
+- 접수 마감된 회차 선택 불가 (FR-04-2) — DB에서 막으면 마감일이 지난 뒤 시드가 실패하므로 화면(`applyStatus`)과 `useAddCertificate` 에서 막습니다.
+- 사용자당 계획 30개 상한 (FR-02-5) — 화면에서 먼저 막고(`canAddPlan`), 2026-10-22부터 DB 트리거도 한 번 더 막습니다.
 
 ## 5. 환경
 
 | 환경 | Supabase | 비고 |
 |---|---|---|
 | 로컬 개발 | 서울 프로젝트 `hxnaobwybllgdcvnwimo` (ap-northeast-2) | 데모 계정 포함 |
-| 운영 | 10/19 별도 생성 예정 | 마이그레이션 + 자격증 시드만, 데모 계정 제외 |
+| 운영 (ybsy.vercel.app) | 같은 서울 프로젝트 `hxnaobwybllgdcvnwimo` | 팀 결정(10/14): 운영 프로젝트를 따로 만들지 않음. 10/19에 테스트 데이터 정리 후 데모 데이터 재생성 |

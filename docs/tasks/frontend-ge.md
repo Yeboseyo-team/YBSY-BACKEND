@@ -17,7 +17,7 @@
 
 `pnpm dev` → 로그인 화면 이메일 칸에 `yebo@hakgi.test` / 비밀번호 `hakgi1234` (프론트 A 1번 이후엔 데모 로그인 버튼) → 메뉴 "자격증", 오른쪽 위 설정 아이콘에 🚧 상자가 보이면 끝.
 
-## [ ] 1. 로그인 정리 — Google만 (S-01, F-01, ~10/14)
+## [x] 1. 로그인 정리 — Google만 (S-01, F-01, ~10/14)
 
 ```
 docs/tasks/frontend-ge.md 의 1번 작업을 해줘.
@@ -28,7 +28,7 @@ docs/tasks/frontend-ge.md 의 1번 작업을 해줘.
 - 지우기 전에 무엇을 지울지 목록을 먼저 보여줘.
 ```
 
-## [ ] 2. 온보딩 + 온보딩 가드 (S-07, F-01, ~10/14)
+## [x] 2. 온보딩 + 온보딩 가드 (S-07, F-01, ~10/14)
 
 ```
 docs/tasks/frontend-ge.md 의 2번 작업을 해줘.
@@ -40,14 +40,14 @@ docs/tasks/frontend-ge.md 의 2번 작업을 해줘.
 - 데모 계정 newbie@hakgi.test(온보딩 전)로 들어가면 온보딩이 뜨는지 확인해줘.
 ```
 
-## [ ] 3. 인증 처리 화면 확인 (S-06, ~10/14)
+## [x] 3. 인증 처리 화면 확인 (S-06, ~10/14)
 
 ```
 docs/tasks/frontend-ge.md 의 3번 작업을 해줘.
 src/pages/AuthCallbackPage.tsx 가 Google 로그인 후 처리 중 표시, 실패 시 안내(docs/design-pc/PcAuthCallback.html)를 제대로 하는지 확인하고, 이메일 로그인 관련 남은 코드가 있으면 정리해줘.
 ```
 
-## [ ] 4. 자격증 선택 (S-10, F-04, ~10/15) ★
+## [x] 4. 자격증 선택 (S-10, F-04, ~10/15) ★
 
 ```
 docs/tasks/frontend-ge.md 의 4번 작업을 해줘.
@@ -73,7 +73,7 @@ docs/tasks/frontend-ge.md 의 5번 작업을 해줘.
 PreviewSheet 파일 자체는 프론트 B 담당이라 고치지 말고, 바꿔야 하면 나에게 말해줘.
 ```
 
-## [ ] 6. 설정 (S-12, ~10/16)
+## [x] 6. 설정 (S-12, ~10/16)
 
 ```
 docs/tasks/frontend-ge.md 의 6번 작업을 해줘.
@@ -82,7 +82,7 @@ src/pages/SettingsPage.tsx 에 학기 설정 수정(가용 시간·시작일·�
 디자인: docs/design-pc/PcSettings.html
 ```
 
-## [ ] 7. 개인정보처리방침·404·레이아웃 다듬기 (~10/18)
+## [x] 7. 개인정보처리방침·404·레이아웃 다듬기 (~10/18)
 
 ```
 docs/tasks/frontend-ge.md 의 7번 작업을 해줘.
@@ -91,7 +91,7 @@ docs/tasks/frontend-ge.md 의 7번 작업을 해줘.
 - 마지막으로 pnpm lint, typecheck, test, build 가 모두 통과하는지 확인해줘.
 ```
 
-## [ ] 8. (선택) 회차 추천 표시 (F-09, 10/18 이후, 필수 기능을 다 끝낸 뒤)
+## [x] 8. (선택) 회차 추천 표시 (F-09, 10/18 이후, 필수 기능을 다 끝낸 뒤)
 
 ```
 docs/tasks/frontend-ge.md 의 8번 작업을 해줘.

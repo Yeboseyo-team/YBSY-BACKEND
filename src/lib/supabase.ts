@@ -14,7 +14,7 @@ if (!url || !key) {
  * 앱 전체에서 하나만 쓰는 Supabase 클라이언트.
  * - persistSession: 세션을 localStorage에 저장 → 새로고침해도 로그인 유지
  * - autoRefreshToken: access token 만료 전에 자동 갱신
- * - detectSessionInUrl + pkce: 이메일 인증/구글 로그인/비밀번호 재설정 링크의 ?code= 를 자동으로 세션으로 교환
+ * - detectSessionInUrl + pkce: 구글 로그인 후 돌아온 /auth/callback?code= 를 자동으로 세션으로 교환
  */
 export const supabase = createClient<Database>(url, key, {
   auth: {

@@ -7,8 +7,6 @@ export type AuthContextValue = {
   status: AuthStatus;
   session: Session | null;
   user: User | null;
-  /** 비밀번호 재설정 링크로 들어와 임시 세션이 생긴 상태 */
-  isRecovery: boolean;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

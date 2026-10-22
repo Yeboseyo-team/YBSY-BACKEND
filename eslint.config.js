@@ -24,6 +24,11 @@ export default tseslint.config(
     },
   },
   {
+    // shadcn/ui 컴포넌트는 variants 상수를 함께 export 함
+    files: ["src/components/ui/**/*.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
     files: ["scripts/**/*.mjs", "*.config.{js,ts}"],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },

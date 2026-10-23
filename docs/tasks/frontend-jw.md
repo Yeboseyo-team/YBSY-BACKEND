@@ -87,7 +87,7 @@ src/features/preview/PreviewSheet.tsx 를 완성해줘.
 - 참고: origin/feature/frontend-session 의 src/features/forecast/components/ForecastPreview.tsx, preview-text.ts
 ```
 
-## [ ] 7. 마무리 (~10/18)
+## [x] 7. 마무리 (~10/18)
 
 ```
 docs/tasks/frontend-jw.md 의 7번 작업을 해줘.

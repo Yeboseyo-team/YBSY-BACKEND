@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { certificates, demoUsers, expectedPreviewDiff, plans, previewPlan, profiles, userCertificates } from "@/mocks/dummy-data";
-import { calculateForecast, semesterWeekOf, type ForecastInput } from "@/features/forecast/calc";
-import { peakHours, runPreview } from "./preview";
+import { calculateForecast } from "@/features/forecast/calc";
+import type { ForecastInput } from "@/features/forecast/calc";
+import { buildPreview, levelChanges, previewHeadline } from "./preview";
 
 function inputOf(email: string): ForecastInput {
   const userId = demoUsers.find((u) => u.email === email)!.id;
@@ -13,42 +14,47 @@ function inputOf(email: string): ForecastInput {
   };
 }
 
-describe("runPreview (F-06)", () => {
-  const yebo = inputOf("yebo@hakgi.test");
+const yebo = inputOf("yebo@hakgi.test");
+const empty = inputOf("empty@hakgi.test");
 
-  it("계획을 더하면 명세서 예시 문구가 나온다 (FR-06-3)", () => {
-    expect(runPreview(yebo, { kind: "plan", plan: previewPlan }).diff).toEqual(expectedPreviewDiff);
+describe("사전 검토 계산 (F-06)", () => {
+  it("계획 추가는 previewForecast 와 같은 결과 (폭풍 1주 → 3주)", () => {
+    const result = buildPreview(yebo, { kind: "plan", plan: previewPlan });
+    expect(result.diff).toEqual(expectedPreviewDiff);
+    expect(previewHeadline("대학생 서포터즈 1차 미션", result, "add")).toBe("대학생 서포터즈 1차 미션을 더하면 폭풍 주가 늘어요");
   });
 
-  it("수정할 계획을 같은 값으로 바꾸면 예보가 그대로다", () => {
-    const target = yebo.plans[0] as (typeof plans)[number];
-    const { before, after, diff } = runPreview(yebo, { kind: "plan", plan: target, replacePlanId: target.id });
-    // 주차별 내역 순서는 바뀔 수 있어서 시간·단계·요약만 비교
-    const shape = (f: typeof before) => f.weeks.map((w) => [w.total_hours, w.level]);
-    expect(shape(after)).toEqual(shape(before));
-    expect(after.summary).toEqual(before.summary);
-    expect(diff.new_storm_weeks).toEqual([]);
+  it("계획 수정은 그 계획을 바꿔서 비교하고, 같은 값이면 그대로", () => {
+    const first = yebo.plans[0];
+    const result = buildPreview(yebo, { kind: "plan", plan: first, replacePlanId: first.id });
+    // 고친 계획은 목록 끝으로 가서 항목 순서만 달라짐 → 주차별 시간·단계로 비교
+    const totals = (f: typeof result.after) => f.weeks.map((w) => [w.total_hours, w.level]);
+    expect(totals(result.after)).toEqual(totals(result.before));
+    expect(previewHeadline(first.title, result, "edit")).toBe("바꿔도 날씨 단계는 그대로예요");
   });
 
-  it("이미 고른 자격증 회차를 같은 값으로 미리 보면 예보가 그대로다", () => {
-    const mine = yebo.userCertificates[0];
-    const cert = certificates.find((c) => c.id === mine.certificate_id)!;
-    const { before, after, diff } = runPreview(yebo, {
+  it("자격증 회차 추가는 준비 기간만큼 예보에 더해짐 (원본 입력은 그대로)", () => {
+    const cert = certificates.find((c) => c.name === "정보처리기사" && c.round === "2026년 정기 3회 실기")!;
+    const before = calculateForecast(empty);
+    const result = buildPreview(empty, { kind: "certificate", certificate: cert, prep_weeks: 6, study_hours: 40 });
+    expect(result.before).toEqual(before);
+    expect(result.after.weeks.map((w) => w.total_hours)).not.toEqual(before.weeks.map((w) => w.total_hours));
+    expect(empty.userCertificates).toHaveLength(0);
+  });
+
+  it("같은 자격증의 다른 회차로 바꾸면 예전 회차는 빠짐 (김예보: 3회 실기 → 2027년 1회, 폭풍 1주 → 0주)", () => {
+    const current = certificates.find((c) => c.name === "정보처리기사" && c.round === "2026년 정기 3회 실기")!;
+    const next = certificates.find((c) => c.name === "정보처리기사" && c.round === "2027년 정기 1회 필기 (예정)")!;
+    const mine = yebo.userCertificates.find((uc) => uc.certificate_id === current.id)!;
+    const result = buildPreview(yebo, {
       kind: "certificate",
-      certificate: cert,
-      study_hours: mine.study_hours,
+      certificate: next,
       prep_weeks: mine.prep_weeks,
+      study_hours: mine.study_hours,
+      replaceCertificateId: current.id,
     });
-    expect(after).toEqual(before);
-    expect(diff.new_storm_weeks).toEqual([]);
-  });
-
-  it("새 자격증을 더하면 시간이 늘어난다", () => {
-    const mineIds = new Set(yebo.userCertificates.map((uc) => uc.certificate_id));
-    const other = certificates.find((c) => !mineIds.has(c.id) && semesterWeekOf(c.exam_date, yebo.profile.semester_start!) !== null)!;
-    const { before, after } = runPreview(yebo, { kind: "certificate", certificate: other, study_hours: 10, prep_weeks: 4 });
-    expect(peakHours(after)).toBeGreaterThanOrEqual(peakHours(before));
-    expect(after.weeks.reduce((s, w) => s + w.total_hours, 0)).toBeGreaterThan(before.weeks.reduce((s, w) => s + w.total_hours, 0));
-    expect(before).toEqual(calculateForecast(yebo));
+    expect(result.diff.message).toBe("폭풍 1주 → 0주");
+    expect(levelChanges(result)[0]).toEqual({ level: "storm", before: 1, after: 0 });
+    expect(previewHeadline("정보처리기사 2027년 정기 1회 필기 (예정)", result, "switch")).toBe("이 회차로 바꾸면 폭풍 주가 줄어요");
   });
 });

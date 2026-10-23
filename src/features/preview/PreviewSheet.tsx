@@ -1,244 +1,287 @@
-import { useEffect, useId, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useForecastData } from "@/features/forecast/api";
-import type { Forecast, Weather } from "@/features/forecast/calc";
-import { formatHours, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { TOTAL_WEEKS, type Forecast, type Weather } from "@/features/forecast/calc";
+import { formatHours, WEATHER_STYLE } from "@/features/forecast/weather";
 import { cn } from "@/lib/utils";
-import { peakHours, runPreview, type PreviewDraft, type PreviewResult } from "./preview";
+import { buildPreview, levelChanges, peakHours, previewHeadline, previewModeOf, type PreviewDraft } from "./preview";
 
 /**
- * S-11 사전 검토 시트 (F-06) — 담당: 프론트 B (feature/frontend-jw)
- * 계획 등록·수정 화면(S-09)과 자격증 선택 화면(S-10)에서 열어 씁니다.
- * - '지금'과 '추가했을 때' 예보를 겹친 그래프로 (calc.ts 만 씀, 서버 호출 없음 — NFR-PERF-2)
- * - 변화 요약은 comparePreview 문장 그대로 (FR-06-3)
- * - [추가하기] → onConfirm (저장은 여는 쪽이 useCreatePlan / useAddCertificate 로), [취소] → onCancel, DB에 아무것도 안 씀
+ * S-11 사전 검토 시트 (F-06) — 계획 등록 화면(S-09)과 자격증 선택 화면(S-10)에서 엽니다.
+ * - 기존 예보와 '추가했을 때' 예보를 한 그래프에 겹쳐 보여주기 (늘어난 부분은 빗금, FR-06-2)
+ * - 변화 요약 ("폭풍 1주 → 3주 (9, 10주차 추가)", FR-06-3)
+ * - [추가하기] → onConfirm (저장은 여는 화면이 함), [취소]·Esc·바깥 누르기 → onCancel (아무것도 저장 안 함, FR-06-4)
+ * 계산은 calc.ts 만 쓰고 서버는 부르지 않습니다 (NFR-PERF-2).
  */
 export type PreviewSheetProps = {
   open: boolean;
-  /** 시트 제목에 쓸 추가 대상 이름, 예: "운영체제", "정보처리기사 3회" */
+  /** 시트 제목에 쓸 추가 대상 이름, 예: "운영체제", "정보처리기사 2026년 정기 3회" */
   title: string;
-  /** 더해 볼 계획·자격증. 없으면 그래프 없이 안내만 보여요. */
-  draft?: PreviewDraft | null;
+  /** 더해 볼 계획 또는 자격증 회차. 없으면(입력이 아직 올바르지 않으면) 그래프 없이 안내만 */
+  draft: PreviewDraft | null;
   onConfirm: () => void;
   onCancel: () => void;
-  /** 기본 "추가하기". 수정 화면이면 "이대로 저장" 등 */
+  /** 확인 버튼 글자 (기본 "추가하기") */
   confirmLabel?: string;
-  isPending?: boolean;
+  /** 저장 중이면 버튼을 막고 "저장하는 중…" */
+  pending?: boolean;
 };
 
-export function PreviewSheet({ open, title, draft = null, onConfirm, onCancel, confirmLabel = "추가하기", isPending = false }: PreviewSheetProps) {
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  const data = useForecastData();
-  // 여는 쪽이 매번 새 함수를 넘겨도 초점 처리가 다시 돌지 않게
-  const cancelRef = useRef(onCancel);
-  useEffect(() => {
-    cancelRef.current = onCancel;
-  });
+export function PreviewSheet({ open, title, draft, onConfirm, onCancel, confirmLabel = "추가하기", pending = false }: PreviewSheetProps) {
+  const ref = useRef<HTMLDialogElement>(null);
 
-  const result = useMemo<PreviewResult | null>(
-    () => (open && draft && data.input ? runPreview(data.input, draft) : null),
-    [open, draft, data.input],
-  );
-
-  // 열리면 시트로 초점을 옮기고, Esc 로 닫고, 뒤 화면 스크롤을 막아요. 닫히면 원래 버튼으로 초점을 돌려요.
   useEffect(() => {
-    if (!open) return;
-    const previous = document.activeElement as HTMLElement | null;
-    panelRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelRef.current();
-    };
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      previous?.focus();
-    };
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  if (!open) return null;
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby="preview-sheet-title"
+      onCancel={(e) => {
+        e.preventDefault(); // Esc: 닫기는 부모가 open 으로 정함
+        if (!pending) onCancel();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !pending) onCancel(); // 바깥(배경) 누르기
+      }}
+      className={cn(
+        "m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-card p-0 text-foreground backdrop:bg-black/40",
+        "sm:m-auto sm:max-w-2xl sm:rounded-2xl",
+      )}
+    >
+      {open ? (
+        <PreviewBody
+          title={title}
+          draft={draft}
+          onConfirm={onConfirm}
+          onCancel={onCancel}
+          confirmLabel={confirmLabel}
+          pending={pending}
+        />
+      ) : null}
+    </dialog>
+  );
+}
+
+function PreviewBody({ title, draft, onConfirm, onCancel, confirmLabel, pending }: Omit<PreviewSheetProps, "open">) {
+  const data = useForecastData();
+  const mode = previewModeOf(draft);
+
+  const result = useMemo(() => (data.input && draft ? buildPreview(data.input, draft) : null), [data.input, draft]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-end bg-ink/40 sm:place-items-center sm:p-6"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
-    >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="grid max-h-[92dvh] w-full max-w-2xl gap-5 overflow-y-auto rounded-t-3xl bg-card p-5 outline-none sm:rounded-3xl sm:p-7"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="grid min-w-0 gap-1.5">
-            <span className="text-[13px] font-semibold text-muted-foreground">사전 검토 · {title}</span>
-            <h2 id={titleId} className="text-xl leading-snug font-bold tracking-tight sm:text-2xl">
-              {result ? headline(result) : "추가했을 때의 예보를 계산할 수 없어요"}
-            </h2>
-            {result ? (
-              <p className="text-[15px] text-muted-foreground" aria-live="polite">
-                {result.diff.message}
-              </p>
+    <div className="grid max-h-[90dvh] gap-5 overflow-y-auto p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-muted-foreground">사전 검토 · {title}</p>
+          <h2 id="preview-sheet-title" className="mt-1 text-xl font-bold tracking-tight">
+            {result ? previewHeadline(title, result, mode) : title}
+          </h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">아직 저장되지 않았어요. [{confirmLabel}]를 눌러야 저장돼요.</p>
+        </div>
+        <Button type="button" variant="ghost" size="icon" aria-label="닫기" onClick={onCancel} disabled={pending}>
+          <X aria-hidden="true" />
+        </Button>
+      </div>
+
+      {data.status === "loading" ? (
+        <div className="grid gap-3" aria-busy="true" aria-label="예보를 계산하는 중">
+          <Skeleton className="h-6 w-64" />
+          <Skeleton className="h-44 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+      ) : data.status === "error" ? (
+        <div role="alert" className="grid gap-3 rounded-xl border border-storm/30 bg-storm/5 p-4 text-sm">
+          예보를 불러오지 못했어요. 그래도 추가할 수는 있어요.
+          <Button type="button" variant="outline" className="justify-self-start" onClick={data.refetch}>
+            다시 불러오기
+          </Button>
+        </div>
+      ) : !result || !data.profile ? (
+        <p className="text-sm text-muted-foreground">입력한 값을 확인해 주세요. 올바르게 입력하면 바뀌는 예보가 여기에 나와요.</p>
+      ) : (
+        <>
+          <p className="text-[15px] leading-relaxed" role="status">
+            <span className="font-semibold">{result.diff.message}</span>
+            {result.diff.new_storm_weeks.length > 0 ? (
+              <span className="text-muted-foreground"> — {result.diff.new_storm_weeks.join(", ")}주차가 새로 폭풍이 돼요.</span>
             ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            aria-label="닫기"
-            className="-mt-1 -mr-1 grid size-10 shrink-0 place-items-center rounded-full text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <X className="size-5" aria-hidden="true" />
-          </button>
-        </div>
-
-        {result ? (
-          <>
-            <OverlayChart
-              before={result.before}
-              after={result.after}
-              available={data.profile?.available_hours ?? 0}
-              newStormWeeks={result.diff.new_storm_weeks}
-              title={title}
-            />
-            <CompareTiles before={result.before} after={result.after} />
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {data.status === "loading" ? "예보를 불러오는 중이에요." : "입력을 확인한 뒤 다시 열어 주세요."}
           </p>
-        )}
 
-        <p className="text-[13px] text-muted-foreground">추가하기를 누르기 전에는 저장되지 않아요.</p>
-        <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
-            취소
-          </Button>
-          <Button type="button" size="lg" className="bg-ink hover:bg-ink/90" disabled={isPending} onClick={onConfirm}>
-            {isPending ? "저장하는 중…" : confirmLabel}
-          </Button>
-        </div>
+          <OverlayChart
+            before={result.before}
+            after={result.after}
+            availableHours={data.profile.available_hours ?? 0}
+            newStormWeeks={result.diff.new_storm_weeks}
+            draftLabel={title}
+          />
+
+          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {levelChanges(result).map((c) => (
+              <ChangeTile key={c.level} level={c.level} before={c.before} after={c.after} unit="주" />
+            ))}
+            <ChangeTile label="가장 바쁜 주" before={peakHours(result.before)} after={peakHours(result.after)} unit="시간" />
+          </dl>
+        </>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 border-t border-border pt-4 sm:flex sm:justify-end">
+        <Button type="button" variant="outline" size="lg" onClick={onCancel} disabled={pending}>
+          취소
+        </Button>
+        <Button type="button" size="lg" onClick={onConfirm} disabled={pending || !draft}>
+          {pending ? "저장하는 중…" : confirmLabel}
+        </Button>
       </div>
     </div>
   );
 }
 
-function headline({ before, after, diff }: PreviewResult): string {
-  if (diff.new_storm_weeks.length > 0) return `폭풍이 ${diff.new_storm_weeks.length}주 늘어나요`;
-  if (diff.storm_after < diff.storm_before) return "폭풍이 줄어들어요";
-  if (after.summary.cloudy > before.summary.cloudy) return "흐린 주가 늘어나요";
-  if (after.summary.clear < before.summary.clear) return "맑은 주가 줄어들어요";
-  return "예보가 크게 바뀌지 않아요";
+function ChangeTile({
+  level,
+  label,
+  before,
+  after,
+  unit,
+}: {
+  level?: Weather;
+  label?: string;
+  before: number;
+  after: number;
+  unit: string;
+}) {
+  const changed = before !== after;
+  return (
+    <div className={cn("rounded-xl px-3.5 py-3", level ? WEATHER_STYLE[level].badge : "bg-secondary")}>
+      <dt className="text-[13px] font-semibold">{label ?? WEATHER_STYLE[level!].label}</dt>
+      <dd className="mt-1 text-base font-bold text-foreground tabular-nums">
+        {changed ? (
+          <>
+            <span className="font-medium text-muted-foreground">{formatHours(before)}</span> → {formatHours(after)}
+            {unit}
+          </>
+        ) : (
+          <>
+            {formatHours(after)}
+            {unit} <span className="text-xs font-normal text-muted-foreground">그대로</span>
+          </>
+        )}
+      </dd>
+    </div>
+  );
 }
 
 const HATCH: Record<Weather, string> = {
-  clear: "bg-[repeating-linear-gradient(135deg,var(--color-clear)_0_3px,var(--color-card)_3px_6px)] shadow-[inset_0_0_0_1px_var(--color-clear)]",
-  cloudy: "bg-[repeating-linear-gradient(135deg,var(--color-caution)_0_3px,var(--color-card)_3px_6px)] shadow-[inset_0_0_0_1px_var(--color-caution)]",
-  storm: "bg-[repeating-linear-gradient(135deg,var(--color-storm)_0_3px,var(--color-card)_3px_6px)] shadow-[inset_0_0_0_1px_var(--color-storm)]",
+  clear: "bg-[repeating-linear-gradient(135deg,var(--color-clear)_0_3px,var(--color-card)_3px_6px)]",
+  cloudy: "bg-[repeating-linear-gradient(135deg,var(--color-caution)_0_3px,var(--color-card)_3px_6px)]",
+  storm: "bg-[repeating-linear-gradient(135deg,var(--color-storm)_0_3px,var(--color-card)_3px_6px)]",
 };
+const SOLID: Record<Weather, string> = { clear: "bg-clear", cloudy: "bg-caution", storm: "bg-storm" };
 
-/** 지금(꽉 찬 막대) 위에 늘어난 만큼(빗금)을 겹쳐 그려요. 줄어든 주는 예전 높이를 점선 테두리로. */
+/** 지금 예보(진한 막대) 위에 늘어난 부분(빗금)을 겹친 16주 그래프 (FR-06-2). 줄어든 부분은 점선 테두리 */
 function OverlayChart({
   before,
   after,
-  available,
+  availableHours,
   newStormWeeks,
-  title,
+  draftLabel,
 }: {
   before: Forecast;
   after: Forecast;
-  available: number;
+  availableHours: number;
   newStormWeeks: number[];
-  title: string;
+  draftLabel: string;
 }) {
-  const max = Math.max(available, peakHours(before), peakHours(after), 1) * 1.08;
+  const max = Math.max(availableHours, peakHours(before), peakHours(after)) * 1.1 || 1;
   const pct = (h: number) => `${(h / max) * 100}%`;
-  const level = after.weeks.map((w) => w.level);
-  const shownLevel: Weather = level.includes("storm") ? "storm" : level.includes("cloudy") ? "cloudy" : "clear";
+  const newStorm = new Set(newStormWeeks);
+  const grew = after.weeks.some((w, i) => w.total_hours > before.weeks[i].total_hours);
+  const shrank = after.weeks.some((w, i) => w.total_hours < before.weeks[i].total_hours);
+  const summary = after.weeks
+    .map((w, i) => {
+      const b = before.weeks[i].total_hours;
+      return b === w.total_hours ? null : `${w.week}주차 ${formatHours(b)}→${formatHours(w.total_hours)}시간 ${WEATHER_STYLE[w.level].label}`;
+    })
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <figure className="grid gap-2">
-      <div className="relative h-[200px] sm:h-[240px]" aria-hidden="true">
-        <div className="absolute inset-0 grid grid-cols-16 items-end gap-1 sm:gap-1.5">
+      <div
+        role="img"
+        aria-label={summary ? `바뀌는 주: ${summary}. 가용 시간 ${formatHours(availableHours)}시간` : "바뀌는 주가 없어요"}
+        className="relative h-44 sm:h-52"
+      >
+        <div className="absolute inset-0 grid grid-cols-16 items-end gap-[3px] sm:gap-1.5">
           {after.weeks.map((w, i) => {
-            const was = before.weeks[i].total_hours;
-            const now = w.total_hours;
-            const base = Math.min(was, now);
-            const style = WEATHER_STYLE[w.level];
+            const b = before.weeks[i].total_hours;
+            const a = w.total_hours;
             return (
               <div key={w.week} className="relative flex h-full flex-col justify-end">
-                {was > now ? (
-                  <div className="absolute inset-x-0 bottom-0 rounded-t-[5px] border border-dashed border-muted-foreground/60" style={{ height: pct(was) }} />
+                {b > a ? (
+                  <div className="rounded-t-[3px] border border-dashed border-muted-foreground/60" style={{ height: pct(b - a) }} />
                 ) : null}
-                {now > was ? <div className={cn("rounded-t-[5px]", HATCH[w.level])} style={{ height: pct(now - was) }} /> : null}
-                <div className={cn("rounded-b-[2px]", style.dot, now <= was && "rounded-t-[5px]")} style={{ height: pct(base) }} />
+                {a > b ? <div className={cn("rounded-t-[3px]", HATCH[w.level])} style={{ height: pct(a - b) }} /> : null}
+                <div
+                  className={cn("rounded-b-[2px]", SOLID[w.level], a <= b && "rounded-t-[3px]")}
+                  style={{ height: pct(Math.min(a, b)) }}
+                />
               </div>
             );
           })}
         </div>
-        <div className="absolute inset-x-0 border-t-[1.5px] border-dashed border-ink" style={{ bottom: pct(available) }} />
+        <div
+          className="pointer-events-none absolute inset-x-0 border-t-[1.5px] border-dashed border-ink"
+          style={{ bottom: pct(availableHours) }}
+        />
       </div>
-      <div className="grid grid-cols-16 gap-1 sm:gap-1.5" aria-hidden="true">
-        {after.weeks.map((w) => (
+      <div className="grid grid-cols-16 gap-[3px] text-center text-[11px] tabular-nums sm:gap-1.5 sm:text-xs" aria-hidden="true">
+        {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map((week) => (
           <span
-            key={w.week}
+            key={week}
             className={cn(
-              "text-center text-[11px] tabular-nums sm:text-xs",
-              newStormWeeks.includes(w.week) ? "font-bold text-[#a82e27]" : "text-muted-foreground",
+              newStorm.has(week) ? "font-bold text-storm" : "text-muted-foreground",
+              // 휴대폰 폭에서는 짝수 주 번호를 숨겨 겹치지 않게 (새 폭풍 주는 항상 보임)
+              week % 2 === 0 && !newStorm.has(week) && "invisible sm:visible",
             )}
           >
-            {w.week}
+            {week}
           </span>
         ))}
       </div>
-      <figcaption className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
+      <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className={cn("size-3 rounded-[3px]", WEATHER_STYLE[shownLevel].dot)} aria-hidden="true" />
-          지금 계획
+          <span className="flex" aria-hidden="true">
+            <span className="size-2.5 rounded-l-sm bg-clear" />
+            <span className="size-2.5 bg-caution" />
+            <span className="size-2.5 rounded-r-sm bg-storm" />
+          </span>
+          지금 예보
         </span>
+        {grew ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span className={cn("size-2.5 rounded-sm", HATCH.storm)} aria-hidden="true" />
+            {draftLabel} 추가분
+          </span>
+        ) : null}
+        {shrank ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm border border-dashed border-muted-foreground" aria-hidden="true" />
+            줄어드는 시간
+          </span>
+        ) : null}
         <span className="inline-flex items-center gap-1.5">
-          <span className={cn("size-3 rounded-[3px]", HATCH[shownLevel])} aria-hidden="true" />
-          {title} 추가분
+          <span className="w-3 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
+          가용 {formatHours(availableHours)}시간
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-4 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
-          가용 {available}시간
-        </span>
+        <span>색은 추가한 뒤의 날씨예요</span>
       </figcaption>
     </figure>
-  );
-}
-
-const TILE: Record<Weather, string> = {
-  storm: "bg-storm/10 text-[#a82e27]",
-  cloudy: "bg-caution/15 text-[#8a5200]",
-  clear: "bg-clear/10 text-[#1f6e4a]",
-};
-
-function CompareTiles({ before, after }: { before: Forecast; after: Forecast }) {
-  return (
-    <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-      {WEATHER_ORDER.map((level) => (
-        <div key={level} className={cn("rounded-2xl p-3.5", TILE[level])}>
-          <dt className="text-[13px] font-semibold">{WEATHER_STYLE[level].label}</dt>
-          <dd className="mt-1 text-lg font-bold text-foreground tabular-nums">
-            {before.summary[level]}주 → {after.summary[level]}주
-          </dd>
-        </div>
-      ))}
-      <div className="rounded-2xl bg-muted p-3.5">
-        <dt className="text-[13px] font-semibold text-muted-foreground">가장 바쁜 주</dt>
-        <dd className="mt-1 text-lg font-bold tabular-nums">
-          {formatHours(peakHours(before))} → {formatHours(peakHours(after))}시간
-        </dd>
-      </div>
-    </dl>
   );
 }

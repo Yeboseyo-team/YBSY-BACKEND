@@ -62,7 +62,7 @@ export default function PlanNewPage() {
         open={previewing !== null}
         title={previewing?.title ?? ""}
         draft={draft}
-        isPending={createPlan.isPending}
+        pending={createPlan.isPending}
         onCancel={() => setPreviewing(null)}
         onConfirm={() => previewing && save(previewing)}
       />

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatHours } from "@/features/forecast/weather";
-import { AI_DESCRIPTION_MAX, toEstimateMessage, useEstimateHours, type EstimateInput } from "@/features/plans/ai";
+import { formatDuration } from "@/features/forecast/weather";
+import { AI_DESCRIPTION_MAX, toEstimateMessage, useEstimateHours, type Estimate, type EstimateInput } from "@/features/plans/ai";
 
 type Props = {
   /** 접힌 상태의 버튼 글자 */
@@ -12,8 +12,8 @@ type Props = {
   placeholder: string;
   /** 설명을 받아 서버로 보낼 값을 만듦 */
   toInput: (description: string) => EstimateInput;
-  /** 추천 시간을 폼에 채움 (저장은 사용자가) */
-  onApply: (hours: number) => void;
+  /** 추천 결과를 폼에 채움 (저장은 사용자가) */
+  onApply: (estimate: Estimate) => void;
   /** 채운 뒤 안내 (예: "직접 입력에 채웠어요.") */
   appliedNote: string;
   disabled?: boolean;
@@ -40,7 +40,7 @@ export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply,
     );
   }
 
-  const ask = () => estimate.mutate(toInput(description.trim()), { onSuccess: (data) => onApply(data.hours_per_week) });
+  const ask = () => estimate.mutate(toInput(description.trim()), { onSuccess: (data) => onApply(data) });
 
   return (
     <div className="mt-2 grid gap-2 rounded-xl border border-border bg-muted/40 p-3">
@@ -71,7 +71,7 @@ export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply,
         {estimate.isError ? <p className="text-[13px] text-destructive">{toEstimateMessage(estimate.error)}</p> : null}
         {estimate.isSuccess ? (
           <p className="text-[13px] leading-relaxed">
-            <span className="font-semibold">AI 추천: 한 주 {formatHours(estimate.data.hours_per_week)}시간</span>
+            <span className="font-semibold">AI 추천: 한 주 {formatDuration(estimate.data.hours_per_week)}</span>
             {estimate.data.reason ? ` — ${estimate.data.reason}` : ""}
             <span className="block text-xs text-muted-foreground">
               {appliedNote} (오늘 {estimate.data.remaining}번 남음)

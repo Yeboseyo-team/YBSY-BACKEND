@@ -4,13 +4,16 @@ import { CloudLightning, CloudSun, Plus, RotateCw, Sun } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
-import type { Forecast, WeekForecast } from "@/features/forecast/calc";
+import { dailyForecast, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { ForecastChart } from "@/features/forecast/components/ForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
-import { formatHours, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { usePlanCategories } from "@/features/plans/categories";
+import { typeTagOf } from "@/features/plans/colors";
 import { cn } from "@/lib/utils";
-import type { Plan } from "@/types/database";
+import type { Plan, PlanCategory } from "@/types/database";
 
 /**
  * S-08 부담 예보 (홈, 경로 /) — 담당: 프론트 B (feature/frontend-jw)
@@ -19,6 +22,7 @@ import type { Plan } from "@/types/database";
 export default function HomePage() {
   const data = useForecastData();
   const [picked, setPicked] = useState<number | null>(null);
+  const categories = usePlanCategories().data ?? [];
 
   if (data.status === "loading") return <HomeSkeleton />;
   if (data.status === "error") return <HomeError onRetry={data.refetch} />;
@@ -73,6 +77,11 @@ export default function HomePage() {
               ? "계획을 하나 넣을 때마다 이 자리에 막대가 쌓여요."
               : "막대나 주차를 누르면 그 주의 내역이 나와요. 진한 원은 이번 주예요."}
           </p>
+
+          {/* 요일별 가용 시간·부담 (10/24 QA) */}
+          <div className="border-t border-border/60 pt-4">
+            <DailyBreakdown week={selectedWeek} days={data.input ? dailyForecast(data.input, selectedWeek) : null} />
+          </div>
         </section>
 
         <aside className="grid min-w-0 flex-[1_1_320px] gap-4">
@@ -86,8 +95,9 @@ export default function HomePage() {
                 midtermWeek={profile.midterm_week}
                 finalWeek={profile.final_week}
                 isCurrent={selectedWeek === currentWeek}
+                categories={categories}
               />
-              <PlanSummary plans={plans} />
+              <PlanSummary plans={plans} categories={categories} />
             </>
           )}
         </aside>
@@ -131,8 +141,8 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
           {focus ? (
             <>
               {" "}
-              · {focus.week}주차에 {formatHours(focus.total_hours)}시간이 예상돼요.{" "}
-              {over > 0 ? `가용 시간보다 ${formatHours(over)}시간 많아요.` : "가용 시간에 거의 꽉 차요."}
+              · {focus.week}주차에 {formatDuration(focus.total_hours)}이 예상돼요.{" "}
+              {over > 0 ? `가용 시간보다 ${formatDuration(over)} 많아요.` : "가용 시간에 거의 꽉 차요."}
             </>
           ) : null}
         </p>
@@ -161,7 +171,7 @@ function WeekProgress({ currentWeek }: { currentWeek: number }) {
   );
 }
 
-function PlanSummary({ plans }: { plans: Plan[] }) {
+function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCategory[] }) {
   const shown = plans.slice(0, 5);
   return (
     <section aria-labelledby="plans-title" className="grid gap-2 rounded-2xl border border-border bg-card p-5">
@@ -177,14 +187,21 @@ function PlanSummary({ plans }: { plans: Plan[] }) {
         <p className="border-t border-border/60 pt-2 text-sm text-muted-foreground">자격증만 골라져 있어요.</p>
       ) : (
         <ul className="text-sm">
-          {shown.map((p) => (
+          {shown.map((p) => {
+            const tag = typeTagOf({ source: "plan", plan_type: p.type, category_id: p.category_id }, categories);
+            return (
             <li key={p.id} className="flex justify-between gap-3 border-t border-border/60 py-2">
-              <span className="min-w-0 truncate">{p.title}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: tag.color }} aria-hidden="true" />
+                <span className="truncate">{p.title}</span>
+                <span className="sr-only">({tag.label})</span>
+              </span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
-                {p.start_week}~{p.end_week}주, {formatHours(p.hours_per_week)}시간
+                {p.start_week}~{p.end_week}주, {formatDuration(p.hours_per_week)}
               </span>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       {plans.length > shown.length ? (

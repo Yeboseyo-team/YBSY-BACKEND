@@ -14,6 +14,7 @@ import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, longDate } from "@/features/auth/semester";
+import { splitWeeklyHours, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { FormField } from "@/features/auth/components/FormField";
 import { SemesterForm } from "@/features/auth/components/SemesterForm";
@@ -95,7 +96,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
           <SemesterForm
             defaultValues={{
               semesterStart: profile.semester_start ?? "",
-              availableHours: profile.available_hours ?? DEFAULT_SEMESTER.availableHours,
+              dailyHours: profile.daily_hours ?? splitWeeklyHours(profile.available_hours ?? DEFAULT_SEMESTER.availableHours),
               midtermWeek: profile.midterm_week,
               finalWeek: profile.final_week,
             }}
@@ -107,7 +108,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
               update.mutate(
                 {
                   semester_start: v.semesterStart,
-                  available_hours: v.availableHours,
+                  daily_hours: v.dailyHours,
                   midterm_week: v.midtermWeek,
                   final_week: v.finalWeek,
                 },
@@ -142,6 +143,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
       </Row>
       <Row label="한 주 가용 시간" onEdit={edit}>
         {profile.available_hours ?? "-"}시간
+        {profile.daily_hours ? <span className="block text-xs text-muted-foreground">{profile.daily_hours.map((h, i) => `${WEEKDAY_LABELS[i]} ${h}`).join(" · ")}</span> : null}
       </Row>
       <Row label="시험 주간" onEdit={edit}>
         중간 {profile.midterm_week}주차, 기말 {profile.final_week}주차

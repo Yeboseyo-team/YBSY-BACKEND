@@ -14,11 +14,3 @@ export type OnboardingProfile = Pick<
 export function isOnboardingDone(profile: OnboardingProfile | null | undefined): boolean {
   return Boolean(profile && isSemesterReady(profile) && profile.privacy_agreed_at);
 }
-
-/** 학기 시작일은 1주차 월요일이어야 합니다 (DB 제약). 아무 날짜나 그 주의 월요일로 바꿔 줍니다. "YYYY-MM-DD" */
-export function toMonday(date: string): string {
-  const d = new Date(`${date}T00:00:00Z`);
-  const day = d.getUTCDay(); // 0 = 일요일
-  d.setUTCDate(d.getUTCDate() - ((day + 6) % 7));
-  return d.toISOString().slice(0, 10);
-}

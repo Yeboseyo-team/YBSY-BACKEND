@@ -14,6 +14,18 @@ export function formatHours(hours: number): string {
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
 }
 
+/**
+ * 시간을 "시간·분" 정수로 (10/24 QA): 0.6 → "36분", 4.5 → "4시간 30분", 6 → "6시간".
+ * 화면에 시간을 보여 줄 때는 이걸 쓰세요 (formatHours 는 그래프 눈금처럼 숫자만 필요할 때).
+ */
+export function formatDuration(hours: number): string {
+  const minutes = Math.round(hours * 60);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}분`;
+  return m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+}
+
 /** FR-05-3 요약 문구: "폭풍 2주 · 흐림 3주" (없으면 맑음 주 수) */
 export function summaryText(summary: Record<Weather, number>): string {
   const parts = [];

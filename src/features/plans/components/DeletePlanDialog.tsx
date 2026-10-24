@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { withJosa } from "@/features/certificates/display";
-import { formatHours } from "@/features/forecast/weather";
+import { formatDuration } from "@/features/forecast/weather";
 import type { Plan } from "@/types/database";
 
 type Props = {
@@ -61,7 +61,7 @@ export function DeletePlanDialog({ plan, isPending = false, onConfirm, onCancel 
           {withJosa(plan.title, "을", "를")} 삭제할까요?
         </h2>
         <p id={descId} className="text-sm leading-relaxed text-muted-foreground">
-          {plan.start_week}~{plan.end_week}주차에서 한 주 {formatHours(plan.hours_per_week)}시간이 빠져요. 삭제한 계획은 되돌릴 수 없어요.
+          {plan.start_week}~{plan.end_week}주차에서 한 주 {formatDuration(plan.hours_per_week)}이 빠져요. 삭제한 계획은 되돌릴 수 없어요.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button ref={cancelButton} type="button" variant="outline" size="lg" onClick={onCancel}>

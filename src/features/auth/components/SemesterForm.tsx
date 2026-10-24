@@ -6,14 +6,15 @@ import { AiHoursHelper } from "@/components/AiHoursHelper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TOTAL_WEEKS } from "@/features/forecast/calc";
+import { splitWeeklyHours, TOTAL_WEEKS, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { cn } from "@/lib/utils";
 import { onboardingSchema, semesterSchema, type OnboardingValues, type SemesterValues } from "../schemas";
-import { HOURS_PRESETS } from "../semester";
+import { DEFAULT_SEMESTER, HOURS_PRESETS } from "../semester";
+
+const DEFAULT_WEEKLY = DEFAULT_SEMESTER.availableHours;
 import { FormAlert } from "./FormAlert";
 import { FormField } from "./FormField";
 import { NativeSelect } from "./NativeSelect";
-import { NumberStepper } from "./NumberStepper";
 
 export type SemesterFormValues = SemesterValues & { agreePrivacy?: boolean };
 
@@ -73,7 +74,7 @@ export function SemesterForm({
     <form noValidate onSubmit={handleSubmit(onSubmit)} className={cn("grid gap-7", className)}>
       {errorMessage ? <FormAlert>{errorMessage}</FormAlert> : null}
 
-      <FormField id="semesterStart" label="개강일" error={errs.semesterStart?.message} hint="이 날이 들어 있는 주를 1주차로 계산해요.">
+      <FormField id="semesterStart" label="개강일" error={errs.semesterStart?.message} hint="이 날부터 7일씩 1주차, 2주차로 세요.">
         <Input
           id="semesterStart"
           type="date"
@@ -84,37 +85,52 @@ export function SemesterForm({
         />
       </FormField>
 
+      {/* 요일별 가용 시간 (10/24 QA). 합계가 한 주 가용 시간 */}
       <Controller
         control={control}
-        name="availableHours"
-        render={({ field }) => (
-          <FormField
-            id="availableHours"
-            label="한 주에 쓸 수 있는 시간"
-            error={errs.availableHours?.message}
-            hint="수업, 과제, 활동, 자격증 공부를 모두 합친 시간이에요. 잠과 식사, 이동 시간은 빼고 생각해 보세요."
-          >
-            <div className="grid gap-3">
-              <NumberStepper
-                id="availableHours"
-                value={field.value}
-                onChange={field.onChange}
-                min={1}
-                max={168}
-                unit="시간"
-                invalid={Boolean(errs.availableHours)}
-                describedBy={describe("availableHours", true)}
-                className="justify-self-start"
-              />
+        name="dailyHours"
+        render={({ field }) => {
+          const days = field.value ?? splitWeeklyHours(DEFAULT_WEEKLY);
+          const total = days.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+          const setDay = (i: number, v: number) => field.onChange(days.map((d, j) => (j === i ? v : d)));
+          return (
+            <fieldset className="grid gap-3">
+              <legend className="mb-1 text-sm font-medium">요일별로 쓸 수 있는 시간</legend>
+              <p id="dailyHours-message" className={cn("text-[13px] leading-relaxed", errs.dailyHours ? "text-destructive" : "text-muted-foreground")}>
+                {errs.dailyHours?.message ??
+                  "수업 시간은 빼고, 과제·활동·자격증 공부에 쓸 수 있는 시간이에요. 잠·식사·이동·알바 시간도 빼고 생각해 보세요."}
+              </p>
+              <div className="grid grid-cols-7 gap-1.5">
+                {WEEKDAY_LABELS.map((label, i) => (
+                  <label key={label} className="grid justify-items-center gap-1">
+                    <span className={cn("text-xs", i >= 5 ? "text-primary" : "text-muted-foreground")}>{label}</span>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={24}
+                      step={1}
+                      aria-label={`${label}요일 시간`}
+                      aria-describedby="dailyHours-message"
+                      value={Number.isFinite(days[i]) ? days[i] : ""}
+                      onChange={(e) => setDay(i, e.target.value === "" ? 0 : Number(e.target.value))}
+                      className="h-11 px-1 text-center tabular-nums"
+                    />
+                  </label>
+                ))}
+              </div>
+              <p className="text-sm">
+                한 주 합계 <span className="font-bold tabular-nums">{total}시간</span>
+              </p>
               <div role="group" aria-label="빠른 선택" className="grid grid-cols-3 gap-2">
                 {HOURS_PRESETS.map((preset) => {
-                  const selected = field.value === preset.hours;
+                  const selected = total === preset.hours;
                   return (
                     <button
                       key={preset.hours}
                       type="button"
                       aria-pressed={selected}
-                      onClick={() => field.onChange(preset.hours)}
+                      onClick={() => field.onChange(splitWeeklyHours(preset.hours))}
                       className={cn(
                         "h-11 rounded-md border bg-card px-1 text-[13px] whitespace-nowrap outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/40 sm:text-sm",
                         selected ? "border-2 border-ink font-semibold" : "border-input text-muted-foreground hover:bg-accent",
@@ -125,18 +141,24 @@ export function SemesterForm({
                   );
                 })}
               </div>
-              {/* F-08: 이번 학기 사정을 말하면 AI 가 가용 시간을 추천 (10/24) */}
+              {/* F-08: 이번 학기 사정을 말하면 AI 가 요일별 가용 시간을 추천 (10/24) */}
               <AiHoursHelper
                 openLabel="AI에게 이번 학기 얘기하고 추천받기"
-                label="이번 학기 생활을 설명하면 AI가 한 주에 쓸 수 있는 시간을 추천해요"
-                placeholder="예: 주 3일 카페 알바(하루 5시간), 통학 왕복 2시간이에요. 동아리 하나 하고 정보처리기사도 준비하려고요."
+                label="이번 학기 생활을 설명하면 AI가 요일별로 쓸 수 있는 시간을 추천해요"
+                placeholder="예: 화·목 저녁에 카페 알바(5시간), 통학 왕복 2시간이에요. 주말엔 쉬고 싶어요. 동아리 하나 하고 정보처리기사도 준비해요."
                 toInput={(description) => ({ kind: "available", description })}
-                onApply={field.onChange}
-                appliedNote="위 칸에 채웠어요. 마음에 안 들면 직접 바꿔도 돼요."
+                onApply={(estimate) =>
+                  field.onChange(
+                    estimate.daily_hours && estimate.daily_hours.length === 7
+                      ? estimate.daily_hours
+                      : splitWeeklyHours(estimate.hours_per_week),
+                  )
+                }
+                appliedNote="요일별 칸에 채웠어요. 마음에 안 들면 직접 바꿔도 돼요."
               />
-            </div>
-          </FormField>
-        )}
+            </fieldset>
+          );
+        }}
       />
 
       <fieldset className="grid gap-3">

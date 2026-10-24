@@ -3,21 +3,24 @@
 // Supabase 없이 화면을 먼저 만들 때 사용하세요. 실제 연결 후에는 supabase gen types 결과로 타입을 교체합니다.
 // expectedForecast 는 src/features/forecast/calc.ts 단위 테스트의 기대값으로 쓸 수 있습니다 (NFR-MAINT-1).
 
-export type PlanType = 'class' | 'activity' | 'project';
+export type PlanType = 'class' | 'activity' | 'project' | 'custom';
+export type PlanPriority = 'high' | 'normal' | 'low';
 export type LoadLevel = 'low' | 'normal' | 'high' | 'custom';
 export type Weather = 'clear' | 'cloudy' | 'storm';
 
 /** 5.1 profiles — available_hours / semester_start / privacy_agreed_at 중 하나라도 null 이면 온보딩 미완료 */
-export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number; privacy_agreed_at: string | null }
+export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; daily_hours: number[] | null; semester_start: string | null; midterm_week: number; final_week: number; privacy_agreed_at: string | null }
 /** 5.2 plans — credits 는 수업일 때만 */
-export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string; updated_at: string }
+export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; start_date: string | null; end_date: string | null; priority: PlanPriority; category_id: string | null; created_at: string; updated_at: string }
+/** 사용자 지정 계획 유형 (10/24) */
+export interface PlanCategory { id: string; user_id: string; name: string; created_at: string }
 export type PlanInput = Pick<Plan, 'title' | 'type' | 'credits' | 'load_level' | 'start_week' | 'end_week' | 'hours_per_week'>;
 /** 5.3 certificates */
-export interface Certificate { id: string; name: string; round: string; apply_start: string; apply_end: string; exam_date: string; prep_weeks: number; default_study_hours: number; source_url: string }
+export interface Certificate { id: string; name: string; round: string; apply_start: string; apply_end: string; exam_date: string; prep_weeks: number; default_study_hours: number; source_url: string; owner_id: string | null }
 /** 5.4 user_certificates */
 export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number; prep_weeks: number; notified_at: string | null }
 
-export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number }
+export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number; priority?: PlanPriority; plan_type?: PlanType; category_id?: string | null }
 export interface WeekForecast { week: number; is_exam_week: boolean; total_hours: number; ratio: number; level: Weather; items: WeekItem[] }
 export interface Forecast { weeks: WeekForecast[]; summary: Record<Weather, number> }
 
@@ -30,10 +33,10 @@ export const LEVEL_THRESHOLD = {
 /** F-03 기본값 (명세서 3장 표, 팀 확정 필요). 수업은 학점당 시간 */
 export const PLAN_DEFAULTS = {
   "class": {
-    "unit": "학점당 시간/주",
-    "low": 1.5,
-    "normal": 2,
-    "high": 3
+    "unit": "학점당 시간/주 (수업 밖 공부)",
+    "low": 1,
+    "normal": 1.5,
+    "high": 2
   },
   "activity": {
     "unit": "시간/주",
@@ -96,6 +99,15 @@ export const profiles: Profile[] = [
     "user_id": "a0000000-0000-4000-8000-000000000001",
     "display_name": "김예보",
     "available_hours": 50,
+    "daily_hours": [
+      8,
+      8,
+      8,
+      8,
+      8,
+      6,
+      4
+    ],
     "semester_start": "2026-08-31",
     "midterm_week": 8,
     "final_week": 15,
@@ -105,6 +117,15 @@ export const profiles: Profile[] = [
     "user_id": "a0000000-0000-4000-8000-000000000002",
     "display_name": "이지원",
     "available_hours": 45,
+    "daily_hours": [
+      7,
+      7,
+      7,
+      7,
+      7,
+      6,
+      4
+    ],
     "semester_start": "2026-08-31",
     "midterm_week": 8,
     "final_week": 15,
@@ -114,6 +135,15 @@ export const profiles: Profile[] = [
     "user_id": "a0000000-0000-4000-8000-000000000003",
     "display_name": "박운영",
     "available_hours": 55,
+    "daily_hours": [
+      9,
+      9,
+      9,
+      9,
+      9,
+      6,
+      4
+    ],
     "semester_start": "2026-08-31",
     "midterm_week": 8,
     "final_week": 16,
@@ -123,6 +153,15 @@ export const profiles: Profile[] = [
     "user_id": "a0000000-0000-4000-8000-000000000004",
     "display_name": "최수강",
     "available_hours": 40,
+    "daily_hours": [
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      4
+    ],
     "semester_start": "2026-08-31",
     "midterm_week": 8,
     "final_week": 15,
@@ -132,6 +171,7 @@ export const profiles: Profile[] = [
     "user_id": "a0000000-0000-4000-8000-000000000005",
     "display_name": "정새내",
     "available_hours": null,
+    "daily_hours": null,
     "semester_start": null,
     "midterm_week": 8,
     "final_week": 15,
@@ -148,7 +188,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-08-07",
     "prep_weeks": 6,
     "default_study_hours": 8,
-    "source_url": "https://www.q-net.or.kr"
+    "source_url": "https://www.q-net.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000002",
@@ -159,7 +200,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-10-24",
     "prep_weeks": 6,
     "default_study_hours": 8,
-    "source_url": "https://www.q-net.or.kr"
+    "source_url": "https://www.q-net.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000003",
@@ -170,7 +212,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2027-01-29",
     "prep_weeks": 6,
     "default_study_hours": 8,
-    "source_url": "https://www.q-net.or.kr"
+    "source_url": "https://www.q-net.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000004",
@@ -181,7 +224,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-08-07",
     "prep_weeks": 5,
     "default_study_hours": 6,
-    "source_url": "https://www.q-net.or.kr"
+    "source_url": "https://www.q-net.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000005",
@@ -192,7 +236,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-10-24",
     "prep_weeks": 5,
     "default_study_hours": 6,
-    "source_url": "https://www.q-net.or.kr"
+    "source_url": "https://www.q-net.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000006",
@@ -203,7 +248,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-08-22",
     "prep_weeks": 4,
     "default_study_hours": 6,
-    "source_url": "https://www.dataq.or.kr"
+    "source_url": "https://www.dataq.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000007",
@@ -214,7 +260,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-11-14",
     "prep_weeks": 4,
     "default_study_hours": 6,
-    "source_url": "https://www.dataq.or.kr"
+    "source_url": "https://www.dataq.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000008",
@@ -225,7 +272,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-08-08",
     "prep_weeks": 4,
     "default_study_hours": 6,
-    "source_url": "https://www.dataq.or.kr"
+    "source_url": "https://www.dataq.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000009",
@@ -236,7 +284,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-10-31",
     "prep_weeks": 4,
     "default_study_hours": 6,
-    "source_url": "https://www.dataq.or.kr"
+    "source_url": "https://www.dataq.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000010",
@@ -247,7 +296,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-09-05",
     "prep_weeks": 6,
     "default_study_hours": 8,
-    "source_url": "https://www.dataq.or.kr"
+    "source_url": "https://www.dataq.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000011",
@@ -258,7 +308,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-11-28",
     "prep_weeks": 6,
     "default_study_hours": 8,
-    "source_url": "https://www.dataq.or.kr"
+    "source_url": "https://www.dataq.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000012",
@@ -269,7 +320,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-10-17",
     "prep_weeks": 4,
     "default_study_hours": 5,
-    "source_url": "https://www.historyexam.go.kr"
+    "source_url": "https://www.historyexam.go.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000013",
@@ -280,7 +332,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-10-03",
     "prep_weeks": 5,
     "default_study_hours": 6,
-    "source_url": "https://license.kacpta.or.kr"
+    "source_url": "https://license.kacpta.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000014",
@@ -291,7 +344,8 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-12-05",
     "prep_weeks": 5,
     "default_study_hours": 6,
-    "source_url": "https://license.kacpta.or.kr"
+    "source_url": "https://license.kacpta.or.kr",
+    "owner_id": null
   },
   {
     "id": "c0000000-0000-4000-8000-000000000015",
@@ -302,7 +356,16 @@ export const certificates: Certificate[] = [
     "exam_date": "2026-08-22",
     "prep_weeks": 4,
     "default_study_hours": 5,
-    "source_url": "https://license.korcham.net"
+    "source_url": "https://license.korcham.net",
+    "owner_id": null
+  }
+];
+export const planCategories: PlanCategory[] = [
+  {
+    "id": "d0000000-0000-4000-0001-000000000001",
+    "user_id": "a0000000-0000-4000-8000-000000000001",
+    "name": "경조사",
+    "created_at": "2026-09-01T09:00:00+09:00"
   }
 ];
 export const plans: Plan[] = [
@@ -312,10 +375,14 @@ export const plans: Plan[] = [
     "title": "운영체제",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -325,10 +392,14 @@ export const plans: Plan[] = [
     "title": "데이터베이스",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -338,10 +409,14 @@ export const plans: Plan[] = [
     "title": "컴퓨터네트워크",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -351,10 +426,14 @@ export const plans: Plan[] = [
     "title": "소프트웨어공학",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "low",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -364,10 +443,14 @@ export const plans: Plan[] = [
     "title": "알고리즘",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "high",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -381,6 +464,27 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 4,
+    "start_date": null,
+    "end_date": null,
+    "priority": "low",
+    "category_id": null,
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
+  },
+  {
+    "id": "b0000000-0000-4000-0001-000000000007",
+    "user_id": "a0000000-0000-4000-8000-000000000001",
+    "title": "사촌형 결혼식",
+    "type": "custom",
+    "credits": null,
+    "load_level": "custom",
+    "start_week": 9,
+    "end_week": 9,
+    "hours_per_week": 6,
+    "start_date": "2026-10-31",
+    "end_date": "2026-10-31",
+    "priority": "normal",
+    "category_id": "d0000000-0000-4000-0001-000000000001",
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -390,10 +494,14 @@ export const plans: Plan[] = [
     "title": "경영학원론",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -403,10 +511,14 @@ export const plans: Plan[] = [
     "title": "마케팅원론",
     "type": "class",
     "credits": 3,
-    "load_level": "low",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 4.5,
+    "start_date": null,
+    "end_date": null,
+    "priority": "low",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -416,10 +528,14 @@ export const plans: Plan[] = [
     "title": "회계원리",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "high",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -429,10 +545,14 @@ export const plans: Plan[] = [
     "title": "경영통계",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -446,6 +566,10 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 3,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -459,6 +583,10 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 2,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -472,6 +600,10 @@ export const plans: Plan[] = [
     "start_week": 3,
     "end_week": 9,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -485,6 +617,10 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 10,
+    "start_date": null,
+    "end_date": null,
+    "priority": "high",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -494,10 +630,14 @@ export const plans: Plan[] = [
     "title": "데이터마이닝",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -507,10 +647,14 @@ export const plans: Plan[] = [
     "title": "정보보호개론",
     "type": "class",
     "credits": 3,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 6,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -520,10 +664,14 @@ export const plans: Plan[] = [
     "title": "진로설계",
     "type": "class",
     "credits": 1,
-    "load_level": "normal",
+    "load_level": "custom",
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 2,
+    "start_date": null,
+    "end_date": null,
+    "priority": "low",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -537,6 +685,10 @@ export const plans: Plan[] = [
     "start_week": 1,
     "end_week": 16,
     "hours_per_week": 10,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   },
@@ -550,6 +702,10 @@ export const plans: Plan[] = [
     "start_week": 6,
     "end_week": 8,
     "hours_per_week": 8,
+    "start_date": null,
+    "end_date": null,
+    "priority": "normal",
+    "category_id": null,
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
   }
@@ -626,42 +782,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -677,42 +851,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -728,42 +920,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -786,42 +996,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -844,42 +1072,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -902,42 +1148,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -960,42 +1224,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1018,42 +1300,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1067,8 +1367,8 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 9,
         "is_exam_week": false,
-        "total_hours": 42,
-        "ratio": 0.84,
+        "total_hours": 48,
+        "ratio": 0.96,
         "level": "cloudy",
         "items": [
           {
@@ -1076,42 +1376,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "사촌형 결혼식",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "custom",
+            "category_id": "d0000000-0000-4000-0001-000000000001"
           },
           {
             "source": "certificate",
@@ -1134,42 +1462,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1192,42 +1538,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1250,42 +1614,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1301,42 +1683,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1352,42 +1752,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1403,42 +1821,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1454,42 +1890,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "운영체제",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터베이스",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "컴퓨터네트워크",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "소프트웨어공학",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "알고리즘",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "프로그래밍 학회",
             "base_hours": 4,
             "weighted": false,
-            "hours": 4
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       }
@@ -1514,42 +1968,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1565,42 +2037,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1616,49 +2106,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1674,49 +2185,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1732,49 +2264,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1790,49 +2343,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1848,49 +2422,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1906,49 +2501,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": true,
-            "hours": 6.8
+            "hours": 6.8,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": true,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1964,49 +2580,70 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "교내 마케팅 공모전",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2022,42 +2659,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2080,42 +2735,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2138,42 +2811,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2196,42 +2887,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2254,42 +2963,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2312,42 +3039,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": true,
-            "hours": 6.8
+            "hours": 6.8,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": true,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2370,42 +3115,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "경영학원론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "마케팅원론",
             "base_hours": 4.5,
             "weighted": false,
-            "hours": 4.5
+            "hours": 4.5,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "회계원리",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "경영통계",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "비즈니스 영어회화",
             "base_hours": 3,
             "weighted": false,
-            "hours": 3
+            "hours": 3,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "사진 동아리",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2437,35 +3200,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2481,35 +3259,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2525,35 +3318,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2569,35 +3377,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2613,35 +3436,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2657,42 +3495,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "축제 준비위원회",
             "base_hours": 8,
             "weighted": false,
-            "hours": 8
+            "hours": 8,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2708,42 +3564,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "축제 준비위원회",
             "base_hours": 8,
             "weighted": false,
-            "hours": 8
+            "hours": 8,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2759,42 +3633,60 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": true,
-            "hours": 3
+            "hours": 3,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "축제 준비위원회",
             "base_hours": 8,
             "weighted": false,
-            "hours": 8
+            "hours": 8,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2817,35 +3709,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2868,35 +3775,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2919,35 +3841,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2977,35 +3914,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3028,35 +3980,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3079,35 +4046,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3123,35 +4105,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": false,
-            "hours": 6
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": false,
-            "hours": 2
+            "hours": 2,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3167,35 +4164,50 @@ export const expectedForecast: Record<string, Forecast> = {
             "title": "졸업 프로젝트",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "데이터마이닝",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "정보보호개론",
             "base_hours": 6,
             "weighted": true,
-            "hours": 9
+            "hours": 9,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "진로설계",
             "base_hours": 2,
             "weighted": true,
-            "hours": 3
+            "hours": 3,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
             "title": "단과대 학생회",
             "base_hours": 10,
             "weighted": false,
-            "hours": 10
+            "hours": 10,
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       }
@@ -3359,42 +4371,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -3410,42 +4440,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -3461,42 +4509,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3519,42 +4585,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3577,42 +4661,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3635,42 +4737,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3693,42 +4813,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3751,42 +4889,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3800,8 +4956,8 @@ export const expectedForecastWithPreview: Forecast = {
     {
       "week": 9,
       "is_exam_week": false,
-      "total_hours": 52,
-      "ratio": 1.04,
+      "total_hours": 58,
+      "ratio": 1.16,
       "level": "storm",
       "items": [
         {
@@ -3809,49 +4965,80 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "사촌형 결혼식",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "custom",
+          "category_id": "d0000000-0000-4000-0001-000000000001"
         },
         {
           "source": "plan",
           "title": "대학생 서포터즈 1차 미션",
           "base_hours": 10,
           "weighted": false,
-          "hours": 10
+          "hours": 10,
+          "priority": "normal",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3874,49 +5061,70 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "대학생 서포터즈 1차 미션",
           "base_hours": 10,
           "weighted": false,
-          "hours": 10
+          "hours": 10,
+          "priority": "normal",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3939,42 +5147,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3997,42 +5223,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4048,42 +5292,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4099,42 +5361,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4150,42 +5430,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": true,
-          "hours": 9
+          "hours": 9,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4201,42 +5499,60 @@ export const expectedForecastWithPreview: Forecast = {
           "title": "운영체제",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "데이터베이스",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "컴퓨터네트워크",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "소프트웨어공학",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "알고리즘",
           "base_hours": 6,
           "weighted": false,
-          "hours": 6
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
           "title": "프로그래밍 학회",
           "base_hours": 4,
           "weighted": false,
-          "hours": 4
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     }

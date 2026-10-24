@@ -46,6 +46,8 @@ export default function PlanNewPage() {
         </section>
       ) : null}
 
+      {/* PC 에서는 사전 검토가 폼 옆 칸에 펼쳐져요 (10/24 QA). 휴대폰은 아래에서 올라오는 시트 */}
+      <div className="grid items-start gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
       <div className="max-w-[520px] rounded-2xl border border-border bg-card p-5 sm:p-6">
         <PlanForm
           submitLabel="추가하기"
@@ -55,10 +57,13 @@ export default function PlanNewPage() {
           disabled={full}
           onSubmit={save}
           onPreview={setPreviewing}
+          onValuesChange={(values) => setPreviewing((open) => (open && values ? values : open))}
         />
       </div>
 
       <PreviewSheet
+        inline
+        placeholder="[사전 검토]를 누르면 이 계획을 넣었을 때 예보가 어떻게 바뀌는지 여기에 보여 드려요."
         open={previewing !== null}
         title={previewing?.title ?? ""}
         draft={draft}
@@ -66,6 +71,7 @@ export default function PlanNewPage() {
         onCancel={() => setPreviewing(null)}
         onConfirm={() => previewing && save(previewing)}
       />
+      </div>
     </PageContainer>
   );
 }

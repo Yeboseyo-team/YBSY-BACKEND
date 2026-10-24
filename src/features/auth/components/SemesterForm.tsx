@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router";
+import { AiHoursHelper } from "@/components/AiHoursHelper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,6 +125,15 @@ export function SemesterForm({
                   );
                 })}
               </div>
+              {/* F-08: 이번 학기 사정을 말하면 AI 가 가용 시간을 추천 (10/24) */}
+              <AiHoursHelper
+                openLabel="AI에게 이번 학기 얘기하고 추천받기"
+                label="이번 학기 생활을 설명하면 AI가 한 주에 쓸 수 있는 시간을 추천해요"
+                placeholder="예: 주 3일 카페 알바(하루 5시간), 통학 왕복 2시간이에요. 동아리 하나 하고 정보처리기사도 준비하려고요."
+                toInput={(description) => ({ kind: "available", description })}
+                onApply={field.onChange}
+                appliedNote="위 칸에 채웠어요. 마음에 안 들면 직접 바꿔도 돼요."
+              />
             </div>
           </FormField>
         )}

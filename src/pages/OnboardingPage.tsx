@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { FullScreenSpinner } from "@/components/FullScreenSpinner";
 import { LoadError } from "@/components/LoadError";
+import { Logo } from "@/components/layout/Logo";
 import { useAuth } from "@/features/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { useProfile, useSignOut } from "@/features/auth/api";
@@ -49,7 +50,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pt-6 sm:px-10">
-        <span className="text-lg font-extrabold tracking-tight">학기예보</span>
+        <Logo className="text-lg font-extrabold tracking-tight" />
         {/* 다른 계정으로 바꾸고 싶을 때 (온보딩 전에는 설정 화면에 갈 수 없음) */}
         <div className="flex items-center gap-2">
           {signOut.error ? <p className="text-[13px] text-destructive">{toAuthMessage(signOut.error)}</p> : null}

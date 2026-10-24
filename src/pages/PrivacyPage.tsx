@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import { ChevronLeft } from "lucide-react";
+import { Logo } from "@/components/layout/Logo";
 
 // TODO(팀 확정): 시행일·보유 기간·문의처 (명세서 9.1 미결 사항)
 const EFFECTIVE_DATE = "2026년 10월 20일";
@@ -60,7 +61,7 @@ export default function PrivacyPage() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-8">
           <Link to="/" className="text-lg font-bold tracking-tight">
-            학기예보
+            <Logo />
           </Link>
           {canGoBack ? (
             <button

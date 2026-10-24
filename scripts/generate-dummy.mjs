@@ -16,12 +16,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TOTAL_WEEKS = 16;
 const EXAM_WEIGHT = 1.5;
 const LEVEL = { CLOUDY_FROM: 0.8, STORM_ABOVE: 1.0 }; // <0.8 맑음, 0.8~1.0 흐림, >1.0 폭풍
-const SEMESTER_START = '2026-08-31'; // 2026년 2학기 1주차 월요일
+const SEMESTER_START = '2026-08-31'; // 2026년 2학기 개강일 = 1주차 첫날 (10/24부터 월요일이 아니어도 됨)
 const DEMO_TODAY = '2026-10-13'; // 7주차. 시연일 10/20은 8주차(중간고사)
 
-// F-03 유형별 기본값 (명세서 3장 표 — 보완, 팀 확정 필요)
+// F-03 유형별 기본값 (명세서 3장 표 — 보완). 10/24 QA: 가용 시간에서 수업 시간을 빼므로 수업은 과제·복습 시간만
 const PLAN_DEFAULTS = {
-  class: { unit: '학점당 시간/주', low: 1.5, normal: 2, high: 3 },
+  class: { unit: '학점당 시간/주 (수업 밖 공부)', low: 1, normal: 1.5, high: 2 },
   activity: { unit: '시간/주', low: 2, normal: 4, high: 8 },
   project: { unit: '시간/주', low: 3, normal: 6, high: 10 },
 };
@@ -40,7 +40,7 @@ function defaultHours(type, level, credits) {
 // ─────────────────────────────────────────────
 const cid = (n) => `c0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const C = (n, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) =>
-  ({ id: cid(n), name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url });
+  ({ id: cid(n), name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url, owner_id: null }); // owner_id null = 공용 회차
 const QNET = 'https://www.q-net.or.kr';
 const DATAQ = 'https://www.dataq.or.kr';
 const certificates = [
@@ -67,21 +67,29 @@ const certById = Object.fromEntries(certificates.map((c) => [c.id, c]));
 
 // ─────────────────────────────────────────────
 // 3. 데모 사용자 — 로컬 로그인 비밀번호 공통 (FR-01-1 규칙: 8자 이상, 영문·숫자 포함)
-//    plan: [제목, 유형, 학점|null, 단계, 시작, 종료, (custom일 때 시간)]
+//    plan: [제목, 유형, 학점|null, 단계, 시작, 종료, (custom일 때 시간), { priority, start_date, end_date, category }]
+//    10/24: 수업 기본값이 바뀌어(3학점 보통 6→4.5h) 4.5 검증 예시·경계값을 지키려고 기존 수업은 직접 입력(custom) 시간으로 둡니다.
+//    daily_hours: 요일별 가용 시간 [월~일], 합계 = available_hours
 //    cert: [회차 id, 주당 학습시간, 준비 주수(생략 시 회차 기본값), 알림 발송 시각]
 // ─────────────────────────────────────────────
 const DEMO_PASSWORD = 'hakgi1234';
 const uid = (n) => `a0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const pid = (u, n) => `b0000000-0000-4000-${String(u).padStart(4, '0')}-${String(n).padStart(12, '0')}`;
+const catId = (u, n) => `d0000000-0000-4000-${String(u).padStart(4, '0')}-${String(n).padStart(12, '0')}`;
+/** 주중 (A-10)/5 시간, 토 6, 일 4 */
+const daily = (a) => { const wd = (a - 10) / 5; return [wd, wd, wd, wd, wd, 6, 4]; };
 
 const users = [
   {
     n: 1, email: 'yebo@hakgi.test', display_name: '김예보', persona: '취업 준비생 3학년 · 시연 시나리오 / 4.5 검증 예시',
-    available_hours: 50, semester_start: SEMESTER_START, midterm_week: 8, final_week: 15,
+    available_hours: 50, daily_hours: daily(50), semester_start: SEMESTER_START, midterm_week: 8, final_week: 15,
+    categories: ['경조사'],
     plans: [
-      ['운영체제', 'class', 3, 'normal', 1, 16], ['데이터베이스', 'class', 3, 'normal', 1, 16],
-      ['컴퓨터네트워크', 'class', 3, 'normal', 1, 16], ['소프트웨어공학', 'class', 3, 'normal', 1, 16],
-      ['알고리즘', 'class', 3, 'normal', 1, 16], ['프로그래밍 학회', 'activity', null, 'normal', 1, 16],
+      ['운영체제', 'class', 3, 'custom', 1, 16, 6], ['데이터베이스', 'class', 3, 'custom', 1, 16, 6],
+      ['컴퓨터네트워크', 'class', 3, 'custom', 1, 16, 6], ['소프트웨어공학', 'class', 3, 'custom', 1, 16, 6, { priority: 'low' }],
+      ['알고리즘', 'class', 3, 'custom', 1, 16, 6, { priority: 'high' }], ['프로그래밍 학회', 'activity', null, 'normal', 1, 16, null, { priority: 'low' }],
+      // 사용자 지정 유형 예시: 9주차 토요일(10/31) 사촌 결혼식 → 요일별 예보에서 토요일만 무거워짐
+      ['사촌형 결혼식', 'custom', null, 'custom', 9, 9, 6, { start_date: '2026-10-31', end_date: '2026-10-31', category: 1 }],
     ],
     certs: [
       [cid(2), 8], // 정보처리기사 3회 실기: 시험 10/24 = 8주차, 준비 3~8주 → 8주차 57h (4.5 검증 예시)
@@ -90,10 +98,10 @@ const users = [
   },
   {
     n: 2, email: 'jiwon@hakgi.test', display_name: '이지원', persona: '대외활동 지원 예정자 2학년 · 직접 입력/학기 밖 준비기간',
-    available_hours: 45, semester_start: SEMESTER_START, midterm_week: 8, final_week: 15,
+    available_hours: 45, daily_hours: daily(45), semester_start: SEMESTER_START, midterm_week: 8, final_week: 15,
     plans: [
-      ['경영학원론', 'class', 3, 'normal', 1, 16], ['마케팅원론', 'class', 3, 'low', 1, 16],
-      ['회계원리', 'class', 3, 'normal', 1, 16], ['경영통계', 'class', 3, 'normal', 1, 16],
+      ['경영학원론', 'class', 3, 'custom', 1, 16, 6], ['마케팅원론', 'class', 3, 'custom', 1, 16, 4.5, { priority: 'low' }],
+      ['회계원리', 'class', 3, 'custom', 1, 16, 6, { priority: 'high' }], ['경영통계', 'class', 3, 'custom', 1, 16, 6],
       ['비즈니스 영어회화', 'class', 2, 'custom', 1, 16, 3], ['사진 동아리', 'activity', null, 'low', 1, 16],
       ['교내 마케팅 공모전', 'project', null, 'normal', 3, 9],
     ],
@@ -104,10 +112,10 @@ const users = [
   },
   {
     n: 3, email: 'woonyoung@hakgi.test', display_name: '박운영', persona: '학생회 운영진 4학년 · 기말 16주차 / 경계값 100%',
-    available_hours: 55, semester_start: SEMESTER_START, midterm_week: 8, final_week: 16, // FR-01-12 시험 주차 변경 예
+    available_hours: 55, daily_hours: daily(55), semester_start: SEMESTER_START, midterm_week: 8, final_week: 16, // FR-01-12 시험 주차 변경 예
     plans: [
-      ['졸업 프로젝트', 'project', null, 'high', 1, 16], ['데이터마이닝', 'class', 3, 'normal', 1, 16],
-      ['정보보호개론', 'class', 3, 'normal', 1, 16], ['진로설계', 'class', 1, 'normal', 1, 16],
+      ['졸업 프로젝트', 'project', null, 'high', 1, 16, null, { priority: 'high' }], ['데이터마이닝', 'class', 3, 'custom', 1, 16, 6],
+      ['정보보호개론', 'class', 3, 'custom', 1, 16, 6], ['진로설계', 'class', 1, 'custom', 1, 16, 2, { priority: 'low' }],
       ['단과대 학생회', 'activity', null, 'custom', 1, 16, 10], ['축제 준비위원회', 'activity', null, 'high', 6, 8],
     ],
     certs: [
@@ -117,13 +125,13 @@ const users = [
   },
   {
     n: 4, email: 'empty@hakgi.test', display_name: '최수강', persona: '학기 설정 완료 · 계획 없음 (FR-05-6 빈 상태)',
-    available_hours: 40, semester_start: SEMESTER_START, midterm_week: 8, final_week: 15, plans: [], certs: [],
+    available_hours: 40, daily_hours: daily(40), semester_start: SEMESTER_START, midterm_week: 8, final_week: 15, plans: [], certs: [],
   },
   {
     n: 5, email: 'newbie@hakgi.test', display_name: '정새내', persona: '가입 직후 · 학기 설정 미완료 (FR-01-11 온보딩)',
-    available_hours: null, semester_start: null, midterm_week: 8, final_week: 15, plans: [], certs: [],
+    available_hours: null, daily_hours: null, semester_start: null, midterm_week: 8, final_week: 15, plans: [], certs: [],
   },
-].map((u) => ({ ...u, id: uid(u.n) }));
+].map((u) => ({ categories: [], ...u, id: uid(u.n) }));
 
 // F-06 사전 검토 시연용: 김예보가 저장 전에 넣어보는 계획 → 폭풍 1주 → 3주
 const previewPlan = { title: '대학생 서포터즈 1차 미션', type: 'activity', credits: null, load_level: 'custom', start_week: 9, end_week: 10, hours_per_week: 10 };
@@ -145,7 +153,7 @@ function forecast(profile, plans, userCerts) {
     for (const p of plans) {
       if (i < p.start_week || i > p.end_week) continue;
       const weighted = p.type === 'class' && isExamWeek; // m_{p,i}
-      items.push({ source: 'plan', title: p.title, base_hours: p.hours_per_week, weighted, hours: p.hours_per_week * (weighted ? EXAM_WEIGHT : 1) });
+      items.push({ source: 'plan', title: p.title, base_hours: p.hours_per_week, weighted, hours: p.hours_per_week * (weighted ? EXAM_WEIGHT : 1), priority: p.priority ?? 'normal' });
     }
     for (const uc of userCerts) {
       const c = certById[uc.certificate_id];
@@ -166,12 +174,15 @@ function forecast(profile, plans, userCerts) {
 const created = '2026-09-01T09:00:00+09:00';
 // 개인정보 동의(NFR-LEGAL-1)는 온보딩에서 받으므로, 학기 설정을 마친 사용자만 동의한 상태로 둡니다.
 // DB에서는 트리거가 동의 시각을 서버 시각(now())으로 바꿔 기록합니다.
-const profiles = users.map(({ id, display_name, available_hours, semester_start, midterm_week, final_week }) =>
-  ({ user_id: id, display_name, available_hours, semester_start, midterm_week, final_week,
+const profiles = users.map(({ id, display_name, available_hours, daily_hours, semester_start, midterm_week, final_week }) =>
+  ({ user_id: id, display_name, available_hours, daily_hours, semester_start, midterm_week, final_week,
     privacy_agreed_at: available_hours && semester_start ? created : null }));
-const plans = users.flatMap((u) => u.plans.map(([title, type, credits, load_level, start_week, end_week, custom], i) => {
+const planCategories = users.flatMap((u) => u.categories.map((name, i) => ({ id: catId(u.n, i + 1), user_id: u.id, name, created_at: created })));
+const plans = users.flatMap((u) => u.plans.map(([title, type, credits, load_level, start_week, end_week, custom, extra = {}], i) => {
   const hours_per_week = load_level === 'custom' ? custom : defaultHours(type, load_level, credits);
-  return { id: pid(u.n, i + 1), user_id: u.id, title, type, credits, load_level, start_week, end_week, hours_per_week, created_at: created, updated_at: created };
+  return { id: pid(u.n, i + 1), user_id: u.id, title, type, credits, load_level, start_week, end_week, hours_per_week,
+    start_date: extra.start_date ?? null, end_date: extra.end_date ?? null, priority: extra.priority ?? 'normal',
+    category_id: extra.category ? catId(u.n, extra.category) : null, created_at: created, updated_at: created };
 }));
 const userCertificates = users.flatMap((u) => u.certs.map(([certificate_id, study_hours, prep, notified_at]) =>
   ({ user_id: u.id, certificate_id, study_hours, prep_weeks: prep ?? certById[certificate_id].prep_weeks, notified_at: notified_at ?? null })));
@@ -195,11 +206,13 @@ if (w8.total_hours !== 57 || w8.ratio !== 1.14 || w8.level !== 'storm') fail(`4.
 if (previewDiff.message !== '폭풍 1주 → 3주 (9, 10주차 추가)') fail(`F-06 시연 문구: ${previewDiff.message}`);
 const woon8 = expected[uid(3)].weeks[7];
 if (woon8.ratio !== 1 || woon8.level !== 'cloudy') fail(`박운영 8주차 경계값: ${woon8.total_hours}h, ${woon8.ratio}, ${woon8.level} (기대 100% 흐림)`);
-if (defaultHours('class', 'normal', 3) !== 6) fail('FR-03-2: 3학점 보통은 6시간');
+if (defaultHours('class', 'normal', 3) !== 4.5) fail('FR-03-2 (10/24): 3학점 보통은 4.5시간 (수업 밖 공부)');
 for (const p of plans) {
   if (p.title.length < 1 || p.title.length > 30) fail(`FR-02-1 제목 길이: ${p.title}`);
   if (p.hours_per_week < 0.5 || p.hours_per_week > 60 || (p.hours_per_week * 2) % 1) fail(`FR-02-1 시간 0.5~60, 0.5 단위: ${p.title}`);
-  if ((p.type === 'class') !== (p.credits !== null) || (p.credits !== null && (p.credits < 1 || p.credits > 4))) fail(`credits: ${p.title}`);
+  if ((p.type === 'class') !== (p.credits !== null) || (p.credits !== null && (p.credits < 1 || p.credits > 6))) fail(`credits: ${p.title}`);
+  if ((p.type === 'custom') !== (p.category_id !== null)) fail(`사용자 유형: ${p.title}`);
+  if (p.start_date && (weekOf(p.start_date, SEMESTER_START) !== p.start_week || weekOf(p.end_date, SEMESTER_START) !== p.end_week)) fail(`날짜-주차: ${p.title}`);
   if (p.start_week > p.end_week || p.start_week < 1 || p.end_week > 16) fail(`주차: ${p.title}`);
 }
 for (const u of users) if (u.plans.length > 30) fail('FR-02-5 계획 30개 초과');
@@ -210,13 +223,13 @@ for (const c of certificates) {
 if (certificates.length < 15 || certificates.length > 20) fail('자격증 15~20종');
 if (certificates.filter((c) => c.name.includes('정보처리')).map((c) => c.name).filter((v, i, a) => a.indexOf(v) === i).length !== 2) fail('FR-04-1 "정보처리" 검색 결과');
 for (const uc of userCertificates) if (uc.study_hours < 1 || uc.study_hours > 40 || uc.prep_weeks < 1 || uc.prep_weeks > 16) fail('5.4 범위');
-for (const p of profiles) if (p.semester_start && new Date(p.semester_start).getUTCDay() !== 1) fail('학기 시작일은 월요일');
+for (const p of profiles) if (p.daily_hours && p.daily_hours.reduce((a, b) => a + b, 0) !== p.available_hours) fail(`요일별 합계: ${p.display_name}`);
 if (weekOf(DEMO_TODAY, SEMESTER_START) !== 7) fail('오늘(10/13)은 7주차');
 
 // ─────────────────────────────────────────────
 // 7. 출력
 // ─────────────────────────────────────────────
-const q = (v) => (v === null || v === undefined ? 'null' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
+const q = (v) => (v === null || v === undefined ? 'null' : typeof v === 'number' ? String(v) : Array.isArray(v) ? `'{${v.join(',')}}'` : `'${String(v).replace(/'/g, "''")}'`);
 const row = (vals) => `  (${vals.map(q).join(', ')})`;
 const header = '-- ⚠ 자동 생성 파일: scripts/generate-dummy.mjs 를 수정한 뒤 재생성하세요.\n';
 
@@ -236,7 +249,7 @@ values (${q(u.id)}, ${q(u.id)}, ${q(u.id)}, ${q(JSON.stringify({ sub: u.id, emai
 on conflict do nothing;`).join('\n')}
 
 -- 2) 학기 설정·개인정보 동의 (정새내는 비워 둠 → 온보딩)
-${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
+${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
 
 -- 3) 자격증 회차 (공용)
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values
@@ -244,9 +257,13 @@ ${certificates.map((c) => row([c.id, c.name, c.round, c.apply_start, c.apply_end
 on conflict (id) do update set name = excluded.name, round = excluded.round, apply_start = excluded.apply_start, apply_end = excluded.apply_end,
   exam_date = excluded.exam_date, prep_weeks = excluded.prep_weeks, default_study_hours = excluded.default_study_hours, source_url = excluded.source_url;
 
--- 4) 계획
-insert into public.plans (id, user_id, title, type, credits, load_level, start_week, end_week, hours_per_week, created_at, updated_at) values
-${plans.map((p) => row([p.id, p.user_id, p.title, p.type, p.credits, p.load_level, p.start_week, p.end_week, p.hours_per_week, p.created_at, p.updated_at])).join(',\n')}
+-- 4) 사용자 지정 유형·계획
+insert into public.plan_categories (id, user_id, name, created_at) values
+${planCategories.map((c) => row([c.id, c.user_id, c.name, c.created_at])).join(',\n')}
+on conflict (id) do nothing;
+
+insert into public.plans (id, user_id, title, type, credits, load_level, start_week, end_week, hours_per_week, start_date, end_date, priority, category_id, created_at, updated_at) values
+${plans.map((p) => row([p.id, p.user_id, p.title, p.type, p.credits, p.load_level, p.start_week, p.end_week, p.hours_per_week, p.start_date, p.end_date, p.priority, p.category_id, p.created_at, p.updated_at])).join(',\n')}
 on conflict (id) do nothing;
 
 -- 5) 사용자 선택 회차
@@ -270,9 +287,10 @@ begin;
 
 delete from public.user_certificates where user_id in (${demoIds});
 delete from public.plans where user_id in (${demoIds});
+delete from public.plan_categories where user_id in (${demoIds});
 
 alter table public.profiles disable trigger profiles_privacy_agreed_at;
-${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
+${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
 alter table public.profiles enable trigger profiles_privacy_agreed_at;
 
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values
@@ -280,8 +298,11 @@ ${certificates.map((c) => row([c.id, c.name, c.round, c.apply_start, c.apply_end
 on conflict (id) do update set name = excluded.name, round = excluded.round, apply_start = excluded.apply_start, apply_end = excluded.apply_end,
   exam_date = excluded.exam_date, prep_weeks = excluded.prep_weeks, default_study_hours = excluded.default_study_hours, source_url = excluded.source_url;
 
-insert into public.plans (id, user_id, title, type, credits, load_level, start_week, end_week, hours_per_week, created_at, updated_at) values
-${plans.map((p) => row([p.id, p.user_id, p.title, p.type, p.credits, p.load_level, p.start_week, p.end_week, p.hours_per_week, p.created_at, p.updated_at])).join(',\n')};
+insert into public.plan_categories (id, user_id, name, created_at) values
+${planCategories.map((c) => row([c.id, c.user_id, c.name, c.created_at])).join(',\n')};
+
+insert into public.plans (id, user_id, title, type, credits, load_level, start_week, end_week, hours_per_week, start_date, end_date, priority, category_id, created_at, updated_at) values
+${plans.map((p) => row([p.id, p.user_id, p.title, p.type, p.credits, p.load_level, p.start_week, p.end_week, p.hours_per_week, p.start_date, p.end_date, p.priority, p.category_id, p.created_at, p.updated_at])).join(',\n')};
 
 insert into public.user_certificates (user_id, certificate_id, study_hours, prep_weeks, notified_at) values
 ${userCertificates.map((x) => row([x.user_id, x.certificate_id, x.study_hours, x.prep_weeks, x.notified_at])).join(',\n')};
@@ -295,21 +316,24 @@ const ts = `${header.replace('--', '//')}// 학기예보 프론트 목데이터 
 // Supabase 없이 화면을 먼저 만들 때 사용하세요. 실제 연결 후에는 supabase gen types 결과로 타입을 교체합니다.
 // expectedForecast 는 src/features/forecast/calc.ts 단위 테스트의 기대값으로 쓸 수 있습니다 (NFR-MAINT-1).
 
-export type PlanType = 'class' | 'activity' | 'project';
+export type PlanType = 'class' | 'activity' | 'project' | 'custom';
+export type PlanPriority = 'high' | 'normal' | 'low';
 export type LoadLevel = 'low' | 'normal' | 'high' | 'custom';
 export type Weather = 'clear' | 'cloudy' | 'storm';
 
 /** 5.1 profiles — available_hours / semester_start / privacy_agreed_at 중 하나라도 null 이면 온보딩 미완료 */
-export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; semester_start: string | null; midterm_week: number; final_week: number; privacy_agreed_at: string | null }
+export interface Profile { user_id: string; display_name: string | null; available_hours: number | null; daily_hours: number[] | null; semester_start: string | null; midterm_week: number; final_week: number; privacy_agreed_at: string | null }
 /** 5.2 plans — credits 는 수업일 때만 */
-export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; created_at: string; updated_at: string }
+export interface Plan { id: string; user_id: string; title: string; type: PlanType; credits: number | null; load_level: LoadLevel; start_week: number; end_week: number; hours_per_week: number; start_date: string | null; end_date: string | null; priority: PlanPriority; category_id: string | null; created_at: string; updated_at: string }
+/** 사용자 지정 계획 유형 (10/24) */
+export interface PlanCategory { id: string; user_id: string; name: string; created_at: string }
 export type PlanInput = Pick<Plan, 'title' | 'type' | 'credits' | 'load_level' | 'start_week' | 'end_week' | 'hours_per_week'>;
 /** 5.3 certificates */
-export interface Certificate { id: string; name: string; round: string; apply_start: string; apply_end: string; exam_date: string; prep_weeks: number; default_study_hours: number; source_url: string }
+export interface Certificate { id: string; name: string; round: string; apply_start: string; apply_end: string; exam_date: string; prep_weeks: number; default_study_hours: number; source_url: string; owner_id: string | null }
 /** 5.4 user_certificates */
 export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number; prep_weeks: number; notified_at: string | null }
 
-export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number }
+export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number; priority?: PlanPriority }
 export interface WeekForecast { week: number; is_exam_week: boolean; total_hours: number; ratio: number; level: Weather; items: WeekItem[] }
 export interface Forecast { weeks: WeekForecast[]; summary: Record<Weather, number> }
 
@@ -332,6 +356,7 @@ export const demoUsers = ${j(users.map(({ id, email, display_name, persona }) =>
 
 export const profiles: Profile[] = ${j(profiles)};
 export const certificates: Certificate[] = ${j(certificates)};
+export const planCategories: PlanCategory[] = ${j(planCategories)};
 export const plans: Plan[] = ${j(plans)};
 export const userCertificates: UserCertificate[] = ${j(userCertificates)};
 

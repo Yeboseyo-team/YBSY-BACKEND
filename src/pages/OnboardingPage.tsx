@@ -13,7 +13,7 @@ import { SemesterForm, type SemesterFormValues } from "@/features/auth/component
 import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
 import { DEFAULT_SEMESTER, defaultSemesterStart } from "@/features/auth/semester";
 import type { SemesterValues } from "@/features/auth/schemas";
-import { todayInKorea } from "@/features/forecast/calc";
+import { splitWeeklyHours, todayInKorea } from "@/features/forecast/calc";
 
 /**
  * S-07 온보딩 (경로 /onboarding) — 담당: 프론트 A
@@ -41,7 +41,7 @@ export default function OnboardingPage() {
 
   const defaults: SemesterValues = {
     semesterStart: profile.data?.semester_start ?? defaultSemesterStart(todayInKorea()),
-    availableHours: profile.data?.available_hours ?? DEFAULT_SEMESTER.availableHours,
+    dailyHours: profile.data?.daily_hours ?? splitWeeklyHours(profile.data?.available_hours ?? DEFAULT_SEMESTER.availableHours),
     midtermWeek: profile.data?.midterm_week ?? DEFAULT_SEMESTER.midtermWeek,
     finalWeek: profile.data?.final_week ?? DEFAULT_SEMESTER.finalWeek,
   };
@@ -89,7 +89,7 @@ export default function OnboardingPage() {
             onSubmit={(v) =>
               update.mutate(
                 {
-                  available_hours: v.availableHours,
+                  daily_hours: v.dailyHours,
                   semester_start: v.semesterStart,
                   midterm_week: v.midtermWeek,
                   final_week: v.finalWeek,

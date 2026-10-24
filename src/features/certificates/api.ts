@@ -7,7 +7,8 @@ import { applyStatus, todayInKorea } from "@/features/forecast/calc";
 import type { Certificate, UserCertificate } from "@/types/database";
 
 export const certificateKeys = {
-  all: ["certificates"] as const,
+  /** 공용 회차 + 내가 직접 추가한 회차라 사용자마다 달라요 (10/24) */
+  all: (userId: string) => ["certificates", userId] as const,
   mine: (userId: string) => ["user_certificates", userId] as const,
 };
 
@@ -22,16 +23,17 @@ export function toCertificateMessage(error: unknown): string {
   if (error instanceof ApplyClosedError) return error.message;
   if (error instanceof TypeError) return "서버에 연결하지 못했어요. 인터넷 연결을 확인하세요.";
   const code = (error as { code?: string } | null)?.code;
-  if (code === "23505") return "이미 고른 회차예요.";
-  if (code === "23514") return "준비 기간은 1~16주, 주당 학습 시간은 1~40시간으로 입력하세요.";
+  if (code === "23505") return "이미 있는 자격증·회차예요. 이름이나 회차를 다르게 써 주세요.";
+  if (code === "23514") return "준비 기간은 1~16주, 주당 학습 시간은 1~40시간, 접수 마감은 시험일보다 앞이어야 해요.";
+  if (code === "P0033") return "자격증은 20개까지 직접 추가할 수 있어요.";
   return "자격증을 저장하지 못했어요. 잠시 뒤 다시 시도하세요.";
 }
 
-/** 전체 자격증 회차 (공용, 로그인 사용자만). 검색·묶기는 searchCertificates 사용 */
+/** 전체 자격증 회차 (공용 + 내가 직접 추가한 것, 로그인 사용자만). 검색·묶기는 searchCertificates 사용 */
 export function useCertificates() {
   const { user } = useAuth();
   return useQuery({
-    queryKey: certificateKeys.all,
+    queryKey: certificateKeys.all(user?.id ?? "anonymous"),
     enabled: Boolean(user),
     staleTime: 10 * 60_000, // 팀이 대시보드에서만 바꾸는 데이터라 자주 다시 부를 필요 없음
     queryFn: async (): Promise<Certificate[]> => {
@@ -74,11 +76,13 @@ export function useAddCertificate() {
       prep_weeks,
       study_hours,
     }: {
-      certificate: Pick<Certificate, "id" | "apply_start" | "apply_end" | "prep_weeks" | "default_study_hours">;
+      certificate: Pick<Certificate, "id" | "apply_start" | "apply_end" | "prep_weeks" | "default_study_hours"> &
+        Partial<Pick<Certificate, "owner_id">>;
       prep_weeks?: number;
       study_hours?: number;
     }): Promise<UserCertificate> => {
-      if (applyStatus(certificate, todayInKorea()) === "closed") throw new ApplyClosedError();
+      // 직접 추가한 자격증은 이미 접수했을 수 있어 마감 여부로 막지 않아요
+      if (!certificate.owner_id && applyStatus(certificate, todayInKorea()) === "closed") throw new ApplyClosedError();
       const { data, error } = await supabase
         .from("user_certificates")
         .insert({
@@ -144,5 +148,60 @@ export function useRemoveMyCertificate() {
     },
     onError: (_error, _id, context) => queryClient.setQueryData(key, context?.previous),
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}
+
+/** 직접 추가하는 자격증 입력값 (10/24 QA) */
+export interface OwnCertificateInput {
+  name: string;
+  round: string;
+  apply_start: string;
+  apply_end: string;
+  exam_date: string;
+  prep_weeks: number;
+  study_hours: number;
+  source_url: string | null;
+}
+
+/** 목록에 없는 자격증을 직접 추가하고 바로 고르기까지 (내 계정에서만 보여요) */
+export function useCreateOwnCertificate() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? "anonymous";
+  return useMutation({
+    mutationFn: async ({ study_hours, ...input }: OwnCertificateInput): Promise<Certificate> => {
+      const { data, error } = await supabase
+        .from("certificates")
+        .insert({ ...input, name: input.name.trim(), round: input.round.trim(), default_study_hours: study_hours })
+        .select()
+        .single();
+      if (error) throw error;
+      const { error: pickError } = await supabase
+        .from("user_certificates")
+        .insert({ certificate_id: data.id, prep_weeks: input.prep_weeks, study_hours });
+      if (pickError) throw pickError;
+      return data;
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: certificateKeys.all(userId) });
+      void queryClient.invalidateQueries({ queryKey: certificateKeys.mine(userId) });
+    },
+  });
+}
+
+/** 직접 추가한 자격증 지우기 (고른 것도 함께 빠져요) */
+export function useDeleteOwnCertificate() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? "anonymous";
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("certificates").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: certificateKeys.all(userId) });
+      void queryClient.invalidateQueries({ queryKey: certificateKeys.mine(userId) });
+    },
   });
 }

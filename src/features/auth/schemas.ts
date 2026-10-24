@@ -14,11 +14,17 @@ export const semesterSchema = z
       .string()
       .min(1, "개강일을 고르세요.")
       .regex(/^\d{4}-\d{2}-\d{2}$/, "개강일을 달력에서 다시 고르세요."),
-    availableHours: z
-      .number({ invalid_type_error: "한 주에 쓸 수 있는 시간을 숫자로 입력하세요." })
-      .int("시간은 1시간 단위로 입력하세요.")
-      .min(1, "한 주에 쓸 수 있는 시간은 1시간 이상이어야 해요.")
-      .max(168, "한 주는 168시간이에요. 168 이하로 입력하세요."),
+    /** 요일별 가용 시간 [월~일] (10/24 QA). 합계가 한 주 가용 시간이 돼요 */
+    dailyHours: z
+      .array(
+        z
+          .number({ invalid_type_error: "시간을 숫자로 입력하세요." })
+          .int("시간은 1시간 단위로 입력하세요.")
+          .min(0, "0시간 이상으로 입력하세요.")
+          .max(24, "하루는 24시간이에요."),
+      )
+      .length(7)
+      .refine((days) => days.reduce((a, b) => a + b, 0) >= 1, "한 주에 쓸 수 있는 시간이 1시간 이상이어야 해요."),
     midtermWeek: examWeek,
     finalWeek: examWeek,
   })

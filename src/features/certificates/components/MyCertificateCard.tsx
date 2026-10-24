@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { applyStatus, certificatePrepRange } from "@/features/forecast/calc";
 import type { Certificate, UserCertificate } from "@/types/database";
-import { toCertificateMessage, useRemoveMyCertificate, useUpdateMyCertificate } from "../api";
+import { toCertificateMessage, useDeleteOwnCertificate, useRemoveMyCertificate, useUpdateMyCertificate } from "../api";
 import { applyBadge, examLabel, prepSentence, prepWeeksLabel, validatePrep } from "../display";
 import { ApplyBadge } from "./ApplyBadge";
 import { PrepInputs } from "./PrepInputs";
@@ -26,13 +26,15 @@ export function MyCertificateCard({ mine, certificate, semesterStart, today, cur
   const [studyHours, setStudyHours] = useState(mine.study_hours);
   const update = useUpdateMyCertificate();
   const remove = useRemoveMyCertificate();
+  const removeOwn = useDeleteOwnCertificate();
+  const isOwn = Boolean(certificate.owner_id);
 
   const shownPrep = mode === "edit" ? prepWeeks : mine.prep_weeks;
   const shownStudy = mode === "edit" ? studyHours : mine.study_hours;
   const range = certificatePrepRange(certificate.exam_date, Number.isInteger(shownPrep) ? shownPrep : 1, semesterStart);
   const badge = applyBadge(certificate, applyStatus(certificate, today), today);
   const titleId = `my-cert-${certificate.id}`;
-  const error = update.error ?? remove.error;
+  const error = update.error ?? remove.error ?? removeOwn.error;
 
   const startEdit = () => {
     update.reset();
@@ -48,7 +50,10 @@ export function MyCertificateCard({ mine, certificate, semesterStart, today, cur
           <h3 id={titleId} className="text-lg font-semibold">
             {certificate.name}
           </h3>
-          <p className="text-sm text-muted-foreground">{certificate.round}</p>
+          <p className="text-sm text-muted-foreground">
+            {certificate.round}
+            {isOwn ? <span className="ml-1.5 rounded bg-muted px-1.5 py-px text-[11px] font-semibold">직접 추가</span> : null}
+          </p>
         </div>
         <ApplyBadge {...badge} />
       </div>
@@ -111,14 +116,19 @@ export function MyCertificateCard({ mine, certificate, semesterStart, today, cur
         <div role="alertdialog" aria-labelledby={`${titleId}-remove`} className="grid gap-3 rounded-lg border border-storm/30 bg-storm/5 p-4">
           <p id={`${titleId}-remove`} className="text-sm">
             {certificate.name} {certificate.round} 선택을 해제할까요? 준비 시간이 예보에서 바로 빠져요.
+            {isOwn ? " 직접 추가한 자격증이라 목록에서도 지워져요." : ""}
           </p>
           <div className="flex gap-2">
             <Button
               variant="destructive"
-              disabled={remove.isPending}
-              onClick={() => remove.mutate(certificate.id, { onError: () => setMode("view") })}
+              disabled={remove.isPending || removeOwn.isPending}
+              onClick={() =>
+                isOwn
+                  ? removeOwn.mutate(certificate.id, { onError: () => setMode("view") })
+                  : remove.mutate(certificate.id, { onError: () => setMode("view") })
+              }
             >
-              {remove.isPending ? "해제하는 중…" : "선택 해제"}
+              {remove.isPending || removeOwn.isPending ? "해제하는 중…" : isOwn ? "지우기" : "선택 해제"}
             </Button>
             <Button variant="outline" onClick={() => setMode("view")} disabled={remove.isPending}>
               취소

@@ -21,6 +21,10 @@ const PlansPage = lazy(() => import("@/pages/PlansPage")); // S-09 목록
 const PlanNewPage = lazy(() => import("@/pages/PlanNewPage")); // S-09 등록
 const PlanEditPage = lazy(() => import("@/pages/PlanEditPage")); // S-09 수정
 
+// ── 10/24 QA ──
+const ReviewPage = lazy(() => import("@/pages/ReviewPage")); // 학기 회고·내보내기
+const DayPage = lazy(() => import("@/pages/DayPage")); // 하루 할 일 (요일별 부담에서 누르면)
+
 export default function App() {
   return (
     <Suspense fallback={<FullScreenSpinner />}>
@@ -40,6 +44,8 @@ export default function App() {
               <Route path="plans/:id/edit" element={<PlanEditPage />} />
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="review" element={<ReviewPage />} />
+              <Route path="day/:date" element={<DayPage />} />
             </Route>
           </Route>
         </Route>

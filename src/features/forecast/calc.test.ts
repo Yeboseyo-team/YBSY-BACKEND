@@ -84,7 +84,7 @@ describe("명세서 4.5 검증 예시", () => {
     const classItem = items.find((x) => x.title === "운영체제");
     const activityItem = items.find((x) => x.title === "프로그래밍 학회");
     const certItem = items.find((x) => x.source === "certificate");
-    expect(classItem).toEqual({ source: "plan", title: "운영체제", base_hours: 6, weighted: true, hours: 9 });
+    expect(classItem).toEqual({ source: "plan", title: "운영체제", base_hours: 6, weighted: true, hours: 9, priority: "normal", plan_type: "class", category_id: null });
     expect(activityItem?.weighted).toBe(false);
     expect(certItem).toEqual({ source: "certificate", title: "정보처리기사 준비", base_hours: 8, weighted: false, hours: 8 });
   });
@@ -262,8 +262,8 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
     const { before, after, diff } = previewDraft(inputOf(yebo), {
       addCertificates: [{ certificate_id: BIGDATA_PRACTICAL, prep_weeks: 6, study_hours: 10 }],
     });
-    expect(hours(before, 9)).toBe(42);
-    expect(hours(after, 9)).toBe(52);
+    expect(hours(before, 9)).toBe(48); // 42 + 사촌형 결혼식 6 (10/31)
+    expect(hours(after, 9)).toBe(58);
     expect(hours(after, 13)).toBe(44);
     expect(diff.message).toBe("폭풍 1주 → 4주 (9, 10, 11주차 추가)");
   });
@@ -273,7 +273,7 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
       removeCertificateIds: [SQLD63],
       addCertificates: [{ certificate_id: BIGDATA_PRACTICAL, prep_weeks: 3, study_hours: 8 }],
     });
-    expect([hours(after, 9), hours(after, 10), hours(after, 11), hours(after, 12), hours(after, 13)]).toEqual([34, 34, 42, 42, 42]);
+    expect([hours(after, 9), hours(after, 10), hours(after, 11), hours(after, 12), hours(after, 13)]).toEqual([40, 34, 42, 42, 42]); // 9주차는 결혼식 6시간
     expect(after.weeks.flatMap((w) => w.items).some((i) => i.title === "SQLD 준비")).toBe(false);
   });
 
@@ -281,7 +281,7 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
     const { after } = previewDraft(inputOf(yebo), {
       addCertificates: [{ certificate_id: SQLD63, prep_weeks: 3, study_hours: 12 }],
     });
-    expect(hours(after, 9)).toBe(46); // 34 + 12 (8시간이 남아 있으면 54)
+    expect(hours(after, 9)).toBe(52); // 34 + 결혼식 6 + 12 (8시간이 남아 있으면 60)
   });
 
   it("계획 수정: 프로그래밍 학회를 주 4시간 → 20시간으로 바꾸면 원래 계획은 빼고 계산", () => {

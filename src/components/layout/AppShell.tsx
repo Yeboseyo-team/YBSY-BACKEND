@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router";
-import { CalendarCheck, CloudSun, ListTodo, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { CalendarCheck, CloudSun, ListTodo, NotebookPen, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/Logo";
 import { cn } from "@/lib/utils";
@@ -10,12 +10,14 @@ const NAV: NavItem[] = [
   { to: "/", label: "예보", end: true, icon: CloudSun },
   { to: "/plans", label: "계획", end: false, icon: ListTodo },
   { to: "/certificates", label: "자격증", end: false, icon: CalendarCheck },
+  { to: "/review", label: "회고", end: false, icon: NotebookPen },
 ];
 
 /**
  * 로그인 후 화면 공통 틀 (명세서 6.1)
  * - PC(1024px~): 상단 메뉴 + 설정 + 계획 추가
- * - 휴대폰(360px~): 위에는 로고·설정·계획 추가, 아래에 탭 3개(예보·계획·자격증)
+ * - 휴대폰(360px~): 위에는 로고·설정·계획 추가, 아래에 탭 4개(예보·계획·자격증·회고)
+ * - 인쇄(회고 PDF 저장)할 때는 메뉴를 숨겨요
  * 본문은 각 화면의 PageContainer(<main>)가 그립니다.
  */
 export function AppShell() {
@@ -28,7 +30,7 @@ export function AppShell() {
         본문으로 건너뛰기
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
+      <header className="sticky top-0 z-30 print:hidden border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
         <div className="mx-auto flex h-14 max-w-[75rem] items-center gap-x-8 px-4 sm:px-8 lg:h-16">
           <Link to="/" className="rounded-md text-lg font-bold tracking-tight outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40">
             <Logo />
@@ -81,9 +83,9 @@ export function AppShell() {
 
       <nav
         aria-label="주요 메뉴"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden"
       >
-        <ul className="mx-auto grid h-16 max-w-md grid-cols-3">
+        <ul className="mx-auto grid h-16 max-w-md grid-cols-4">
           {NAV.map(({ to, label, end, icon: Icon }) => (
             <li key={to}>
               <NavLink

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForecastData } from "@/features/forecast/api";
 import { TOTAL_WEEKS, type Forecast, type Weather } from "@/features/forecast/calc";
-import { formatHours, WEATHER_STYLE } from "@/features/forecast/weather";
+import { formatDuration, formatHours, WEATHER_STYLE } from "@/features/forecast/weather";
+import { useIsDesktop } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { buildPreview, levelChanges, peakHours, previewHeadline, previewModeOf, type PreviewDraft } from "./preview";
 
@@ -27,9 +28,39 @@ export type PreviewSheetProps = {
   confirmLabel?: string;
   /** 저장 중이면 버튼을 막고 "저장하는 중…" */
   pending?: boolean;
+  /**
+   * true 면 PC 화면(1024px~)에서 팝업 대신 이 자리(폼 옆 빈 칸)에 그대로 펼쳐요 (10/24 QA). 휴대폰은 지금처럼 아래에서 올라오는 시트.
+   * 여는 화면이 폼 옆 칸에 이 컴포넌트를 두면 돼요.
+   */
+  inline?: boolean;
+  /** inline 일 때 아직 안 열었으면 그 칸에 보여 줄 안내 (없으면 빈 칸) */
+  placeholder?: string;
 };
 
-export function PreviewSheet({ open, title, draft, onConfirm, onCancel, confirmLabel = "추가하기", pending = false }: PreviewSheetProps) {
+export function PreviewSheet(props: PreviewSheetProps) {
+  const isDesktop = useIsDesktop();
+  if (props.inline && isDesktop) return <PreviewPanel {...props} />;
+  return <PreviewDialog {...props} />;
+}
+
+/** PC: 폼 옆에 붙는 사전 검토 칸 */
+function PreviewPanel({ open, title, draft, onConfirm, onCancel, confirmLabel = "추가하기", pending = false, placeholder }: PreviewSheetProps) {
+  if (!open) {
+    return placeholder ? (
+      <aside className="sticky top-24 grid min-h-64 place-items-center rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
+        {placeholder}
+      </aside>
+    ) : null;
+  }
+  return (
+    <aside aria-labelledby="preview-sheet-title" className="sticky top-24 rounded-2xl border border-border bg-card shadow-sm">
+      <PreviewBody title={title} draft={draft} onConfirm={onConfirm} onCancel={onCancel} confirmLabel={confirmLabel} pending={pending} />
+    </aside>
+  );
+}
+
+/** 휴대폰(또는 inline 이 아닌 곳): 아래에서 올라오는 시트·가운데 팝업 */
+function PreviewDialog({ open, title, draft, onConfirm, onCancel, confirmLabel = "추가하기", pending = false }: PreviewSheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -69,7 +100,7 @@ export function PreviewSheet({ open, title, draft, onConfirm, onCancel, confirmL
   );
 }
 
-function PreviewBody({ title, draft, onConfirm, onCancel, confirmLabel, pending }: Omit<PreviewSheetProps, "open">) {
+function PreviewBody({ title, draft, onConfirm, onCancel, confirmLabel, pending }: Omit<PreviewSheetProps, "open" | "inline" | "placeholder">) {
   const data = useForecastData();
   const mode = previewModeOf(draft);
 
@@ -157,19 +188,19 @@ function ChangeTile({
   unit: string;
 }) {
   const changed = before !== after;
+  // 시간은 "4시간 30분"처럼, 주 수는 "3주"처럼
+  const show = (n: number) => (unit === "시간" ? formatDuration(n) : `${formatHours(n)}${unit}`);
   return (
     <div className={cn("rounded-xl px-3.5 py-3", level ? WEATHER_STYLE[level].badge : "bg-secondary")}>
       <dt className="text-[13px] font-semibold">{label ?? WEATHER_STYLE[level!].label}</dt>
       <dd className="mt-1 text-base font-bold text-foreground tabular-nums">
         {changed ? (
           <>
-            <span className="font-medium text-muted-foreground">{formatHours(before)}</span> → {formatHours(after)}
-            {unit}
+            <span className="font-medium text-muted-foreground">{show(before)}</span> → {show(after)}
           </>
         ) : (
           <>
-            {formatHours(after)}
-            {unit} <span className="text-xs font-normal text-muted-foreground">그대로</span>
+            {show(after)} <span className="text-xs font-normal text-muted-foreground">그대로</span>
           </>
         )}
       </dd>
@@ -206,7 +237,7 @@ function OverlayChart({
   const summary = after.weeks
     .map((w, i) => {
       const b = before.weeks[i].total_hours;
-      return b === w.total_hours ? null : `${w.week}주차 ${formatHours(b)}→${formatHours(w.total_hours)}시간 ${WEATHER_STYLE[w.level].label}`;
+      return b === w.total_hours ? null : `${w.week}주차 ${formatDuration(b)}→${formatDuration(w.total_hours)} ${WEATHER_STYLE[w.level].label}`;
     })
     .filter(Boolean)
     .join(", ");
@@ -215,7 +246,7 @@ function OverlayChart({
     <figure className="grid gap-2">
       <div
         role="img"
-        aria-label={summary ? `바뀌는 주: ${summary}. 가용 시간 ${formatHours(availableHours)}시간` : "바뀌는 주가 없어요"}
+        aria-label={summary ? `바뀌는 주: ${summary}. 가용 시간 ${formatDuration(availableHours)}` : "바뀌는 주가 없어요"}
         className="relative h-44 sm:h-52"
       >
         <div className="absolute inset-0 grid grid-cols-16 items-end gap-[3px] sm:gap-1.5">
@@ -278,7 +309,7 @@ function OverlayChart({
         ) : null}
         <span className="inline-flex items-center gap-1.5">
           <span className="w-3 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
-          가용 {formatHours(availableHours)}시간
+          가용 {formatDuration(availableHours)}
         </span>
         <span>색은 추가한 뒤의 날씨예요</span>
       </figcaption>

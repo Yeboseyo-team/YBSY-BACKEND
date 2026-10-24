@@ -16,6 +16,8 @@ export type EstimateInput =
 export interface Estimate {
   /** 계획: 0.5 단위 0.5~60 / 가용 시간: 정수 10~80 */
   hours_per_week: number;
+  /** 가용 시간 추천일 때 요일별 시간 [월~일] (10/24 QA) */
+  daily_hours?: number[];
   /** 근거 한 줄 */
   reason: string;
   /** 오늘 남은 횟수 */

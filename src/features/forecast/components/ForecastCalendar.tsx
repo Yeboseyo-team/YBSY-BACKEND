@@ -85,7 +85,7 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
         </p>
       ) : null}
 
-      <div role="grid" aria-label={`${year}년 ${mon}월 예보 달력`} className="grid gap-1">
+      <div role="grid" aria-label={`${year}년 ${mon}월 예보 달력`} className="grid gap-1.5">
         <div role="row" className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] gap-1 sm:grid-cols-[2.75rem_repeat(7,minmax(0,1fr))]">
           <span role="columnheader" className="text-center text-xs text-muted-foreground">
             주차
@@ -168,7 +168,7 @@ function DayCell({
       to={`/day/${date}`}
       aria-label={label}
       className={cn(
-        "flex min-h-11 flex-col justify-between rounded-md px-1.5 py-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:min-h-14",
+        "flex min-h-16 flex-col justify-between rounded-md px-1.5 py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:min-h-24 sm:px-2 sm:py-2",
         style.badge,
         "hover:brightness-95",
         dim && "opacity-40",
@@ -176,13 +176,13 @@ function DayCell({
         isToday && "ring-2 ring-ink",
       )}
     >
-      <span className="text-xs font-semibold tabular-nums">
+      <span className="text-xs font-semibold tabular-nums sm:text-sm">
         {dayNumber(date)}
         {isToday ? <span className="ml-1 hidden text-[10px] font-medium sm:inline">오늘</span> : null}
       </span>
       {day ? (
         <>
-          <span className="hidden text-right text-[11px] leading-tight font-medium tabular-nums sm:block">{formatDuration(day.hours)}</span>
+          <span className="hidden text-right text-xs leading-tight font-medium tabular-nums sm:block">{formatDuration(day.hours)}</span>
           {/* 휴대폰은 칸이 좁아 시간 단위로 반올림 */}
           <span className="text-right text-[10px] leading-tight font-medium tabular-nums sm:hidden">{Math.round(day.hours)}시간</span>
         </>

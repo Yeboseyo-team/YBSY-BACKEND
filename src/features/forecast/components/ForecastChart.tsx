@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 import type { WeekForecast } from "../calc";
-import { formatHours, WEATHER_STYLE } from "../weather";
+import { formatDuration, WEATHER_STYLE } from "../weather";
 
 type Props = {
   weeks: WeekForecast[];
@@ -54,7 +54,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
                 <LabelList
                   dataKey="total_hours"
                   position="top"
-                  formatter={(value: unknown) => (typeof value === "number" && value > 0 ? formatHours(value) : "")}
+                  formatter={(value: unknown) => (typeof value === "number" && value > 0 ? String(Math.round(value)) : "")}
                   className="fill-muted-foreground text-xs tabular-nums"
                 />
               ) : null}
@@ -75,7 +75,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
               type="button"
               onClick={() => onSelect(w.week)}
               aria-pressed={isSelected}
-              aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} ${formatHours(w.total_hours)}시간${isCurrent ? ", 이번 주" : ""}`}
+              aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} ${formatDuration(w.total_hours)}${isCurrent ? ", 이번 주" : ""}`}
               className={cn(
                 "mx-auto flex h-7 min-w-0 items-center justify-center rounded-full px-0.5 text-[11px] tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2 sm:text-xs",
                 isCurrent ? "bg-ink font-bold text-white" : "text-muted-foreground hover:bg-muted",

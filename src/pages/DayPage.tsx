@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, dailyForecast, isInSemester, WEEKDAY_LABELS, weekOf } from "@/features/forecast/calc";
-import { formatHours, WEATHER_STYLE } from "@/features/forecast/weather";
+import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
@@ -98,7 +98,7 @@ export default function DayPage() {
   }
 
   const style = WEATHER_STYLE[day.level];
-  const over = Math.round((day.hours - day.available) * 10) / 10;
+  const over = day.hours - day.available;
   const scale = Math.max(...day.items.map((i) => i.hours), 1);
 
   return (
@@ -109,7 +109,7 @@ export default function DayPage() {
         <section className="grid gap-3 rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              이날 예상 <span className={cn("text-2xl font-bold tabular-nums", style.text)}>{formatHours(day.hours)}</span>시간 · 쓸 수 있는 시간{" "}
+              이날 예상 <span className={cn("text-2xl font-bold tabular-nums", style.text)}>{formatDuration(day.hours)}</span> · 쓸 수 있는 시간{" "}
               {day.available}시간
             </p>
             <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", style.badge)}>
@@ -119,7 +119,7 @@ export default function DayPage() {
           </div>
           {over > 0 ? (
             <p className="rounded-lg bg-storm/5 px-3 py-2 text-[13px]">
-              쓸 수 있는 시간보다 <span className="font-semibold">{formatHours(over)}시간</span> 많아요. 같은 주에 여유 있는 날로 옮기거나,
+              쓸 수 있는 시간보다 <span className="font-semibold">{formatDuration(over)}</span> 많아요. 같은 주에 여유 있는 날로 옮기거나,
               우선순위가 낮은 일부터 줄여 보세요.
             </p>
           ) : null}
@@ -150,7 +150,7 @@ export default function DayPage() {
                           <span className="text-xs text-muted-foreground">{PRIORITY_LABEL[item.priority]}</span>
                         ) : null}
                       </span>
-                      <span className="shrink-0 font-semibold tabular-nums">{formatHours(item.hours)}시간</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{formatDuration(item.hours)}</span>
                     </div>
                     <span className="h-2 rounded-full bg-muted" aria-hidden="true">
                       <span className="block h-full rounded-full" style={{ width: `${(item.hours / scale) * 100}%`, backgroundColor: tag.color }} />

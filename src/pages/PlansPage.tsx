@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { TOTAL_WEEKS } from "@/features/forecast/calc";
-import { formatHours } from "@/features/forecast/weather";
+import { formatDuration } from "@/features/forecast/weather";
 import { toPlanMessage, useDeletePlan, usePlans } from "@/features/plans/api";
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { toCategoryMessage, useDeleteCategory, usePlanCategories } from "@/features/plans/categories";
@@ -143,14 +143,14 @@ function PlanRow({ plan, onDelete }: { plan: Plan; onDelete: () => void }) {
           <span className="absolute inset-y-0 rounded bg-[#9aa6ba]" style={{ left: `${left}%`, width: `${width}%` }} />
         </span>
         <span className="w-14 shrink-0 text-[13px] text-muted-foreground tabular-nums">
-          {plan.start_week}~{plan.end_week}주
+          {plan.start_week === plan.end_week ? plan.start_week : `${plan.start_week}~${plan.end_week}`}주
         </span>
       </div>
 
-      <p className="hidden text-sm font-semibold tabular-nums sm:block">한 주 {formatHours(plan.hours_per_week)}시간</p>
+      <p className="hidden text-sm font-semibold tabular-nums sm:block">한 주 {formatDuration(plan.hours_per_week)}</p>
 
       <div className="flex items-center gap-1">
-        <span className="mr-1 text-sm font-semibold tabular-nums sm:hidden">{formatHours(plan.hours_per_week)}시간</span>
+        <span className="mr-1 text-sm font-semibold tabular-nums sm:hidden">{formatDuration(plan.hours_per_week)}</span>
         <Button asChild variant="ghost" size="icon" aria-label={`${plan.title} 수정`}>
           <Link to={`/plans/${plan.id}/edit`}>
             <Pencil aria-hidden="true" />

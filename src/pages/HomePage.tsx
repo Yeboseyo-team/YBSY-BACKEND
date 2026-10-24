@@ -9,7 +9,7 @@ import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { ForecastChart } from "@/features/forecast/components/ForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
-import { formatHours, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { cn } from "@/lib/utils";
@@ -141,8 +141,8 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
           {focus ? (
             <>
               {" "}
-              · {focus.week}주차에 {formatHours(focus.total_hours)}시간이 예상돼요.{" "}
-              {over > 0 ? `가용 시간보다 ${formatHours(over)}시간 많아요.` : "가용 시간에 거의 꽉 차요."}
+              · {focus.week}주차에 {formatDuration(focus.total_hours)}이 예상돼요.{" "}
+              {over > 0 ? `가용 시간보다 ${formatDuration(over)} 많아요.` : "가용 시간에 거의 꽉 차요."}
             </>
           ) : null}
         </p>
@@ -197,7 +197,7 @@ function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCat
                 <span className="sr-only">({tag.label})</span>
               </span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
-                {p.start_week}~{p.end_week}주, {formatHours(p.hours_per_week)}시간
+                {p.start_week}~{p.end_week}주, {formatDuration(p.hours_per_week)}
               </span>
             </li>
             );

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatHours } from "@/features/forecast/weather";
+import { formatDuration } from "@/features/forecast/weather";
 import { AI_DESCRIPTION_MAX, toEstimateMessage, useEstimateHours, type Estimate, type EstimateInput } from "@/features/plans/ai";
 
 type Props = {
@@ -71,7 +71,7 @@ export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply,
         {estimate.isError ? <p className="text-[13px] text-destructive">{toEstimateMessage(estimate.error)}</p> : null}
         {estimate.isSuccess ? (
           <p className="text-[13px] leading-relaxed">
-            <span className="font-semibold">AI 추천: 한 주 {formatHours(estimate.data.hours_per_week)}시간</span>
+            <span className="font-semibold">AI 추천: 한 주 {formatDuration(estimate.data.hours_per_week)}</span>
             {estimate.data.reason ? ` — ${estimate.data.reason}` : ""}
             <span className="block text-xs text-muted-foreground">
               {appliedNote} (오늘 {estimate.data.remaining}번 남음)

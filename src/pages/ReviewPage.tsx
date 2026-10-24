@@ -8,7 +8,7 @@ import { FormAlert } from "@/features/auth/components/FormAlert";
 import { longDate } from "@/features/auth/semester";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, summarizeSemester, TOTAL_WEEKS } from "@/features/forecast/calc";
-import { formatHours, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { formatDuration, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import {
   buildSemesterFile,
@@ -170,12 +170,12 @@ export default function ReviewPage() {
           </header>
 
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="16주 예상 합계" value={`${formatHours(summary.total_hours)}시간`} />
-            <Stat label="한 주 평균" value={`${formatHours(summary.average_hours)}시간`} sub={`가용 ${profile.available_hours ?? "-"}시간`} />
+            <Stat label="16주 예상 합계" value={`${formatDuration(summary.total_hours)}`} />
+            <Stat label="한 주 평균" value={`${formatDuration(summary.average_hours)}`} sub={`가용 ${profile.available_hours ?? "-"}시간`} />
             <Stat
               label="가장 바쁜 주"
               value={`${summary.busiest.week}주차`}
-              sub={`${formatHours(summary.busiest.total_hours)}시간 · ${Math.round(summary.busiest.ratio * 100)}%`}
+              sub={`${formatDuration(summary.busiest.total_hours)} · ${Math.round(summary.busiest.ratio * 100)}%`}
             />
             <Stat
               label="날씨"
@@ -189,7 +189,7 @@ export default function ReviewPage() {
             </h3>
             <ol className="grid grid-cols-16 items-end gap-1" style={{ height: 120 }}>
               {forecast.weeks.map((w) => (
-                <li key={w.week} className="flex h-full flex-col justify-end" title={`${w.week}주차 ${formatHours(w.total_hours)}시간`}>
+                <li key={w.week} className="flex h-full flex-col justify-end" title={`${w.week}주차 ${formatDuration(w.total_hours)}`}>
                   <span
                     className={cn("block rounded-t-[3px] print:[print-color-adjust:exact]", WEATHER_STYLE[w.level].dot)}
                     style={{ height: `${(w.total_hours / max) * 100}%` }}
@@ -216,7 +216,7 @@ export default function ReviewPage() {
                     {item.source === "certificate" ? <span className="ml-1.5 text-xs text-muted-foreground">자격증</span> : null}
                   </span>
                   <span className="font-semibold tabular-nums">
-                    {formatHours(item.hours)}시간
+                    {formatDuration(item.hours)}
                     <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                       {Math.round((item.hours / Math.max(summary.total_hours, 1)) * 100)}%
                     </span>

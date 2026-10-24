@@ -3,7 +3,7 @@ import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
 import type { PlanCategory } from "@/types/database";
 import { trimSuggestions, type WeekForecast } from "../calc";
-import { formatHours, WEATHER_STYLE } from "../weather";
+import { formatDuration, WEATHER_STYLE } from "../weather";
 
 type Props = {
   week: WeekForecast;
@@ -29,8 +29,7 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
           {isCurrent ? <span className="ml-2 text-xs font-medium text-muted-foreground">이번 주</span> : null}
         </h2>
         <span className={cn("text-[26px] font-bold tracking-tight tabular-nums", style.text)}>
-          {formatHours(week.total_hours)}
-          <span className="ml-0.5 text-sm font-medium">시간</span>
+          {formatDuration(week.total_hours)}
         </span>
       </div>
 
@@ -62,7 +61,7 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
                   <span className="ml-1.5 text-xs text-muted-foreground">{PRIORITY_LABEL[item.priority]}</span>
                 ) : null}
               </span>
-              <span className="shrink-0 font-semibold tabular-nums">{formatHours(item.hours)}시간</span>
+              <span className="shrink-0 font-semibold tabular-nums">{formatDuration(item.hours)}</span>
             </li>
             );
           })}
@@ -84,7 +83,7 @@ function TrimAdvice({ week }: { week: WeekForecast }) {
       <ul className="mt-1 text-muted-foreground">
         {candidates.map((item, i) => (
           <li key={`${item.title}-${i}`}>
-            {item.title} · {formatHours(item.hours)}시간
+            {item.title} · {formatDuration(item.hours)}
             {item.priority === "low" ? " (우선순위 낮음)" : ""}
           </li>
         ))}

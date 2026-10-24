@@ -10,7 +10,7 @@ import { useProfile } from "@/features/auth/api";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { FormField } from "@/features/auth/components/FormField";
 import { addDays, TOTAL_WEEKS, weekDates, weeksFromDates } from "@/features/forecast/calc";
-import { formatHours } from "@/features/forecast/weather";
+import { formatDuration } from "@/features/forecast/weather";
 import { cn } from "@/lib/utils";
 import type { PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
 import type { PlanInput } from "../api";
@@ -357,7 +357,7 @@ function PlanFormInner({
                 >
                   <span className={cn("text-xs", active ? "font-semibold" : "text-muted-foreground")}>{LOAD_LEVEL_LABEL[l]}</span>
                   <span className={cn("text-base tabular-nums", active ? "font-bold" : "font-semibold")}>
-                    {hours === null ? "-" : `${formatHours(hours)}시간`}
+                    {hours === null ? "-" : `${formatDuration(hours)}`}
                   </span>
                 </button>
               );

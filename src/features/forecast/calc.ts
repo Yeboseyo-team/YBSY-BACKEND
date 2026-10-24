@@ -162,6 +162,8 @@ export function levelOf(ratio: number): Weather {
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const toPriority = (p: string | undefined): PlanPriority => (p === "high" || p === "low" ? p : "normal");
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
+/** 하루 단위는 분까지 맞게 보이도록 1분(1/60시간) 단위로 */
+const roundMinute = (n: number) => Math.round(n * 60) / 60;
 
 /** 학기 설정(가용 시간·학기 시작일)을 마쳤는지. 마치지 않았으면 예보를 낼 수 없습니다 (FR-01-11). */
 export function isSemesterReady(
@@ -237,12 +239,12 @@ export interface DayForecast {
   weekday: number;
   /** 그 요일의 가용 시간 */
   available: number;
-  /** 그날 예상 시간 (소수점 첫째 자리) */
+  /** 그날 예상 시간 (1분 단위로 맞춤) */
   hours: number;
   /** 부담률. 가용 시간이 0 인데 할 일이 있으면 null (폭풍으로 표시) */
   ratio: number | null;
   level: Weather;
-  /** 그날 할 일별 시간 (많은 순, 소수점 첫째 자리). 요일별 상세 화면에서 써요 */
+  /** 그날 할 일별 시간 (많은 순, 1분 단위). 요일별 상세 화면에서 써요 */
   items: WeekItem[];
 }
 
@@ -312,11 +314,11 @@ export function dailyForecast({ profile, plans, userCertificates, certificates }
       date,
       weekday: weekdayIndex(date),
       available: available[i],
-      hours: round1(hours[i]),
+      hours: roundMinute(hours[i]),
       ratio: ratio === null ? null : round3(ratio),
       level,
       items: items[i]
-        .map((item) => ({ ...item, base_hours: round1(item.base_hours), hours: round1(item.hours) }))
+        .map((item) => ({ ...item, base_hours: roundMinute(item.base_hours), hours: roundMinute(item.hours) }))
         .sort((a, b) => b.hours - a.hours),
     };
   });

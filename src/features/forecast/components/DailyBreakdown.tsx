@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WEEKDAY_LABELS, type DayForecast } from "../calc";
-import { formatHours, WEATHER_STYLE } from "../weather";
+import { formatDuration, WEATHER_STYLE } from "../weather";
 
 type Props = {
   week: number;
@@ -49,7 +49,7 @@ export function DailyBreakdown({ week, days }: Props) {
             <li key={day.date} className="border-t border-border/60">
               <Link
                 to={`/day/${day.date}`}
-                aria-label={`${shortMonthDay(day.date)} ${label}요일: 예상 ${formatHours(day.hours)}시간, 가용 ${day.available}시간, ${style.label}. 할 일 보기`}
+                aria-label={`${shortMonthDay(day.date)} ${label}요일: 예상 ${formatDuration(day.hours)}, 가용 ${day.available}시간, ${style.label}. 할 일 보기`}
                 className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-md px-1 py-2.5 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[5rem_minmax(0,1fr)_6rem_3.5rem_1rem]"
               >
                 <span className="whitespace-nowrap">
@@ -66,8 +66,8 @@ export function DailyBreakdown({ week, days }: Props) {
                 </span>
 
                 <span className="text-right text-[13px] whitespace-nowrap tabular-nums">
-                  <span className="font-semibold">{formatHours(day.hours)}h</span>{" "}
-                  <span className="text-muted-foreground">/ {day.available}h</span>
+                  <span className="font-semibold">{formatDuration(day.hours)}</span>{" "}
+                  <span className="text-muted-foreground">/ {day.available}시간</span>
                 </span>
 
                 <span className="hidden text-right sm:block">

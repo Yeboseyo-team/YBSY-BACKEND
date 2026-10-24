@@ -51,7 +51,8 @@ export function CertificatePicker({ certificates, mine, semesterStart, today, cu
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
-      <section aria-labelledby="cert-search-title" className="grid gap-3 rounded-xl border border-border bg-card p-4">
+      {/* PC: 오른쪽 회차 상세가 길어도 검색 칸은 화면에 고정 */}
+      <section aria-labelledby="cert-search-title" className="grid gap-3 rounded-xl border border-border bg-card p-4 lg:sticky lg:top-24">
         <h2 id="cert-search-title" className="sr-only">
           자격증 검색
         </h2>

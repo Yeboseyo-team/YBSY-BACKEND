@@ -36,22 +36,32 @@ export default function SettingsPage() {
       ) : profile.isError || !profile.data ? (
         <LoadError what="설정" onRetry={() => profile.refetch()} retrying={profile.isFetching} />
       ) : (
-        <div className="grid max-w-2xl gap-6">
-          <AccountCard profile={profile.data} email={user?.email} />
-          <SemesterSection profile={profile.data} />
-          <NameSection profile={profile.data} />
-          <Section title="안내">
-            <Row label="자격증 일정 출처">
-              <span className="text-sm text-muted-foreground">각 회차의 시행 기관 공고 (자격증 화면에서 링크 확인)</span>
-            </Row>
-            <Row label="개인정보처리방침">
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/privacy">
-                  보기 <ExternalLink aria-hidden="true" />
-                </Link>
-              </Button>
-            </Row>
-          </Section>
+        // PC: 왼쪽 칸에 계정·이름·안내, 오른쪽 칸에 학기 설정 (휴대폰은 지금처럼 한 줄로)
+        // 마지막 줄(1fr)이 남는 높이를 받아서, 학기 설정이 길어도 왼쪽 카드 사이가 벌어지지 않아요
+        <div className="grid max-w-2xl gap-6 lg:max-w-none lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr] lg:items-start">
+          <div className="lg:col-start-1 lg:row-start-1">
+            <AccountCard profile={profile.data} email={user?.email} />
+          </div>
+          <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1">
+            <SemesterSection profile={profile.data} />
+          </div>
+          <div className="lg:col-start-1 lg:row-start-2">
+            <NameSection profile={profile.data} />
+          </div>
+          <div className="lg:col-start-1 lg:row-start-3">
+            <Section title="안내">
+              <Row label="자격증 일정 출처">
+                <span className="text-sm text-muted-foreground">각 회차의 시행 기관 공고 (자격증 화면에서 링크 확인)</span>
+              </Row>
+              <Row label="개인정보처리방침">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/privacy">
+                    보기 <ExternalLink aria-hidden="true" />
+                  </Link>
+                </Button>
+              </Row>
+            </Section>
+          </div>
         </div>
       )}
     </PageContainer>

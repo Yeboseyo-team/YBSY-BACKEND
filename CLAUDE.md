@@ -50,7 +50,7 @@
 - 타입은 src/types/database.ts 의 Profile·Plan·Certificate·UserCertificate 를 씀. 같은 타입을 따로 만들지 않기
 - 더미데이터는 scripts/generate-dummy.mjs 만 고치고 node scripts/generate-dummy.mjs 로 재생성
 - 부담 계산은 src/features/forecast/calc.ts 한 곳에서만. 단계 이름은 clear(맑음)/cloudy(흐림)/storm(폭풍)
-- 접수 마감 회차 선택 불가, 계획 30개 상한은 DB가 아닌 화면에서 막기
+- 접수 마감 회차 선택 불가는 화면에서 막기(DB 에서 막으면 마감 지난 뒤 시드가 실패). 계획 30개 상한은 화면에서 먼저 막고 DB 트리거(plans_limit)도 막음 (10/22)
 
 ## 로그인
 - 팀 결정(10/13): 로그인은 Google만. 이메일 가입·비밀번호 찾기 화면은 만들지 않음 (docs/AUTH.md)

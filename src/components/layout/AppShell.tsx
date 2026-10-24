@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router";
 import { CalendarCheck, CloudSun, ListTodo, NotebookPen, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/layout/Logo";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; end: boolean; icon: LucideIcon };
@@ -32,7 +33,7 @@ export function AppShell() {
       <header className="sticky top-0 z-30 print:hidden border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
         <div className="mx-auto flex h-14 max-w-[75rem] items-center gap-x-8 px-4 sm:px-8 lg:h-16">
           <Link to="/" className="rounded-md text-lg font-bold tracking-tight outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40">
-            학기예보
+            <Logo />
           </Link>
 
           <nav aria-label="주요 메뉴" className="hidden gap-1 lg:flex">

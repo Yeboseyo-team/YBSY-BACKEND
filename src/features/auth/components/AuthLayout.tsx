@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { Logo } from "@/components/layout/Logo";
 import { ForecastStrip } from "./ForecastStrip";
 
 type Props = {
@@ -14,7 +15,7 @@ export function AuthLayout({ title, description, children, footer }: Props) {
     <div className="min-h-dvh lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <aside className="bg-ink px-6 pt-8 pb-7 text-white sm:px-10 lg:flex lg:flex-col lg:justify-between lg:px-14 lg:py-14">
         <Link to="/" className="inline-block text-lg font-extrabold tracking-tight">
-          학기예보
+          <Logo size={32} />
         </Link>
 
         <div className="mt-6 max-w-md lg:mt-0">

@@ -34,6 +34,7 @@
   - `src/features/certificates/api.ts`(회차·내 자격증 고르기·수정·해제), `src/features/certificates/search.ts`(검색·회차 상태·D-day)
   - `src/features/auth/profile-api.ts`(학기 설정·이름·동의 저장), `src/features/auth/onboarding.ts`(온보딩 완료 판정)
   - `src/features/forecast/api.ts`(예보 화면 데이터 한 번에: useForecastData)
+  - `src/features/plans/ai.ts`(F-08 AI 시간 추천: useEstimateHours → Edge Function estimate-hours, 10/24)
 
 ## 브랜치·병합
 - main이 팀 기준점. main에 직접 push·머지 금지

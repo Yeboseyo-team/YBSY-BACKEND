@@ -5,6 +5,10 @@ import { isOnboardingDone } from "@/features/auth/onboarding";
 import { FullScreenSpinner } from "@/components/FullScreenSpinner";
 import { LoadError } from "@/components/LoadError";
 
+// 이번 방문에서 로그인 상태였던 적이 있는지. 있으면 로그아웃으로 나간 것이라 원래 경로를 기억하지 않습니다.
+// (기억하면 다른 계정으로 로그인했을 때 직전 사람이 보던 설정 화면으로 들어가 버림)
+let wasSignedIn = false;
+
 /** 로그인한 사용자만 통과. 아니면 /login 으로 보내고 원래 경로를 기억합니다 (FR-01-7). */
 export function ProtectedRoute() {
   const { status } = useAuth();
@@ -12,8 +16,13 @@ export function ProtectedRoute() {
 
   if (status === "loading") return <FullScreenSpinner />;
   if (status === "unauthenticated") {
+    if (wasSignedIn) {
+      wasSignedIn = false;
+      return <Navigate to="/login" replace />;
+    }
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
+  wasSignedIn = true;
   return <Outlet />;
 }
 

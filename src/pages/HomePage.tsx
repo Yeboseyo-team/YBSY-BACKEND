@@ -4,7 +4,8 @@ import { CloudLightning, CloudSun, Plus, RotateCw, Sun } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
-import type { Forecast, WeekForecast } from "@/features/forecast/calc";
+import { dailyForecast, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { ForecastChart } from "@/features/forecast/components/ForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
@@ -73,6 +74,11 @@ export default function HomePage() {
               ? "계획을 하나 넣을 때마다 이 자리에 막대가 쌓여요."
               : "막대나 주차를 누르면 그 주의 내역이 나와요. 진한 원은 이번 주예요."}
           </p>
+
+          {/* 요일별 가용 시간·부담 (10/24 QA) */}
+          <div className="border-t border-border/60 pt-4">
+            <DailyBreakdown week={selectedWeek} days={data.input ? dailyForecast(data.input, selectedWeek) : null} />
+          </div>
         </section>
 
         <aside className="grid min-w-0 flex-[1_1_320px] gap-4">

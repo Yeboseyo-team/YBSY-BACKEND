@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import type { WeekForecast } from "../calc";
+import { PRIORITY_LABEL } from "@/features/plans/defaults";
+import { trimSuggestions, type WeekForecast } from "../calc";
 import { formatHours, WEATHER_STYLE } from "../weather";
 
 type Props = {
@@ -47,12 +48,36 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
               <span className="min-w-0">
                 {item.title}
                 {item.weighted ? <span className="ml-1.5 text-xs text-[#9a5b00]">시험 ×1.5</span> : null}
+                {item.priority && item.priority !== "normal" ? (
+                  <span className="ml-1.5 text-xs text-muted-foreground">{PRIORITY_LABEL[item.priority]}</span>
+                ) : null}
               </span>
               <span className="shrink-0 font-semibold tabular-nums">{formatHours(item.hours)}시간</span>
             </li>
           ))}
         </ul>
       )}
+
+      {week.level === "storm" ? <TrimAdvice week={week} /> : null}
     </section>
+  );
+}
+
+/** 폭풍 주: 우선순위 낮은 계획부터 줄여 보라고 안내 (10/24 QA) */
+function TrimAdvice({ week }: { week: WeekForecast }) {
+  const candidates = trimSuggestions(week).slice(0, 3);
+  if (candidates.length === 0) return null;
+  return (
+    <div className="rounded-lg bg-storm/5 p-3 text-[13px] leading-relaxed">
+      <p className="font-semibold">이번 주는 이 계획부터 줄여 보세요</p>
+      <ul className="mt-1 text-muted-foreground">
+        {candidates.map((item, i) => (
+          <li key={`${item.title}-${i}`}>
+            {item.title} · {formatHours(item.hours)}시간
+            {item.priority === "low" ? " (우선순위 낮음)" : ""}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

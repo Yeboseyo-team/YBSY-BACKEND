@@ -18,6 +18,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           apply_end: string
@@ -184,6 +202,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_ai_quota: { Args: never; Returns: number }
       hook_google_only_signup: { Args: { event: Json }; Returns: Json }
     }
     Enums: {

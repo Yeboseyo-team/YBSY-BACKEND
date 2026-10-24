@@ -105,8 +105,9 @@ export default function DayPage() {
     <PageContainer>
       {header(title, `${week}주차${week === data.profile.midterm_week ? " · 중간고사 주간" : week === data.profile.final_week ? " · 기말고사 주간" : ""}`)}
 
-      <div className="grid max-w-2xl gap-4">
-        <section className="grid gap-3 rounded-2xl border border-border bg-card p-5">
+      {/* PC: 왼쪽에 이날 요약(스크롤해도 고정), 오른쪽에 할 일 목록. 휴대폰은 위아래로 */}
+      <div className="grid max-w-2xl gap-4 lg:max-w-none lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <section className="grid gap-3 rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-24">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               이날 예상 <span className={cn("text-2xl font-bold tabular-nums", style.text)}>{formatDuration(day.hours)}</span> · 쓸 수 있는 시간{" "}

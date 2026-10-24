@@ -183,48 +183,51 @@ export default function ReviewPage() {
             />
           </dl>
 
-          <section aria-labelledby="weeks-title" className="grid gap-2">
-            <h3 id="weeks-title" className="text-base font-semibold">
-              주차별 예상 시간
-            </h3>
-            <ol className="grid grid-cols-16 items-end gap-1" style={{ height: 120 }}>
-              {forecast.weeks.map((w) => (
-                <li key={w.week} className="flex h-full flex-col justify-end" title={`${w.week}주차 ${formatDuration(w.total_hours)}`}>
-                  <span
-                    className={cn("block rounded-t-[3px] print:[print-color-adjust:exact]", WEATHER_STYLE[w.level].dot)}
-                    style={{ height: `${(w.total_hours / max) * 100}%` }}
-                  />
-                </li>
-              ))}
-            </ol>
-            <ol className="grid grid-cols-16 gap-1 text-center text-[10px] text-muted-foreground" aria-hidden="true">
-              {forecast.weeks.map((w) => (
-                <li key={w.week}>{w.week}</li>
-              ))}
-            </ol>
-          </section>
+          {/* PC: 주차별 그래프와 시간 쓴 곳을 나란히. 휴대폰·인쇄는 위아래로 */}
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-8">
+            <section aria-labelledby="weeks-title" className="grid gap-2">
+              <h3 id="weeks-title" className="text-base font-semibold">
+                주차별 예상 시간
+              </h3>
+              <ol className="grid h-[120px] grid-cols-16 items-end gap-1 lg:h-[220px]">
+                {forecast.weeks.map((w) => (
+                  <li key={w.week} className="flex h-full flex-col justify-end" title={`${w.week}주차 ${formatDuration(w.total_hours)}`}>
+                    <span
+                      className={cn("block rounded-t-[3px] print:[print-color-adjust:exact]", WEATHER_STYLE[w.level].dot)}
+                      style={{ height: `${(w.total_hours / max) * 100}%` }}
+                    />
+                  </li>
+                ))}
+              </ol>
+              <ol className="grid grid-cols-16 gap-1 text-center text-[10px] text-muted-foreground" aria-hidden="true">
+                {forecast.weeks.map((w) => (
+                  <li key={w.week}>{w.week}</li>
+                ))}
+              </ol>
+            </section>
 
-          <section aria-labelledby="items-title" className="grid gap-2">
-            <h3 id="items-title" className="text-base font-semibold">
-              어디에 시간을 썼나요 (학기 전체)
-            </h3>
-            <ul className="text-sm">
-              {summary.by_item.slice(0, 10).map((item) => (
-                <li key={`${item.source}-${item.title}`} className="flex justify-between gap-3 border-t border-border/60 py-2">
-                  <span>
-                    {item.title}
-                    {item.source === "certificate" ? <span className="ml-1.5 text-xs text-muted-foreground">자격증</span> : null}
-                  </span>
-                  <span className="font-semibold tabular-nums">
-                    {formatDuration(item.hours)}
-                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                      {Math.round((item.hours / Math.max(summary.total_hours, 1)) * 100)}%
+            <section aria-labelledby="items-title" className="grid gap-2">
+              <h3 id="items-title" className="text-base font-semibold">
+                어디에 시간을 썼나요 (학기 전체)
+              </h3>
+              <ul className="text-sm">
+                {summary.by_item.slice(0, 10).map((item) => (
+                  <li key={`${item.source}-${item.title}`} className="flex justify-between gap-3 border-t border-border/60 py-2">
+                    <span>
+                      {item.title}
+                      {item.source === "certificate" ? <span className="ml-1.5 text-xs text-muted-foreground">자격증</span> : null}
                     </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
+                    <span className="font-semibold tabular-nums">
+                      {formatDuration(item.hours)}
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        {Math.round((item.hours / Math.max(summary.total_hours, 1)) * 100)}%
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
 
           <p className="text-[13px] text-muted-foreground">
             다음 학기에는 "다음 학기용 파일 내려받기"로 저장한 파일을 이 화면에서 불러오면 같은 계획으로 바로 시작할 수 있어요.

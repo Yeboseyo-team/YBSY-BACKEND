@@ -304,6 +304,41 @@ export function trimSuggestions(week: WeekForecast): WeekItem[] {
     .sort((a, b) => order[a.priority ?? "normal"] - order[b.priority ?? "normal"] || b.hours - a.hours);
 }
 
+// ── 학기 회고 요약 (10/24 QA) ─────────────────────────
+export interface SemesterSummary {
+  /** 16주 예상 시간 합계 */
+  total_hours: number;
+  /** 한 주 평균 */
+  average_hours: number;
+  /** 가장 바쁜 주 (같으면 앞 주) */
+  busiest: WeekForecast;
+  summary: Record<Weather, number>;
+  /** 계획·자격증별 학기 전체 시간 (많은 순) */
+  by_item: { source: WeekItem["source"]; title: string; hours: number }[];
+}
+
+/** 학기 전체를 한눈에: 합계·평균·가장 바쁜 주·항목별 시간. 회고 화면과 내보내기 파일에 씁니다. */
+export function summarizeSemester(forecast: Forecast): SemesterSummary {
+  const total = forecast.weeks.reduce((sum, w) => sum + w.total_hours, 0);
+  const busiest = forecast.weeks.reduce((top, w) => (w.total_hours > top.total_hours ? w : top), forecast.weeks[0]);
+  const byItem = new Map<string, { source: WeekItem["source"]; title: string; hours: number }>();
+  for (const week of forecast.weeks) {
+    for (const item of week.items) {
+      const key = `${item.source}:${item.title}`;
+      const prev = byItem.get(key) ?? { source: item.source, title: item.title, hours: 0 };
+      prev.hours += item.hours;
+      byItem.set(key, prev);
+    }
+  }
+  return {
+    total_hours: round1(total),
+    average_hours: round1(total / TOTAL_WEEKS),
+    busiest,
+    summary: forecast.summary,
+    by_item: [...byItem.values()].map((x) => ({ ...x, hours: round1(x.hours) })).sort((a, b) => b.hours - a.hours),
+  };
+}
+
 // ── 사전 검토 (F-06) ─────────────────────────────────
 /** 기존 예보와 계획을 더한 예보를 비교해 폭풍 주차 변화를 요약합니다 (FR-06-3). */
 export function comparePreview(before: Forecast, after: Forecast): PreviewDiff {

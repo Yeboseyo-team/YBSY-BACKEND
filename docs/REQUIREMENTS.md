@@ -17,7 +17,7 @@
 | 2026-10-22 | 계획 30개 상한을 **화면 + DB 트리거** 둘 다에서 막음 (원래: 화면에서만) | FR-02-5, docs/ARCHITECTURE.md |
 | 2026-10-22 | 사전 검토 계산은 calc.ts 의 `previewDraft` 하나로 (계획 등록·수정, 자격증 고르기·회차 바꾸기) | F-06, 4장 단일 모듈 |
 | 2026-10-22 | main 병합은 **팀장이 PR(Squash)로** 진행. 각 브랜치는 PR 머지 뒤 `/start` 로 main 을 받아옴 | NFR-MAINT-2 (위 10-13 결정 갱신) |
-| 2026-10-24 | F-08 AI 소요 시간 추정 구현: Edge Function `estimate-hours` → Claude Haiku 5.5. 사용자당 **하루 20회** 제한(DB 함수 `consume_ai_quota`), 설명 5~300자. 추천값은 "직접 입력"에 채우기만 함 | FR-08-1, supabase/functions/estimate-hours |
+| 2026-10-24 | F-08 AI 소요 시간 추정 구현: Edge Function `estimate-hours` → Claude Haiku 5.5. 사용자당 **하루 20회** 제한(DB 함수 `consume_ai_quota`), 설명 5~300자. 추천값은 "직접 입력"에 채우기만 함. 온보딩·설정의 **가용 시간**도 AI 추천(명세 확장) | FR-08-1, supabase/functions/estimate-hours |
 
 ---
 

@@ -18,7 +18,7 @@ erDiagram
     uuid user_id PK "auth.users 참조"
     text display_name "이름, 40자 이하"
     smallint available_hours "주당 가용 시간 1~168, null이면 온보딩 전"
-    date semester_start "1주차 월요일, null이면 온보딩 전"
+    date semester_start "1주차 첫날(개강일), null이면 온보딩 전"
     smallint midterm_week "중간고사 주차, 기본 8"
     smallint final_week "기말고사 주차, 기본 15"
     timestamptz privacy_agreed_at "개인정보 동의 시각, null이면 온보딩 전"

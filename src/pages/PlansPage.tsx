@@ -29,8 +29,9 @@ export default function PlansPage() {
   const list = plans.data ?? [];
   const canAdd = canAddPlan(list.length);
 
+  // PC 는 상단 메뉴에 [계획 추가]가 바로 옆에 있어서 이 버튼은 휴대폰에서만 (30개가 차면 안내 버튼은 PC 에도 보여요)
   const addButton = canAdd ? (
-    <Button asChild size="lg" className="bg-ink hover:bg-ink/90">
+    <Button asChild size="lg" className="bg-ink hover:bg-ink/90 lg:hidden">
       <Link to="/plans/new">
         <Plus aria-hidden="true" />
         계획 추가

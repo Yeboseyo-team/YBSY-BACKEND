@@ -175,6 +175,8 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
             onAdded(`${withJosa(label, "을", "를")} 추가했어요. 예보에 바로 반영돼요.`);
           }
         },
+        // 저장 실패: 시트를 닫고 화면의 오류 문구로 알려 줌
+        onError: () => setPreviewOpen(false),
       },
     );
   };
@@ -274,23 +276,41 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
 
           {error ? <FormAlert>{toCertificateMessage(error)}</FormAlert> : null}
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="lg" variant="outline" disabled={invalid || pending} onClick={() => setPreviewOpen(true)}>
-              사전 검토
+          <div className="grid gap-2">
+            <Button
+              type="button"
+              size="lg"
+              className="sm:justify-self-start"
+              disabled={invalid || pending}
+              onClick={() => {
+                add.reset();
+                remove.reset();
+                setPreviewOpen(true);
+              }}
+            >
+              {current ? "이 회차로 바꾸기" : "추가하기"}
             </Button>
-            <Button type="button" size="lg" className="flex-1 sm:flex-none" disabled={invalid || pending} onClick={save}>
-              {pending ? "저장하는 중…" : current ? "이 회차로 바꾸기" : "추가하기"}
-            </Button>
+            <p className="text-[13px] text-muted-foreground">누르면 먼저 예보가 어떻게 바뀌는지 보여 드려요. 확인한 뒤에 저장돼요.</p>
           </div>
 
           <PreviewSheet
             open={previewOpen}
             title={`${group.name} ${round.certificate.round}`}
+            draft={
+              invalid
+                ? null
+                : {
+                    kind: "certificate",
+                    certificate: round.certificate,
+                    prep_weeks: prepWeeks,
+                    study_hours: studyHours,
+                    replaceCertificateId: current?.certificate.id,
+                  }
+            }
+            confirmLabel={current ? "이 회차로 바꾸기" : "추가하기"}
+            pending={pending}
             onCancel={() => setPreviewOpen(false)}
-            onConfirm={() => {
-              setPreviewOpen(false);
-              save();
-            }}
+            onConfirm={save}
           />
         </>
       ) : (

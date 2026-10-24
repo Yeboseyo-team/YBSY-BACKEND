@@ -24,7 +24,7 @@
   - 30개가 차 있으면 추가가 `PlanLimitError` 로 막혀요. 수업이 아니면 학점은 자동으로 비워져요.
 - `src/features/plans/defaults.ts`: `defaultHoursPerWeek(유형, 단계, 학점)`(F-03), `groupPlansByType(plans)`(FR-02-2), `canAddPlan(개수)`·`MAX_PLANS`, `PLAN_TYPE_LABEL`·`LOAD_LEVEL_LABEL`(화면 글자)
 
-## [ ] 2. 계획 목록 화면 (S-09, ~10/15)
+## [x] 2. 계획 목록 화면 (S-09, ~10/15)
 
 ```
 docs/tasks/frontend-jw.md 의 2번 작업을 해줘.
@@ -37,7 +37,7 @@ src/pages/PlansPage.tsx 의 🚧 상자를 실제 계획 목록으로 바꿔줘.
 - 이 파일들은 백엔드가 만든 거라 고치지 말고, 바꿔야 하면 나에게 말해줘.
 ```
 
-## [ ] 3. 계획 등록 화면 + 기본 시간 (S-09, F-02·F-03, ~10/15)
+## [x] 3. 계획 등록 화면 + 기본 시간 (S-09, F-02·F-03, ~10/15)
 
 ```
 docs/tasks/frontend-jw.md 의 3번 작업을 해줘.
@@ -50,7 +50,7 @@ src/pages/PlanNewPage.tsx 에 계획 등록 폼을 만들어줘. 폼 부분은 s
 - 사전 검토 버튼 자리는 만들어 두기만 (6번에서 연결)
 ```
 
-## [ ] 4. 계획 수정 화면 (S-09, ~10/15)
+## [x] 4. 계획 수정 화면 (S-09, ~10/15)
 
 ```
 docs/tasks/frontend-jw.md 의 4번 작업을 해줘.
@@ -73,7 +73,7 @@ src/pages/HomePage.tsx 를 부담 예보 화면으로 만들어줘.
 - 데모 계정 yebo@hakgi.test 로 확인했을 때 명세서 4.5 검증 예시와 숫자가 맞는지 확인해줘.
 ```
 
-## [ ] 6. 사전 검토 시트 (S-11, F-06, ~10/17) ★ 우리 서비스만의 차별점
+## [x] 6. 사전 검토 시트 (S-11, F-06, ~10/17) ★ 우리 서비스만의 차별점
 
 ```
 docs/tasks/frontend-jw.md 의 6번 작업을 해줘.
@@ -87,7 +87,7 @@ src/features/preview/PreviewSheet.tsx 를 완성해줘.
 - 참고: origin/feature/frontend-session 의 src/features/forecast/components/ForecastPreview.tsx, preview-text.ts
 ```
 
-## [ ] 7. 마무리 (~10/18)
+## [x] 7. 마무리 (~10/18)
 
 ```
 docs/tasks/frontend-jw.md 의 7번 작업을 해줘.

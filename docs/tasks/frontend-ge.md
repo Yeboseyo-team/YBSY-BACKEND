@@ -13,7 +13,7 @@
 
 ---
 
-## [ ] 0. 실행 확인 (10/14)
+## [x] 0. 실행 확인 (10/14)
 
 `pnpm dev` → 로그인 화면 이메일 칸에 `yebo@hakgi.test` / 비밀번호 `hakgi1234` (프론트 A 1번 이후엔 데모 로그인 버튼) → 메뉴 "자격증", 오른쪽 위 설정 아이콘에 🚧 상자가 보이면 끝.
 
@@ -64,7 +64,9 @@ useCertificates()(전체 회차), useMyCertificates()(내가 고른 회차), use
 - 참고: origin/feature/frontend-session 의 src/features/certificates/, src/pages/CertificateSearchPage.tsx
 ```
 
-## [ ] 5. 자격증에 사전 검토 연결 (F-06, ~10/17, 프론트 B 6번이 끝난 뒤)
+## [x] 5. 자격증에 사전 검토 연결 (F-06, ~10/17, 프론트 B 6번이 끝난 뒤)
+
+> 10/22 완료 (ge 브랜치에서 B 6번 시트와 함께). 자격증 [추가하기]·[이 회차로 바꾸기]를 누르면 시트가 먼저 열리고, 시트의 버튼을 눌러야 저장돼요.
 
 ```
 docs/tasks/frontend-ge.md 의 5번 작업을 해줘.

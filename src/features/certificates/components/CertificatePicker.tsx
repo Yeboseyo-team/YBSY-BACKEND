@@ -294,6 +294,7 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
           </div>
 
           <PreviewSheet
+            inline
             open={previewOpen}
             title={`${group.name} ${round.certificate.round}`}
             draft={

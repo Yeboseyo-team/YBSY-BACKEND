@@ -84,6 +84,8 @@ export default function PlanEditPage() {
     <PageContainer>
       {header}
 
+      {/* PC 에서는 사전 검토가 폼 옆 칸에 펼쳐져요 (10/24 QA) */}
+      <div className="grid items-start gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
       <div className="max-w-[520px] rounded-2xl border border-border bg-card p-5 sm:p-6">
         <PlanForm
           defaultValues={{
@@ -107,6 +109,7 @@ export default function PlanEditPage() {
           }
           onSubmit={save}
           onPreview={setPreviewing}
+          onValuesChange={(values) => setPreviewing((open) => (open && values ? values : open))}
           extraActions={
             <Button
               type="button"
@@ -125,6 +128,8 @@ export default function PlanEditPage() {
       </div>
 
       <PreviewSheet
+        inline
+        placeholder="[사전 검토]를 누르면 바꾼 내용으로 예보가 어떻게 달라지는지 여기에 보여 드려요."
         open={previewing !== null}
         title={previewing?.title ?? current.title}
         draft={draft}
@@ -133,6 +138,7 @@ export default function PlanEditPage() {
         onCancel={() => setPreviewing(null)}
         onConfirm={() => previewing && save(previewing)}
       />
+      </div>
 
       <DeletePlanDialog
         plan={deleting}

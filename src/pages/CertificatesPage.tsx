@@ -40,8 +40,8 @@ export default function CertificatesPage() {
     return (
       <PageContainer>
         <PageHeader
-          title="자격증 직접 추가"
-          description="목록에 없는 자격증이나 어학 시험을 넣으면 준비 기간이 예보에 들어가요."
+          title="자격증 추가"
+          description="목록에 없는 자격증이나 어학 시험도 넣을 수 있어요. 준비 기간이 예보에 들어가요."
           back={{ to: "/certificates?view=add", label: "자격증 추가" }}
         />
         <OwnCertificateForm
@@ -86,7 +86,7 @@ export default function CertificatesPage() {
         <Button asChild variant="outline">
           <Link to="/certificates?view=custom">
             <Plus aria-hidden="true" />
-            목록에 없어요 · 직접 추가
+            목록에 없는 자격증 추가
           </Link>
         </Button>
       }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { FormField } from "@/features/auth/components/FormField";
 import { addDays } from "@/features/forecast/calc";
+import { PreviewSheet } from "@/features/preview/PreviewSheet";
+import type { PreviewDraft } from "@/features/preview/preview";
 import { toCertificateMessage, useCreateOwnCertificate } from "../api";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "날짜를 달력에서 고르세요.");
@@ -35,9 +38,13 @@ type Props = {
   onCancel: () => void;
 };
 
-/** 목록에 없는 자격증을 직접 추가 (10/24 QA). 저장하면 바로 내 자격증으로 골라져 예보에 들어가요. */
+/** 사전 검토용 임시 회차 id (저장 전이라 아직 DB id 가 없음) */
+const DRAFT_ID = "own-certificate-draft";
+
+/** 목록에 없는 자격증을 추가 (10/24 QA). [사전 검토]로 예보 변화를 먼저 보고, 저장하면 바로 내 자격증으로 골라져요. */
 export function OwnCertificateForm({ onCreated, onCancel }: Props) {
   const create = useCreateOwnCertificate();
+  const [previewing, setPreviewing] = useState<Values | null>(null);
   const {
     register,
     handleSubmit,
@@ -47,7 +54,7 @@ export function OwnCertificateForm({ onCreated, onCancel }: Props) {
     defaultValues: { name: "", round: "", exam_date: "", apply_start: "", apply_end: "", prep_weeks: 4, study_hours: 6, source_url: "" },
   });
 
-  const submit = handleSubmit((v) => {
+  const save = (v: Values) => {
     // 접수 일정을 모르면 시험 전날로 채워요 (DB 는 접수 마감 < 시험일만 확인)
     const dayBefore = addDays(v.exam_date, -1);
     const applyEnd = v.apply_end || dayBefore;
@@ -62,11 +69,26 @@ export function OwnCertificateForm({ onCreated, onCancel }: Props) {
         study_hours: v.study_hours,
         source_url: v.source_url || null,
       },
-      { onSuccess: (c) => onCreated(`${c.name}을(를) 추가했어요. 준비 기간 ${v.prep_weeks}주가 예보에 들어갔어요.`) },
+      {
+        onSuccess: (c) => onCreated(`${c.name}을(를) 추가했어요. 준비 기간 ${v.prep_weeks}주가 예보에 들어갔어요.`),
+        onError: () => setPreviewing(null),
+      },
     );
-  });
+  };
+  const submit = handleSubmit(save);
+  const preview = handleSubmit((v) => setPreviewing(v));
+  const draft: PreviewDraft | null = previewing
+    ? {
+        kind: "certificate",
+        certificate: { id: DRAFT_ID, name: previewing.name.trim(), exam_date: previewing.exam_date },
+        prep_weeks: previewing.prep_weeks,
+        study_hours: previewing.study_hours,
+      }
+    : null;
 
   return (
+    // PC 에서는 사전 검토가 폼 옆 칸에 펼쳐져요. 휴대폰은 아래에서 올라오는 시트
+    <div className="grid items-start gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
     <form noValidate onSubmit={submit} className="grid max-w-[520px] gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
       {create.error ? <FormAlert>{toCertificateMessage(create.error)}</FormAlert> : null}
 
@@ -108,6 +130,9 @@ export function OwnCertificateForm({ onCreated, onCancel }: Props) {
         <Input id="cert-url" type="url" className="h-11" placeholder="https://" {...register("source_url")} />
       </FormField>
 
+      <Button type="button" variant="outline" size="lg" onClick={() => void preview()}>
+        사전 검토
+      </Button>
       <div className="grid grid-cols-2 gap-2">
         <Button type="button" variant="outline" size="lg" onClick={onCancel}>
           취소
@@ -118,5 +143,17 @@ export function OwnCertificateForm({ onCreated, onCancel }: Props) {
       </div>
       <p className="text-[13px] text-muted-foreground">직접 추가한 자격증은 내 계정에서만 보여요.</p>
     </form>
+
+    <PreviewSheet
+      inline
+      placeholder="[사전 검토]를 누르면 이 자격증을 준비했을 때 예보가 어떻게 바뀌는지 여기에 보여 드려요."
+      open={previewing !== null}
+      title={previewing ? `${previewing.name.trim()} ${previewing.round.trim() || ""}`.trim() : ""}
+      draft={draft}
+      pending={create.isPending}
+      onCancel={() => setPreviewing(null)}
+      onConfirm={() => previewing && save(previewing)}
+    />
+    </div>
   );
 }

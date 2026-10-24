@@ -10,7 +10,7 @@ import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { PlanForm } from "@/features/plans/components/PlanForm";
 import { PreviewSheet } from "@/features/preview/PreviewSheet";
 import type { PreviewDraft } from "@/features/preview/preview";
-import type { Plan, PlanLoadLevel, PlanType } from "@/types/database";
+import type { Plan, PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
 
 /**
  * S-09 계획 수정 (경로 /plans/:id/edit) — 담당: 프론트 B (feature/frontend-jw)
@@ -94,6 +94,10 @@ export default function PlanEditPage() {
             start_week: current.start_week,
             end_week: current.end_week,
             hours_per_week: current.hours_per_week,
+            start_date: current.start_date,
+            end_date: current.end_date,
+            priority: current.priority as PlanPriority,
+            category_id: current.category_id,
           }}
           submitLabel="저장"
           pendingLabel="저장하는 중…"

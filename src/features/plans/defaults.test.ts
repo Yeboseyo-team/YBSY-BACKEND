@@ -3,13 +3,13 @@ import { demoUsers, plans } from "@/mocks/dummy-data";
 import { MAX_PLANS, canAddPlan, defaultHoursPerWeek, groupPlansByType } from "./defaults";
 
 describe("계획 기본 시간 (F-03)", () => {
-  it("3학점 수업 보통 = 주 6시간 (FR-03-2, 제안서 기준)", () => {
-    expect(defaultHoursPerWeek("class", "normal", 3)).toBe(6);
+  it("3학점 수업 보통 = 주 4.5시간 (10/24: 수업 밖 공부 시간만)", () => {
+    expect(defaultHoursPerWeek("class", "normal", 3)).toBe(4.5);
   });
 
   it("수업은 학점에 비례, 활동·프로젝트는 학점과 무관", () => {
-    expect(defaultHoursPerWeek("class", "low", 2)).toBe(3);
-    expect(defaultHoursPerWeek("class", "high", 4)).toBe(12);
+    expect(defaultHoursPerWeek("class", "low", 2)).toBe(2);
+    expect(defaultHoursPerWeek("class", "high", 6)).toBe(12);
     expect(defaultHoursPerWeek("activity", "normal")).toBe(4);
     expect(defaultHoursPerWeek("project", "high")).toBe(10);
   });
@@ -17,6 +17,7 @@ describe("계획 기본 시간 (F-03)", () => {
   it("직접 입력이거나 수업인데 학점이 없으면 자동값 없음(null)", () => {
     expect(defaultHoursPerWeek("activity", "custom")).toBeNull();
     expect(defaultHoursPerWeek("class", "normal", null)).toBeNull();
+    expect(defaultHoursPerWeek("custom", "normal")).toBeNull();
   });
 
   it("데모 데이터의 기본값 계획은 모두 이 규칙과 같은 시간", () => {

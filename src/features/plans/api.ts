@@ -3,10 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-context";
-import type { Plan, PlanLoadLevel, PlanType } from "@/types/database";
+import type { Plan, PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
 import { MAX_PLANS } from "./defaults";
 
-/** 화면 폼에서 넘기는 값. user_id·id·시각은 DB가 채웁니다. 수업이 아니면 credits 는 null. */
+/**
+ * 화면 폼에서 넘기는 값. user_id·id·시각은 DB가 채웁니다. 수업이 아니면 credits 는 null.
+ * 10/24 QA: 기간은 날짜(start_date~end_date)로 고르고 주차는 날짜에서 계산해 함께 저장해요.
+ * 사용자 지정 유형이면 type "custom" + category_id.
+ */
 export interface PlanInput {
   title: string;
   type: PlanType;
@@ -15,6 +19,10 @@ export interface PlanInput {
   start_week: number;
   end_week: number;
   hours_per_week: number;
+  start_date: string | null;
+  end_date: string | null;
+  priority: PlanPriority;
+  category_id: string | null;
 }
 
 export const planKeys = {
@@ -33,13 +41,20 @@ export function toPlanMessage(error: unknown): string {
   if (error instanceof TypeError) return "서버에 연결하지 못했어요. 인터넷 연결을 확인하세요.";
   const code = (error as { code?: string } | null)?.code;
   if (code === "P0030") return new PlanLimitError().message; // DB 의 30개 상한 트리거 (plans_limit)
-  if (code === "23514") return "입력값을 확인하세요. 계획명 1~30자, 주차 1~16(시작 ≤ 종료), 주당 시간 0.5~60(0.5 단위), 학점은 수업만 1~4예요.";
+  if (code === "23514") return "입력값을 확인하세요. 계획명 1~30자, 기간(시작 ≤ 끝), 주당 시간 0.5~60(0.5 단위), 학점은 수업만 1~6이에요.";
+  if (code === "23503") return "고른 유형을 찾을 수 없어요. 유형을 다시 골라 주세요.";
   return "계획을 저장하지 못했어요. 잠시 뒤 다시 시도하세요.";
 }
 
-/** 수업이 아니면 학점을 비워 DB 제약(plans_credits_only_class)에 걸리지 않게 */
+/** 수업이 아니면 학점을, 사용자 지정 유형이 아니면 유형 id 를 비워 DB 제약에 걸리지 않게 */
 function clean(input: PlanInput): PlanInput {
-  return { ...input, title: input.title.trim(), credits: input.type === "class" ? input.credits : null };
+  return {
+    ...input,
+    title: input.title.trim(),
+    credits: input.type === "class" ? input.credits : null,
+    category_id: input.type === "custom" ? input.category_id : null,
+    load_level: input.type === "custom" ? "custom" : input.load_level,
+  };
 }
 
 function useUserKey() {

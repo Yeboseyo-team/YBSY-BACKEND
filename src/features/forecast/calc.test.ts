@@ -301,3 +301,30 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 });
+
+describe("성능 (NFR-PERF-2: 사전 검토 계산은 서버 호출 없이 0.2초 이내)", () => {
+  it("계획 30개 + 자격증 2개인 사용자의 사전 검토 계산이 0.2초보다 훨씬 빠름", () => {
+    const base = inputOf(yebo);
+    const plans30 = Array.from({ length: 30 }, (_, i) => ({
+      id: `p${i}`,
+      title: `계획 ${i + 1}`,
+      type: i % 3 === 0 ? "class" : "activity",
+      start_week: (i % 16) + 1,
+      end_week: 16,
+      hours_per_week: 1.5,
+    }));
+    const input = { ...base, plans: plans30 };
+    const draft = {
+      removePlanIds: ["p0"],
+      addPlans: [{ ...plans30[0], hours_per_week: 10 }],
+      addCertificates: [{ certificate_id: "c0000000-0000-4000-8000-000000000011", prep_weeks: 6, study_hours: 10 }],
+    };
+    previewDraft(input, draft); // 첫 실행(준비) 제외
+    const runs = 50;
+    const start = performance.now();
+    for (let i = 0; i < runs; i++) previewDraft(input, draft);
+    const perRunMs = (performance.now() - start) / runs;
+    expect(perRunMs).toBeLessThan(200);
+    expect(perRunMs).toBeLessThan(20); // 실제로는 1ms 안팎 — 여유 있게 20ms 로 확인
+  });
+});

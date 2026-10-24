@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { demoUsers, profiles } from "@/mocks/dummy-data";
-import { isOnboardingDone, toMonday } from "./onboarding";
+import { isOnboardingDone } from "./onboarding";
 
 const profileOf = (email: string) => profiles.find((p) => p.user_id === demoUsers.find((u) => u.email === email)!.id)!;
 
@@ -20,11 +20,3 @@ describe("온보딩 완료 판정 (FR-01-11, NFR-LEGAL-1)", () => {
   });
 });
 
-describe("학기 시작일 → 그 주 월요일 (DB 제약: 1주차 월요일)", () => {
-  it("월요일은 그대로, 다른 요일은 그 주 월요일로", () => {
-    expect(toMonday("2026-08-31")).toBe("2026-08-31"); // 월
-    expect(toMonday("2026-09-02")).toBe("2026-08-31"); // 수
-    expect(toMonday("2026-09-06")).toBe("2026-08-31"); // 일
-    expect(toMonday("2026-09-01")).toBe("2026-08-31"); // 화 (디자인 예시 "9/1 개강")
-  });
-});

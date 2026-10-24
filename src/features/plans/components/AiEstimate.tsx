@@ -25,7 +25,7 @@ export function AiEstimate({ title, type, credits, disabled, onApply }: Props) {
       label="계획을 설명하면 AI가 한 주 시간을 추천해요"
       placeholder={PLACEHOLDER[type]}
       toInput={(description) => ({ kind: "plan", title: title.trim(), type, credits, description })}
-      onApply={onApply}
+      onApply={(estimate) => onApply(estimate.hours_per_week)}
       appliedNote={'"직접 입력"에 채웠어요. 저장해야 반영돼요.'}
       disabled={disabled}
     />

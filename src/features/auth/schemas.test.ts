@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { displayNameSchema, onboardingSchema, semesterSchema } from "./schemas";
 
-const valid = { semesterStart: "2026-09-01", availableHours: 50, midtermWeek: 8, finalWeek: 15 };
+const valid = { semesterStart: "2026-09-01", dailyHours: [8, 8, 8, 8, 8, 5, 5], midtermWeek: 8, finalWeek: 15 };
 
 describe("학기 설정 검증", () => {
   it("올바른 값은 통과", () => {
@@ -14,10 +14,11 @@ describe("학기 설정 검증", () => {
     expect(r.error?.issues[0].path).toEqual(["finalWeek"]);
   });
 
-  it("가용 시간은 1~168", () => {
-    expect(semesterSchema.safeParse({ ...valid, availableHours: 0 }).success).toBe(false);
-    expect(semesterSchema.safeParse({ ...valid, availableHours: 169 }).success).toBe(false);
-    expect(semesterSchema.safeParse({ ...valid, availableHours: Number.NaN }).success).toBe(false);
+  it("요일별 시간은 0~24 정수 7개, 합계 1시간 이상 (10/24)", () => {
+    expect(semesterSchema.safeParse({ ...valid, dailyHours: [0, 0, 0, 0, 0, 0, 0] }).success).toBe(false);
+    expect(semesterSchema.safeParse({ ...valid, dailyHours: [25, 0, 0, 0, 0, 0, 0] }).success).toBe(false);
+    expect(semesterSchema.safeParse({ ...valid, dailyHours: [8, 8, 8] }).success).toBe(false);
+    expect(semesterSchema.safeParse({ ...valid, dailyHours: [8, 8, 8, 8, 8, 5, Number.NaN] }).success).toBe(false);
   });
 
   it("온보딩은 개인정보 동의가 필수 (NFR-LEGAL-1)", () => {

@@ -11,6 +11,7 @@ import { FormAlert } from "@/features/auth/components/FormAlert";
 import { useCertificates, useMyCertificates } from "@/features/certificates/api";
 import { CertificatePicker } from "@/features/certificates/components/CertificatePicker";
 import { MyCertificateCard } from "@/features/certificates/components/MyCertificateCard";
+import { OwnCertificateForm } from "@/features/certificates/components/OwnCertificateForm";
 import { RoundSuggest } from "@/features/certificates/components/RoundSuggest";
 import { semesterWeekOf, todayInKorea } from "@/features/forecast/calc";
 import type { Certificate } from "@/types/database";
@@ -20,6 +21,7 @@ import type { Certificate } from "@/types/database";
  * - 기본: 내가 고른 회차 목록 (PcMyCertificates) — 준비 기간·시간 바꾸기, 선택 해제
  * - ?view=add: 검색·회차 선택 (PcCertificate) — 접수 마감 회차 선택 불가, 사전 검토 후 추가 (F-04, F-06)
  * - ?view=suggest&name=…: 폭풍이 가장 적은 회차 추천 (PcRoundSuggest, F-09)
+ * - ?view=custom: 목록에 없는 자격증 직접 추가 (10/24 QA)
  */
 export default function CertificatesPage() {
   const { user } = useAuth();
@@ -33,6 +35,26 @@ export default function CertificatesPage() {
   const mine = useMyCertificates();
   const queries = [profile, certificates, mine];
   const today = todayInKorea();
+
+  if (params.get("view") === "custom") {
+    return (
+      <PageContainer>
+        <PageHeader
+          title="자격증 직접 추가"
+          description="목록에 없는 자격증이나 어학 시험을 넣으면 준비 기간이 예보에 들어가요."
+          back={{ to: "/certificates?view=add", label: "자격증 추가" }}
+        />
+        <OwnCertificateForm
+          onCancel={() => setParams({ view: "add" })}
+          onCreated={(message) => {
+            setNotice(message);
+            setParams({}, { replace: false });
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      </PageContainer>
+    );
+  }
 
   if (suggestName) {
     return (
@@ -60,6 +82,14 @@ export default function CertificatesPage() {
       title="자격증 추가"
       description="회차를 고르면 접수·시험 일정과 준비 기간이 예보에 들어가요."
       back={{ to: "/certificates", label: "내 자격증" }}
+      action={
+        <Button asChild variant="outline">
+          <Link to="/certificates?view=custom">
+            <Plus aria-hidden="true" />
+            목록에 없어요 · 직접 추가
+          </Link>
+        </Button>
+      }
     />
   ) : (
     <PageHeader
@@ -167,7 +197,7 @@ export default function CertificatesPage() {
       )}
 
       <p className="text-[13px] text-muted-foreground">
-        일정은 시행 기관 공고를 기준으로 팀이 입력해요. 최종 일정은 시행 기관에서 확인하세요.
+        일정은 시행 기관 공고를 기준으로 팀이 입력해요(직접 추가한 자격증 제외). 최종 일정은 시행 기관에서 확인하세요.
       </p>
     </PageContainer>
   );

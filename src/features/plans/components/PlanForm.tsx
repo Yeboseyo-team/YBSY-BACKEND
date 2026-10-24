@@ -14,6 +14,7 @@ import type { PlanLoadLevel, PlanType } from "@/types/database";
 import type { PlanInput } from "../api";
 import { defaultHoursPerWeek, LOAD_LEVEL_LABEL, PLAN_TYPE_LABEL } from "../defaults";
 import { planSchema, type PlanFormValues } from "../schema";
+import { AiEstimate } from "./AiEstimate";
 
 type Props = {
   /** 수정 화면에서는 저장된 값, 등록 화면에서는 비워 두면 3학점 수업 보통으로 시작 */
@@ -260,6 +261,17 @@ export function PlanForm({
         {level !== "custom" && errors.hours_per_week ? (
           <p className="text-[13px] text-destructive">{errors.hours_per_week.message}</p>
         ) : null}
+
+        <AiEstimate
+          title={watch("title") ?? ""}
+          type={type}
+          credits={credits}
+          disabled={disabled}
+          onApply={(hours) => {
+            setValue("load_level", "custom");
+            setValue("hours_per_week", hours, { shouldValidate: true });
+          }}
+        />
       </fieldset>
 
       <div className="grid gap-2 pt-1">

@@ -1,4 +1,4 @@
-// ⚠ 자동 생성 파일: 스키마를 바꾸면 다시 생성하세요. (2026-10-13 서울 프로젝트 기준)
+// ⚠ 자동 생성 파일: 스키마를 바꾸면 다시 생성하세요. (2026-10-24 서울 프로젝트 기준)
 //   supabase gen types typescript --project-id hxnaobwybllgdcvnwimo > src/types/database.ts
 // 아래쪽 "편의 타입"은 손으로 추가한 부분이라 재생성 후 다시 붙여 주세요.
 
@@ -44,6 +44,7 @@ export type Database = {
           exam_date: string
           id: string
           name: string
+          owner_id: string | null
           prep_weeks: number
           round: string
           source_url: string | null
@@ -55,6 +56,7 @@ export type Database = {
           exam_date: string
           id?: string
           name: string
+          owner_id?: string | null
           prep_weeks: number
           round: string
           source_url?: string | null
@@ -66,20 +68,62 @@ export type Database = {
           exam_date?: string
           id?: string
           name?: string
+          owner_id?: string | null
           prep_weeks?: number
           round?: string
           source_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "certificates_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      plan_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_categories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       plans: {
         Row: {
+          category_id: string | null
           created_at: string
           credits: number | null
+          end_date: string | null
           end_week: number
           hours_per_week: number
           id: string
           load_level: string
+          priority: string
+          start_date: string | null
           start_week: number
           title: string
           type: string
@@ -87,12 +131,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           credits?: number | null
+          end_date?: string | null
           end_week: number
           hours_per_week: number
           id?: string
           load_level?: string
+          priority?: string
+          start_date?: string | null
           start_week: number
           title: string
           type: string
@@ -100,12 +148,16 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           credits?: number | null
+          end_date?: string | null
           end_week?: number
           hours_per_week?: number
           id?: string
           load_level?: string
+          priority?: string
+          start_date?: string | null
           start_week?: number
           title?: string
           type?: string
@@ -113,6 +165,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "plans_category_fkey"
+            columns: ["category_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "plan_categories"
+            referencedColumns: ["id", "user_id"]
+          },
           {
             foreignKeyName: "plans_user_id_fkey"
             columns: ["user_id"]
@@ -126,6 +185,7 @@ export type Database = {
         Row: {
           available_hours: number | null
           created_at: string
+          daily_hours: number[] | null
           display_name: string | null
           final_week: number
           midterm_week: number
@@ -137,6 +197,7 @@ export type Database = {
         Insert: {
           available_hours?: number | null
           created_at?: string
+          daily_hours?: number[] | null
           display_name?: string | null
           final_week?: number
           midterm_week?: number
@@ -148,6 +209,7 @@ export type Database = {
         Update: {
           available_hours?: number | null
           created_at?: string
+          daily_hours?: number[] | null
           display_name?: string | null
           final_week?: number
           midterm_week?: number
@@ -342,6 +404,10 @@ export type Profile = Tables<"profiles">
 export type Plan = Tables<"plans">
 export type Certificate = Tables<"certificates">
 export type UserCertificate = Tables<"user_certificates">
+export type PlanCategory = Tables<"plan_categories">
 /** plans.type, plans.load_level 은 DB에서 text + check 라서 생성 타입이 string 입니다. 화면에서는 아래 타입으로 좁혀 쓰세요. */
-export type PlanType = "class" | "activity" | "project"
+/** custom = 사용자가 만든 유형(plan_categories). 10/24 QA */
+export type PlanType = "class" | "activity" | "project" | "custom"
 export type PlanLoadLevel = "low" | "normal" | "high" | "custom"
+/** 계획 우선순위 (10/24 QA). 폭풍 주에는 low 부터 줄이라고 안내 */
+export type PlanPriority = "high" | "normal" | "low"

@@ -36,7 +36,9 @@ export function useGoogleSignIn() {
 export function useSignOut() {
   return useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.auth.signOut();
+      // 이 기기에서만 로그아웃. 기본값(global)은 같은 계정의 모든 기기를 끊어서,
+      // 여럿이 함께 쓰는 데모 계정은 한 명이 로그아웃하면 발표자 화면까지 튕김
+      const { error } = await supabase.auth.signOut({ scope: "local" });
       if (error) throw error;
     },
   });

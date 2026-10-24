@@ -242,6 +242,8 @@ export interface DayForecast {
   /** 부담률. 가용 시간이 0 인데 할 일이 있으면 null (폭풍으로 표시) */
   ratio: number | null;
   level: Weather;
+  /** 그날 할 일별 시간 (많은 순, 소수점 첫째 자리). 요일별 상세 화면에서 써요 */
+  items: WeekItem[];
 }
 
 /**
@@ -260,14 +262,18 @@ export function dailyForecast({ profile, plans, userCertificates, certificates }
   const dates = weekDates(week, semester_start);
   const available = dates.map((d) => daily[weekdayIndex(d)]);
   const hours = new Array<number>(7).fill(0);
+  const items: WeekItem[][] = dates.map(() => []);
 
-  /** total 시간을 active 인 날들에 가용 시간 비율대로 (가용 시간이 모두 0 이면 똑같이) */
-  const spread = (total: number, active: boolean[]) => {
+  /** item 의 시간을 active 인 날들에 가용 시간 비율대로 (가용 시간이 모두 0 이면 똑같이) */
+  const spread = (item: WeekItem, active: boolean[]) => {
     const days = active.some(Boolean) ? active : active.map(() => true);
     const weight = days.reduce((sum, on, i) => sum + (on ? available[i] : 0), 0);
     const count = days.filter(Boolean).length;
     days.forEach((on, i) => {
-      if (on) hours[i] += weight > 0 ? (total * available[i]) / weight : total / count;
+      if (!on) return;
+      const share = weight > 0 ? (item.hours * available[i]) / weight : item.hours / count;
+      hours[i] += share;
+      if (share > 0) items[i].push({ ...item, base_hours: share, hours: share });
     });
   };
 
@@ -275,21 +281,44 @@ export function dailyForecast({ profile, plans, userCertificates, certificates }
     if (week < plan.start_week || week > plan.end_week) continue;
     const weighted = plan.type === "class" && is_exam_week;
     const active = dates.map((d) => (!plan.start_date || d >= plan.start_date) && (!plan.end_date || d <= plan.end_date));
-    spread(plan.hours_per_week * (weighted ? EXAM_WEIGHT : 1), active);
+    spread(
+      {
+        source: "plan",
+        title: plan.title,
+        base_hours: plan.hours_per_week,
+        weighted,
+        hours: plan.hours_per_week * (weighted ? EXAM_WEIGHT : 1),
+        priority: toPriority(plan.priority),
+        plan_type: plan.type as PlanType,
+        category_id: plan.category_id ?? null,
+      },
+      active,
+    );
   }
   const certById = new Map(certificates.map((c) => [c.id, c]));
   for (const uc of userCertificates) {
     const cert = certById.get(uc.certificate_id);
     if (!cert) continue;
     if (certificatePrepRange(cert.exam_date, uc.prep_weeks, semester_start).weeks.includes(week)) {
-      spread(uc.study_hours, dates.map(() => true));
+      const title = `${cert.name} 준비`;
+      spread({ source: "certificate", title, base_hours: uc.study_hours, weighted: false, hours: uc.study_hours }, dates.map(() => true));
     }
   }
 
   return dates.map((date, i) => {
     const ratio = available[i] > 0 ? hours[i] / available[i] : null;
     const level: Weather = ratio === null ? (hours[i] > 0.05 ? "storm" : "clear") : levelOf(ratio);
-    return { date, weekday: weekdayIndex(date), available: available[i], hours: round1(hours[i]), ratio: ratio === null ? null : round3(ratio), level };
+    return {
+      date,
+      weekday: weekdayIndex(date),
+      available: available[i],
+      hours: round1(hours[i]),
+      ratio: ratio === null ? null : round3(ratio),
+      level,
+      items: items[i]
+        .map((item) => ({ ...item, base_hours: round1(item.base_hours), hours: round1(item.hours) }))
+        .sort((a, b) => b.hours - a.hours),
+    };
   });
 }
 

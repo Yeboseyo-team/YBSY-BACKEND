@@ -1,17 +1,17 @@
 // 계획 유형별 색 (10/24 QA) — 예보 화면 목록에서 어떤 계획이 어떤 유형인지 알아보게.
-// 날씨 색(맑음 초록·흐림 주황·폭풍 빨강)과 헷갈리지 않게 파랑·보라·청록·분홍 계열만 씁니다.
+// 날씨 색(맑음 초록·흐림 주황·폭풍 빨강)과 헷갈리지 않게 고르고, 수업·활동은 서로 확실히 다른 색으로 (10/24 QA).
 import type { PlanCategory, PlanType } from "@/types/database";
 import { PLAN_TYPE_LABEL } from "./defaults";
 
 export const TYPE_COLOR: Record<Exclude<PlanType, "custom"> | "certificate", string> = {
   class: "#2563eb",
-  activity: "#7c3aed",
+  activity: "#db2777",
   project: "#0d9488",
-  certificate: "#db2777",
+  certificate: "#7c3aed",
 };
 
 /** 내 유형은 만든 순서대로 이 색을 돌려 써요 */
-const CATEGORY_PALETTE = ["#0891b2", "#a16207", "#4f46e5", "#be185d", "#475569"];
+const CATEGORY_PALETTE = ["#0891b2", "#a16207", "#4f46e5", "#78716c", "#c026d3"];
 const OTHER_COLOR = "#6b7280";
 
 export interface TypeTag {

@@ -59,6 +59,14 @@ describe("요일별 예보", () => {
     expect(days[0].level).toBe("cloudy"); // 월요일은 결혼식 없이 42시간을 비율대로 → 84%
   });
 
+  it("그날 할 일별 시간이 그날 합계와 같고, 결혼식은 토요일에만 있다", () => {
+    const days = dailyForecast(yebo, 9)!;
+    for (const day of days) expect(day.items.reduce((sum, item) => sum + item.hours, 0)).toBeCloseTo(day.hours, 0);
+    const wedding = days.filter((d) => d.items.some((i) => i.title === "사촌형 결혼식"));
+    expect(wedding.map((d) => d.date)).toEqual(["2026-10-31"]);
+    expect(wedding[0].items[0]).toMatchObject({ title: "사촌형 결혼식", hours: 6, plan_type: "custom" });
+  });
+
   it("요일별 시간을 안 정했으면 null", () => {
     expect(dailyForecast({ ...yebo, profile: { ...yebo.profile, daily_hours: null } }, 9)).toBeNull();
   });

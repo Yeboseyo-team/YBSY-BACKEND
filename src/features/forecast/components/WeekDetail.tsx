@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
+import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
+import type { PlanCategory } from "@/types/database";
 import { trimSuggestions, type WeekForecast } from "../calc";
 import { formatHours, WEATHER_STYLE } from "../weather";
 
@@ -9,10 +11,12 @@ type Props = {
   midtermWeek: number | null;
   finalWeek: number | null;
   isCurrent: boolean;
+  /** 내 유형 (색·이름 구분용, 10/24 QA) */
+  categories?: PlanCategory[];
 };
 
 /** 고른 주의 구성 내역 (FR-05-4): 계획별 시간, 시험 가중치 적용 여부 */
-export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCurrent }: Props) {
+export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCurrent, categories = [] }: Props) {
   const style = WEATHER_STYLE[week.level];
   const scale = Math.max(week.total_hours, availableHours, 1);
   const examLabel = week.week === midtermWeek ? " 중간고사 주간" : week.week === finalWeek ? " 기말고사 주간" : "";
@@ -43,10 +47,16 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
         <p className="border-t border-border/60 pt-3 text-sm text-muted-foreground">이 주에는 잡힌 계획이 없어요.</p>
       ) : (
         <ul className="text-sm">
-          {week.items.map((item, i) => (
+          {week.items.map((item, i) => {
+            const tag = typeTagOf(item, categories);
+            return (
             <li key={`${item.source}-${item.title}-${i}`} className="flex justify-between gap-3 border-t border-border/60 py-2.5">
-              <span className="min-w-0">
+              <span className="flex min-w-0 flex-wrap items-center gap-x-1.5">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: tag.color }} aria-hidden="true" />
                 {item.title}
+                <span className="text-xs font-semibold" style={{ color: tag.color }}>
+                  {tag.label}
+                </span>
                 {item.weighted ? <span className="ml-1.5 text-xs text-[#9a5b00]">시험 ×1.5</span> : null}
                 {item.priority && item.priority !== "normal" ? (
                   <span className="ml-1.5 text-xs text-muted-foreground">{PRIORITY_LABEL[item.priority]}</span>
@@ -54,7 +64,8 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
               </span>
               <span className="shrink-0 font-semibold tabular-nums">{formatHours(item.hours)}시간</span>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 

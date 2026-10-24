@@ -1,7 +1,7 @@
 // 학기 부담 산출 — 기준: 요구사항 명세서(2026-10-13) 4장
 // 부담 계산은 이 파일 한 곳에서만 합니다. DB 호출 없이 순수 계산만 합니다.
 // 참조 구현: scripts/generate-dummy.mjs 의 forecast() — 결과가 같아야 합니다.
-import type { Certificate, Plan, PlanPriority, Profile, UserCertificate } from "@/types/database";
+import type { Certificate, Plan, PlanPriority, PlanType, Profile, UserCertificate } from "@/types/database";
 
 // ── 산출 상수 (명세서 2.3, 4장) ─────────────────────────
 export const TOTAL_WEEKS = 16;
@@ -23,6 +23,8 @@ export type ForecastProfile = Pick<Profile, "available_hours" | "semester_start"
 };
 /** 저장된 계획과 저장 전 계획(사전 검토) 모두 받을 수 있도록 필요한 필드만 씁니다. */
 export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_week" | "hours_per_week"> & {
+  /** 사용자 지정 유형 id (10/24 QA, 예보 목록 색 구분용) */
+  category_id?: string | null;
   /** 저장된 계획이면 id (사전 검토에서 "이 계획을 바꾸면"을 계산할 때 씀) */
   id?: string;
   /** 날짜로 정한 기간 (10/24 QA). 있으면 요일별 예보에서 그 날짜에만 나눠 넣어요. */
@@ -54,6 +56,9 @@ export interface WeekItem {
   hours: number;
   /** 계획의 우선순위 (계획일 때만) */
   priority?: PlanPriority;
+  /** 계획의 유형·내 유형 id (계획일 때만, 예보 목록 색 구분용) */
+  plan_type?: PlanType;
+  category_id?: string | null;
 }
 
 export interface WeekForecast {
@@ -200,6 +205,8 @@ export function calculateForecast({ profile, plans, userCertificates, certificat
         weighted,
         hours: plan.hours_per_week * (weighted ? EXAM_WEIGHT : 1),
         priority: toPriority(plan.priority),
+        plan_type: plan.type as PlanType,
+        category_id: plan.category_id ?? null,
       });
     }
     for (const cert of certRanges) {

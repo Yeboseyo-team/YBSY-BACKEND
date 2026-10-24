@@ -153,7 +153,7 @@ function forecast(profile, plans, userCerts) {
     for (const p of plans) {
       if (i < p.start_week || i > p.end_week) continue;
       const weighted = p.type === 'class' && isExamWeek; // m_{p,i}
-      items.push({ source: 'plan', title: p.title, base_hours: p.hours_per_week, weighted, hours: p.hours_per_week * (weighted ? EXAM_WEIGHT : 1), priority: p.priority ?? 'normal' });
+      items.push({ source: 'plan', title: p.title, base_hours: p.hours_per_week, weighted, hours: p.hours_per_week * (weighted ? EXAM_WEIGHT : 1), priority: p.priority ?? 'normal', plan_type: p.type, category_id: p.category_id ?? null });
     }
     for (const uc of userCerts) {
       const c = certById[uc.certificate_id];
@@ -333,7 +333,7 @@ export interface Certificate { id: string; name: string; round: string; apply_st
 /** 5.4 user_certificates */
 export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number; prep_weeks: number; notified_at: string | null }
 
-export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number; priority?: PlanPriority }
+export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number; priority?: PlanPriority; plan_type?: PlanType; category_id?: string | null }
 export interface WeekForecast { week: number; is_exam_week: boolean; total_hours: number; ratio: number; level: Weather; items: WeekItem[] }
 export interface Forecast { weeks: WeekForecast[]; summary: Record<Weather, number> }
 

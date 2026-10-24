@@ -84,7 +84,7 @@ describe("명세서 4.5 검증 예시", () => {
     const classItem = items.find((x) => x.title === "운영체제");
     const activityItem = items.find((x) => x.title === "프로그래밍 학회");
     const certItem = items.find((x) => x.source === "certificate");
-    expect(classItem).toEqual({ source: "plan", title: "운영체제", base_hours: 6, weighted: true, hours: 9, priority: "normal" });
+    expect(classItem).toEqual({ source: "plan", title: "운영체제", base_hours: 6, weighted: true, hours: 9, priority: "normal", plan_type: "class", category_id: null });
     expect(activityItem?.weighted).toBe(false);
     expect(certItem).toEqual({ source: "certificate", title: "정보처리기사 준비", base_hours: 8, weighted: false, hours: 8 });
   });

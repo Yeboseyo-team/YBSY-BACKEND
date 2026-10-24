@@ -20,7 +20,7 @@ export interface Certificate { id: string; name: string; round: string; apply_st
 /** 5.4 user_certificates */
 export interface UserCertificate { user_id: string; certificate_id: string; study_hours: number; prep_weeks: number; notified_at: string | null }
 
-export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number; priority?: PlanPriority }
+export interface WeekItem { source: 'plan' | 'certificate'; title: string; base_hours: number; weighted: boolean; hours: number; priority?: PlanPriority; plan_type?: PlanType; category_id?: string | null }
 export interface WeekForecast { week: number; is_exam_week: boolean; total_hours: number; ratio: number; level: Weather; items: WeekItem[] }
 export interface Forecast { weeks: WeekForecast[]; summary: Record<Weather, number> }
 
@@ -783,7 +783,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -791,7 +793,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -799,7 +803,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -807,7 +813,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -815,7 +823,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -823,7 +833,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -840,7 +852,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -848,7 +862,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -856,7 +872,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -864,7 +882,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -872,7 +892,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -880,7 +902,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -897,7 +921,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -905,7 +931,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -913,7 +941,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -921,7 +951,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -929,7 +961,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -937,7 +971,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -961,7 +997,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -969,7 +1007,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -977,7 +1017,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -985,7 +1027,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -993,7 +1037,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1001,7 +1047,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1025,7 +1073,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1033,7 +1083,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1041,7 +1093,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1049,7 +1103,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1057,7 +1113,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1065,7 +1123,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1089,7 +1149,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1097,7 +1159,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1105,7 +1169,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1113,7 +1179,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1121,7 +1189,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1129,7 +1199,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1153,7 +1225,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1161,7 +1235,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1169,7 +1245,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1177,7 +1255,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1185,7 +1265,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1193,7 +1275,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1217,7 +1301,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1225,7 +1311,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1233,7 +1321,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1241,7 +1331,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1249,7 +1341,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1257,7 +1351,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1281,7 +1377,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1289,7 +1387,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1297,7 +1397,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1305,7 +1407,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1313,7 +1417,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1321,7 +1427,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1329,7 +1437,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "custom",
+            "category_id": "d0000000-0000-4000-0001-000000000001"
           },
           {
             "source": "certificate",
@@ -1353,7 +1463,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1361,7 +1473,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1369,7 +1483,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1377,7 +1493,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1385,7 +1503,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1393,7 +1513,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1417,7 +1539,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1425,7 +1549,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1433,7 +1559,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1441,7 +1569,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1449,7 +1579,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1457,7 +1589,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -1481,7 +1615,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1489,7 +1625,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1497,7 +1635,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1505,7 +1645,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1513,7 +1655,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1521,7 +1665,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1538,7 +1684,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1546,7 +1694,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1554,7 +1704,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1562,7 +1714,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1570,7 +1724,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1578,7 +1734,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1595,7 +1753,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1603,7 +1763,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1611,7 +1773,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1619,7 +1783,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1627,7 +1793,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1635,7 +1803,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1652,7 +1822,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1660,7 +1832,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1668,7 +1842,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1676,7 +1852,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1684,7 +1862,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1692,7 +1872,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1709,7 +1891,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1717,7 +1901,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1725,7 +1911,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1733,7 +1921,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1741,7 +1931,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1749,7 +1941,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4,
             "weighted": false,
             "hours": 4,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       }
@@ -1775,7 +1969,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1783,7 +1979,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1791,7 +1989,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1799,7 +1999,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1807,7 +2009,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1815,7 +2019,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1832,7 +2038,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1840,7 +2048,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1848,7 +2058,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1856,7 +2068,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1864,7 +2078,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1872,7 +2088,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -1889,7 +2107,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1897,7 +2117,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1905,7 +2127,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1913,7 +2137,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1921,7 +2147,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1929,7 +2157,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1937,7 +2167,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -1954,7 +2186,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1962,7 +2196,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1970,7 +2206,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1978,7 +2216,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1986,7 +2226,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -1994,7 +2236,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2002,7 +2246,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2019,7 +2265,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2027,7 +2275,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2035,7 +2285,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2043,7 +2295,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2051,7 +2305,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2059,7 +2315,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2067,7 +2325,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2084,7 +2344,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2092,7 +2354,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2100,7 +2364,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2108,7 +2374,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2116,7 +2384,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2124,7 +2394,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2132,7 +2404,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2149,7 +2423,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2157,7 +2433,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2165,7 +2443,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2173,7 +2453,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2181,7 +2463,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2189,7 +2473,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2197,7 +2483,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2214,7 +2502,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2222,7 +2512,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": true,
             "hours": 6.8,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2230,7 +2522,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2238,7 +2532,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2246,7 +2542,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": true,
             "hours": 4.5,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2254,7 +2552,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2262,7 +2562,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2279,7 +2581,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2287,7 +2591,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2295,7 +2601,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2303,7 +2611,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2311,7 +2621,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2319,7 +2631,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2327,7 +2641,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "project",
+            "category_id": null
           }
         ]
       },
@@ -2344,7 +2660,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2352,7 +2670,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2360,7 +2680,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2368,7 +2690,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2376,7 +2700,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2384,7 +2710,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2408,7 +2736,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2416,7 +2746,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2424,7 +2756,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2432,7 +2766,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2440,7 +2776,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2448,7 +2786,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2472,7 +2812,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2480,7 +2822,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2488,7 +2832,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2496,7 +2842,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2504,7 +2852,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2512,7 +2862,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2536,7 +2888,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2544,7 +2898,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2552,7 +2908,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2560,7 +2918,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2568,7 +2928,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2576,7 +2938,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2600,7 +2964,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2608,7 +2974,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2616,7 +2984,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2624,7 +2994,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2632,7 +3004,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2640,7 +3014,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2664,7 +3040,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2672,7 +3050,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": true,
             "hours": 6.8,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2680,7 +3060,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2688,7 +3070,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2696,7 +3080,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": true,
             "hours": 4.5,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2704,7 +3090,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2728,7 +3116,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2736,7 +3126,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 4.5,
             "weighted": false,
             "hours": 4.5,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2744,7 +3136,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2752,7 +3146,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2760,7 +3156,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 3,
             "weighted": false,
             "hours": 3,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2768,7 +3166,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -2801,7 +3201,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2809,7 +3211,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2817,7 +3221,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2825,7 +3231,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2833,7 +3241,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2850,7 +3260,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2858,7 +3270,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2866,7 +3280,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2874,7 +3290,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2882,7 +3300,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2899,7 +3319,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2907,7 +3329,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2915,7 +3339,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2923,7 +3349,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2931,7 +3359,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2948,7 +3378,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2956,7 +3388,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2964,7 +3398,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2972,7 +3408,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -2980,7 +3418,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -2997,7 +3437,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3005,7 +3447,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3013,7 +3457,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3021,7 +3467,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3029,7 +3477,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3046,7 +3496,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3054,7 +3506,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3062,7 +3516,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3070,7 +3526,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3078,7 +3536,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3086,7 +3546,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 8,
             "weighted": false,
             "hours": 8,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3103,7 +3565,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3111,7 +3575,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3119,7 +3585,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3127,7 +3595,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3135,7 +3605,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3143,7 +3615,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 8,
             "weighted": false,
             "hours": 8,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3160,7 +3634,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3168,7 +3644,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3176,7 +3654,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3184,7 +3664,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": true,
             "hours": 3,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3192,7 +3674,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3200,7 +3684,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 8,
             "weighted": false,
             "hours": 8,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3224,7 +3710,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3232,7 +3720,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3240,7 +3730,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3248,7 +3740,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3256,7 +3750,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3280,7 +3776,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3288,7 +3786,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3296,7 +3796,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3304,7 +3806,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3312,7 +3816,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3336,7 +3842,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3344,7 +3852,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3352,7 +3862,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3360,7 +3872,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3368,7 +3882,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3399,7 +3915,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3407,7 +3925,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3415,7 +3935,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3423,7 +3945,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3431,7 +3955,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3455,7 +3981,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3463,7 +3991,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3471,7 +4001,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3479,7 +4011,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3487,7 +4021,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           },
           {
             "source": "certificate",
@@ -3511,7 +4047,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3519,7 +4057,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3527,7 +4067,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3535,7 +4077,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3543,7 +4087,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3560,7 +4106,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3568,7 +4116,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3576,7 +4126,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3584,7 +4136,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": false,
             "hours": 2,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3592,7 +4146,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       },
@@ -3609,7 +4165,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "high"
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3617,7 +4175,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3625,7 +4185,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 6,
             "weighted": true,
             "hours": 9,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3633,7 +4195,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 2,
             "weighted": true,
             "hours": 3,
-            "priority": "low"
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
           },
           {
             "source": "plan",
@@ -3641,7 +4205,9 @@ export const expectedForecast: Record<string, Forecast> = {
             "base_hours": 10,
             "weighted": false,
             "hours": 10,
-            "priority": "normal"
+            "priority": "normal",
+            "plan_type": "activity",
+            "category_id": null
           }
         ]
       }
@@ -3806,7 +4372,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3814,7 +4382,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3822,7 +4392,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3830,7 +4402,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3838,7 +4412,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3846,7 +4422,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -3863,7 +4441,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3871,7 +4451,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3879,7 +4461,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3887,7 +4471,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3895,7 +4481,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3903,7 +4491,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -3920,7 +4510,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3928,7 +4520,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3936,7 +4530,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3944,7 +4540,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3952,7 +4550,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3960,7 +4560,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -3984,7 +4586,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -3992,7 +4596,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4000,7 +4606,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4008,7 +4616,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4016,7 +4626,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4024,7 +4636,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4048,7 +4662,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4056,7 +4672,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4064,7 +4682,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4072,7 +4692,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4080,7 +4702,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4088,7 +4712,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4112,7 +4738,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4120,7 +4748,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4128,7 +4758,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4136,7 +4768,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4144,7 +4778,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4152,7 +4788,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4176,7 +4814,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4184,7 +4824,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4192,7 +4834,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4200,7 +4844,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4208,7 +4854,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4216,7 +4864,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4240,7 +4890,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4248,7 +4900,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4256,7 +4910,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4264,7 +4920,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4272,7 +4930,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4280,7 +4940,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4304,7 +4966,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4312,7 +4976,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4320,7 +4986,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4328,7 +4996,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4336,7 +5006,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4344,7 +5016,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4352,7 +5026,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "custom",
+          "category_id": "d0000000-0000-4000-0001-000000000001"
         },
         {
           "source": "plan",
@@ -4360,7 +5036,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 10,
           "weighted": false,
           "hours": 10,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4384,7 +5062,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4392,7 +5072,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4400,7 +5082,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4408,7 +5092,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4416,7 +5102,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4424,7 +5112,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4432,7 +5122,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 10,
           "weighted": false,
           "hours": 10,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4456,7 +5148,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4464,7 +5158,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4472,7 +5168,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4480,7 +5178,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4488,7 +5188,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4496,7 +5198,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         },
         {
           "source": "certificate",
@@ -4520,7 +5224,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4528,7 +5234,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4536,7 +5244,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4544,7 +5254,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4552,7 +5264,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4560,7 +5274,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4577,7 +5293,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4585,7 +5303,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4593,7 +5313,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4601,7 +5323,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4609,7 +5333,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4617,7 +5343,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4634,7 +5362,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4642,7 +5372,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4650,7 +5382,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4658,7 +5392,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4666,7 +5402,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4674,7 +5412,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4691,7 +5431,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4699,7 +5441,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4707,7 +5451,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4715,7 +5461,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4723,7 +5471,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": true,
           "hours": 9,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4731,7 +5481,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     },
@@ -4748,7 +5500,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4756,7 +5510,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4764,7 +5520,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "normal"
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4772,7 +5530,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4780,7 +5540,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
-          "priority": "high"
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
         },
         {
           "source": "plan",
@@ -4788,7 +5550,9 @@ export const expectedForecastWithPreview: Forecast = {
           "base_hours": 4,
           "weighted": false,
           "hours": 4,
-          "priority": "low"
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
         }
       ]
     }

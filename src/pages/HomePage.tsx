@@ -10,8 +10,10 @@ import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { ForecastChart } from "@/features/forecast/components/ForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
 import { formatHours, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { usePlanCategories } from "@/features/plans/categories";
+import { typeTagOf } from "@/features/plans/colors";
 import { cn } from "@/lib/utils";
-import type { Plan } from "@/types/database";
+import type { Plan, PlanCategory } from "@/types/database";
 
 /**
  * S-08 부담 예보 (홈, 경로 /) — 담당: 프론트 B (feature/frontend-jw)
@@ -20,6 +22,7 @@ import type { Plan } from "@/types/database";
 export default function HomePage() {
   const data = useForecastData();
   const [picked, setPicked] = useState<number | null>(null);
+  const categories = usePlanCategories().data ?? [];
 
   if (data.status === "loading") return <HomeSkeleton />;
   if (data.status === "error") return <HomeError onRetry={data.refetch} />;
@@ -92,8 +95,9 @@ export default function HomePage() {
                 midtermWeek={profile.midterm_week}
                 finalWeek={profile.final_week}
                 isCurrent={selectedWeek === currentWeek}
+                categories={categories}
               />
-              <PlanSummary plans={plans} />
+              <PlanSummary plans={plans} categories={categories} />
             </>
           )}
         </aside>
@@ -167,7 +171,7 @@ function WeekProgress({ currentWeek }: { currentWeek: number }) {
   );
 }
 
-function PlanSummary({ plans }: { plans: Plan[] }) {
+function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCategory[] }) {
   const shown = plans.slice(0, 5);
   return (
     <section aria-labelledby="plans-title" className="grid gap-2 rounded-2xl border border-border bg-card p-5">
@@ -183,14 +187,21 @@ function PlanSummary({ plans }: { plans: Plan[] }) {
         <p className="border-t border-border/60 pt-2 text-sm text-muted-foreground">자격증만 골라져 있어요.</p>
       ) : (
         <ul className="text-sm">
-          {shown.map((p) => (
+          {shown.map((p) => {
+            const tag = typeTagOf({ source: "plan", plan_type: p.type, category_id: p.category_id }, categories);
+            return (
             <li key={p.id} className="flex justify-between gap-3 border-t border-border/60 py-2">
-              <span className="min-w-0 truncate">{p.title}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: tag.color }} aria-hidden="true" />
+                <span className="truncate">{p.title}</span>
+                <span className="sr-only">({tag.label})</span>
+              </span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
                 {p.start_week}~{p.end_week}주, {formatHours(p.hours_per_week)}시간
               </span>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       {plans.length > shown.length ? (

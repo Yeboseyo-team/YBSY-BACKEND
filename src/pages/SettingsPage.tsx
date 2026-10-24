@@ -68,7 +68,9 @@ function AccountCard({ profile, email }: { profile: Profile; email?: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{name}</p>
         <p className="truncate text-sm text-muted-foreground">{email}</p>
-        <p className="mt-1 text-[13px] text-muted-foreground">Google 계정으로 로그인 중</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          {email?.endsWith("@hakgi.test") ? "데모 계정으로 로그인 중" : "Google 계정으로 로그인 중"}
+        </p>
       </div>
       <div className="grid w-full gap-2 sm:w-auto">
         <Button variant="outline" disabled={signOut.isPending} onClick={() => signOut.mutate()}>

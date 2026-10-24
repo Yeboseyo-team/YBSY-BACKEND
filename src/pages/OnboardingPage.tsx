@@ -3,7 +3,9 @@ import { Navigate, useNavigate } from "react-router";
 import { FullScreenSpinner } from "@/components/FullScreenSpinner";
 import { LoadError } from "@/components/LoadError";
 import { useAuth } from "@/features/auth/auth-context";
-import { useProfile } from "@/features/auth/api";
+import { Button } from "@/components/ui/button";
+import { useProfile, useSignOut } from "@/features/auth/api";
+import { toAuthMessage } from "@/features/auth/errors";
 import { isOnboardingDone } from "@/features/auth/onboarding";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { SemesterForm, type SemesterFormValues } from "@/features/auth/components/SemesterForm";
@@ -20,6 +22,7 @@ export default function OnboardingPage() {
   const { user } = useAuth();
   const profile = useProfile(user?.id);
   const update = useUpdateProfile();
+  const signOut = useSignOut();
   const navigate = useNavigate();
   const [preview, setPreview] = useState<Partial<SemesterFormValues> | null>(null);
   const handleValuesChange = useCallback((v: Partial<SemesterFormValues>) => setPreview(v), []);
@@ -45,8 +48,15 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-dvh">
-      <header className="mx-auto max-w-6xl px-4 pt-6 sm:px-10">
+      <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pt-6 sm:px-10">
         <span className="text-lg font-extrabold tracking-tight">학기예보</span>
+        {/* 다른 계정으로 바꾸고 싶을 때 (온보딩 전에는 설정 화면에 갈 수 없음) */}
+        <div className="flex items-center gap-2">
+          {signOut.error ? <p className="text-[13px] text-destructive">{toAuthMessage(signOut.error)}</p> : null}
+          <Button variant="ghost" size="sm" disabled={signOut.isPending} onClick={() => signOut.mutate()}>
+            {signOut.isPending ? "로그아웃하는 중…" : "다른 계정으로 로그인"}
+          </Button>
+        </div>
       </header>
 
       <main className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-12 lg:py-14">

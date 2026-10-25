@@ -18,7 +18,7 @@ const yebo = inputOf("yebo@hakgi.test");
 const empty = inputOf("empty@hakgi.test");
 
 describe("사전 검토 계산 (F-06)", () => {
-  it("계획 추가는 previewForecast 와 같은 결과 (폭풍 1주 → 3주)", () => {
+  it("계획 추가는 previewForecast 와 같은 결과 (폭풍 2주 → 3주)", () => {
     const result = buildPreview(yebo, { kind: "plan", plan: previewPlan });
     expect(result.diff).toEqual(expectedPreviewDiff);
     expect(previewHeadline("대학생 서포터즈 1차 미션", result, "add")).toBe("대학생 서포터즈 1차 미션을 더하면 폭풍 주가 늘어요");
@@ -42,7 +42,7 @@ describe("사전 검토 계산 (F-06)", () => {
     expect(empty.userCertificates).toHaveLength(0);
   });
 
-  it("같은 자격증의 다른 회차로 바꾸면 예전 회차는 빠짐 (김예보: 3회 실기 → 2027년 1회, 폭풍 1주 → 0주)", () => {
+  it("같은 자격증의 다른 회차로 바꾸면 예전 회차는 빠짐 (김예보: 3회 실기 → 2027년 1회, 폭풍 2주 → 1주)", () => {
     const current = certificates.find((c) => c.name === "정보처리기사" && c.round === "2026년 정기 3회 실기")!;
     const next = certificates.find((c) => c.name === "정보처리기사" && c.round === "2027년 정기 1회 필기 (예정)")!;
     const mine = yebo.userCertificates.find((uc) => uc.certificate_id === current.id)!;
@@ -53,8 +53,8 @@ describe("사전 검토 계산 (F-06)", () => {
       study_hours: mine.study_hours,
       replaceCertificateId: current.id,
     });
-    expect(result.diff.message).toBe("폭풍 1주 → 0주");
-    expect(levelChanges(result)[0]).toEqual({ level: "storm", before: 1, after: 0 });
+    expect(result.diff.message).toBe("폭풍 2주 → 1주");
+    expect(levelChanges(result)[0]).toEqual({ level: "storm", before: 2, after: 1 });
     expect(previewHeadline("정보처리기사 2027년 정기 1회 필기 (예정)", result, "switch")).toBe("이 회차로 바꾸면 폭풍 주가 줄어요");
   });
 });

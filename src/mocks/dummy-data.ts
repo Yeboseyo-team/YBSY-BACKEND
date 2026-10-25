@@ -66,7 +66,7 @@ export const demoUsers = [
     "id": "a0000000-0000-4000-8000-000000000001",
     "email": "yebo@hakgi.test",
     "display_name": "김예보",
-    "persona": "취업 준비생 3학년 · 시연 시나리오 / 4.5 검증 예시"
+    "persona": "취업 준비생 3학년 · 발표 시연(10/27 = 9주차 폭풍) / 4.5 검증 예시"
   },
   {
     "id": "a0000000-0000-4000-8000-000000000002",
@@ -474,6 +474,23 @@ export const plans: Plan[] = [
   {
     "id": "b0000000-0000-4000-0001-000000000007",
     "user_id": "a0000000-0000-4000-8000-000000000001",
+    "title": "캡스톤 디자인 중간 발표",
+    "type": "project",
+    "credits": null,
+    "load_level": "custom",
+    "start_week": 9,
+    "end_week": 10,
+    "hours_per_week": 6,
+    "start_date": "2026-10-26",
+    "end_date": "2026-11-08",
+    "priority": "high",
+    "category_id": null,
+    "created_at": "2026-09-01T09:00:00+09:00",
+    "updated_at": "2026-09-01T09:00:00+09:00"
+  },
+  {
+    "id": "b0000000-0000-4000-0001-000000000008",
+    "user_id": "a0000000-0000-4000-8000-000000000001",
     "title": "사촌형 결혼식",
     "type": "custom",
     "credits": null,
@@ -483,7 +500,7 @@ export const plans: Plan[] = [
     "hours_per_week": 6,
     "start_date": "2026-10-31",
     "end_date": "2026-10-31",
-    "priority": "normal",
+    "priority": "high",
     "category_id": "d0000000-0000-4000-0001-000000000001",
     "created_at": "2026-09-01T09:00:00+09:00",
     "updated_at": "2026-09-01T09:00:00+09:00"
@@ -723,6 +740,13 @@ export const userCertificates: UserCertificate[] = [
     "certificate_id": "c0000000-0000-4000-8000-000000000007",
     "study_hours": 8,
     "prep_weeks": 3,
+    "notified_at": null
+  },
+  {
+    "user_id": "a0000000-0000-4000-8000-000000000001",
+    "certificate_id": "c0000000-0000-4000-8000-000000000011",
+    "study_hours": 6,
+    "prep_weeks": 2,
     "notified_at": null
   },
   {
@@ -1367,6 +1391,102 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 9,
         "is_exam_week": false,
+        "total_hours": 54,
+        "ratio": 1.08,
+        "level": "storm",
+        "items": [
+          {
+            "source": "plan",
+            "title": "운영체제",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "데이터베이스",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "컴퓨터네트워크",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "normal",
+            "plan_type": "class",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "소프트웨어공학",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "low",
+            "plan_type": "class",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "알고리즘",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "class",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "프로그래밍 학회",
+            "base_hours": 4,
+            "weighted": false,
+            "hours": 4,
+            "priority": "low",
+            "plan_type": "activity",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "캡스톤 디자인 중간 발표",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "project",
+            "category_id": null
+          },
+          {
+            "source": "plan",
+            "title": "사촌형 결혼식",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6,
+            "priority": "high",
+            "plan_type": "custom",
+            "category_id": "d0000000-0000-4000-0001-000000000001"
+          },
+          {
+            "source": "certificate",
+            "title": "SQLD 준비",
+            "base_hours": 8,
+            "weighted": false,
+            "hours": 8
+          }
+        ]
+      },
+      {
+        "week": 10,
+        "is_exam_week": false,
         "total_hours": 48,
         "ratio": 0.96,
         "level": "cloudy",
@@ -1433,88 +1553,12 @@ export const expectedForecast: Record<string, Forecast> = {
           },
           {
             "source": "plan",
-            "title": "사촌형 결혼식",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6,
-            "priority": "normal",
-            "plan_type": "custom",
-            "category_id": "d0000000-0000-4000-0001-000000000001"
-          },
-          {
-            "source": "certificate",
-            "title": "SQLD 준비",
-            "base_hours": 8,
-            "weighted": false,
-            "hours": 8
-          }
-        ]
-      },
-      {
-        "week": 10,
-        "is_exam_week": false,
-        "total_hours": 42,
-        "ratio": 0.84,
-        "level": "cloudy",
-        "items": [
-          {
-            "source": "plan",
-            "title": "운영체제",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6,
-            "priority": "normal",
-            "plan_type": "class",
-            "category_id": null
-          },
-          {
-            "source": "plan",
-            "title": "데이터베이스",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6,
-            "priority": "normal",
-            "plan_type": "class",
-            "category_id": null
-          },
-          {
-            "source": "plan",
-            "title": "컴퓨터네트워크",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6,
-            "priority": "normal",
-            "plan_type": "class",
-            "category_id": null
-          },
-          {
-            "source": "plan",
-            "title": "소프트웨어공학",
-            "base_hours": 6,
-            "weighted": false,
-            "hours": 6,
-            "priority": "low",
-            "plan_type": "class",
-            "category_id": null
-          },
-          {
-            "source": "plan",
-            "title": "알고리즘",
+            "title": "캡스톤 디자인 중간 발표",
             "base_hours": 6,
             "weighted": false,
             "hours": 6,
             "priority": "high",
-            "plan_type": "class",
-            "category_id": null
-          },
-          {
-            "source": "plan",
-            "title": "프로그래밍 학회",
-            "base_hours": 4,
-            "weighted": false,
-            "hours": 4,
-            "priority": "low",
-            "plan_type": "activity",
+            "plan_type": "project",
             "category_id": null
           },
           {
@@ -1605,9 +1649,9 @@ export const expectedForecast: Record<string, Forecast> = {
       {
         "week": 12,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 40,
+        "ratio": 0.8,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -1668,15 +1712,22 @@ export const expectedForecast: Record<string, Forecast> = {
             "priority": "low",
             "plan_type": "activity",
             "category_id": null
+          },
+          {
+            "source": "certificate",
+            "title": "빅데이터분석기사 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
       {
         "week": 13,
         "is_exam_week": false,
-        "total_hours": 34,
-        "ratio": 0.68,
-        "level": "clear",
+        "total_hours": 40,
+        "ratio": 0.8,
+        "level": "cloudy",
         "items": [
           {
             "source": "plan",
@@ -1737,6 +1788,13 @@ export const expectedForecast: Record<string, Forecast> = {
             "priority": "low",
             "plan_type": "activity",
             "category_id": null
+          },
+          {
+            "source": "certificate",
+            "title": "빅데이터분석기사 준비",
+            "base_hours": 6,
+            "weighted": false,
+            "hours": 6
           }
         ]
       },
@@ -1949,9 +2007,9 @@ export const expectedForecast: Record<string, Forecast> = {
       }
     ],
     "summary": {
-      "storm": 1,
-      "cloudy": 9,
-      "clear": 6
+      "storm": 2,
+      "cloudy": 10,
+      "clear": 4
     }
   },
   "a0000000-0000-4000-8000-000000000002": {
@@ -4956,6 +5014,112 @@ export const expectedForecastWithPreview: Forecast = {
     {
       "week": 9,
       "is_exam_week": false,
+      "total_hours": 64,
+      "ratio": 1.28,
+      "level": "storm",
+      "items": [
+        {
+          "source": "plan",
+          "title": "운영체제",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "데이터베이스",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "컴퓨터네트워크",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "normal",
+          "plan_type": "class",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "소프트웨어공학",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "low",
+          "plan_type": "class",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "알고리즘",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "class",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "프로그래밍 학회",
+          "base_hours": 4,
+          "weighted": false,
+          "hours": 4,
+          "priority": "low",
+          "plan_type": "activity",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "캡스톤 디자인 중간 발표",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "project",
+          "category_id": null
+        },
+        {
+          "source": "plan",
+          "title": "사촌형 결혼식",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6,
+          "priority": "high",
+          "plan_type": "custom",
+          "category_id": "d0000000-0000-4000-0001-000000000001"
+        },
+        {
+          "source": "plan",
+          "title": "대학생 서포터즈 1차 미션",
+          "base_hours": 10,
+          "weighted": false,
+          "hours": 10,
+          "priority": "normal",
+          "plan_type": "activity",
+          "category_id": null
+        },
+        {
+          "source": "certificate",
+          "title": "SQLD 준비",
+          "base_hours": 8,
+          "weighted": false,
+          "hours": 8
+        }
+      ]
+    },
+    {
+      "week": 10,
+      "is_exam_week": false,
       "total_hours": 58,
       "ratio": 1.16,
       "level": "storm",
@@ -5022,98 +5186,12 @@ export const expectedForecastWithPreview: Forecast = {
         },
         {
           "source": "plan",
-          "title": "사촌형 결혼식",
-          "base_hours": 6,
-          "weighted": false,
-          "hours": 6,
-          "priority": "normal",
-          "plan_type": "custom",
-          "category_id": "d0000000-0000-4000-0001-000000000001"
-        },
-        {
-          "source": "plan",
-          "title": "대학생 서포터즈 1차 미션",
-          "base_hours": 10,
-          "weighted": false,
-          "hours": 10,
-          "priority": "normal",
-          "plan_type": "activity",
-          "category_id": null
-        },
-        {
-          "source": "certificate",
-          "title": "SQLD 준비",
-          "base_hours": 8,
-          "weighted": false,
-          "hours": 8
-        }
-      ]
-    },
-    {
-      "week": 10,
-      "is_exam_week": false,
-      "total_hours": 52,
-      "ratio": 1.04,
-      "level": "storm",
-      "items": [
-        {
-          "source": "plan",
-          "title": "운영체제",
-          "base_hours": 6,
-          "weighted": false,
-          "hours": 6,
-          "priority": "normal",
-          "plan_type": "class",
-          "category_id": null
-        },
-        {
-          "source": "plan",
-          "title": "데이터베이스",
-          "base_hours": 6,
-          "weighted": false,
-          "hours": 6,
-          "priority": "normal",
-          "plan_type": "class",
-          "category_id": null
-        },
-        {
-          "source": "plan",
-          "title": "컴퓨터네트워크",
-          "base_hours": 6,
-          "weighted": false,
-          "hours": 6,
-          "priority": "normal",
-          "plan_type": "class",
-          "category_id": null
-        },
-        {
-          "source": "plan",
-          "title": "소프트웨어공학",
-          "base_hours": 6,
-          "weighted": false,
-          "hours": 6,
-          "priority": "low",
-          "plan_type": "class",
-          "category_id": null
-        },
-        {
-          "source": "plan",
-          "title": "알고리즘",
+          "title": "캡스톤 디자인 중간 발표",
           "base_hours": 6,
           "weighted": false,
           "hours": 6,
           "priority": "high",
-          "plan_type": "class",
-          "category_id": null
-        },
-        {
-          "source": "plan",
-          "title": "프로그래밍 학회",
-          "base_hours": 4,
-          "weighted": false,
-          "hours": 4,
-          "priority": "low",
-          "plan_type": "activity",
+          "plan_type": "project",
           "category_id": null
         },
         {
@@ -5214,9 +5292,9 @@ export const expectedForecastWithPreview: Forecast = {
     {
       "week": 12,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 40,
+      "ratio": 0.8,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -5277,15 +5355,22 @@ export const expectedForecastWithPreview: Forecast = {
           "priority": "low",
           "plan_type": "activity",
           "category_id": null
+        },
+        {
+          "source": "certificate",
+          "title": "빅데이터분석기사 준비",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         }
       ]
     },
     {
       "week": 13,
       "is_exam_week": false,
-      "total_hours": 34,
-      "ratio": 0.68,
-      "level": "clear",
+      "total_hours": 40,
+      "ratio": 0.8,
+      "level": "cloudy",
       "items": [
         {
           "source": "plan",
@@ -5346,6 +5431,13 @@ export const expectedForecastWithPreview: Forecast = {
           "priority": "low",
           "plan_type": "activity",
           "category_id": null
+        },
+        {
+          "source": "certificate",
+          "title": "빅데이터분석기사 준비",
+          "base_hours": 6,
+          "weighted": false,
+          "hours": 6
         }
       ]
     },
@@ -5559,17 +5651,16 @@ export const expectedForecastWithPreview: Forecast = {
   ],
   "summary": {
     "storm": 3,
-    "cloudy": 7,
-    "clear": 6
+    "cloudy": 9,
+    "clear": 4
   }
 };
 /** FR-06-3 변화 요약 기대값 */
 export const expectedPreviewDiff = {
-  "storm_before": 1,
+  "storm_before": 2,
   "storm_after": 3,
   "new_storm_weeks": [
-    9,
     10
   ],
-  "message": "폭풍 1주 → 3주 (9, 10주차 추가)"
+  "message": "폭풍 2주 → 3주 (10주차 추가)"
 };

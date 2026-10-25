@@ -108,12 +108,12 @@ describe("사전 검토 (F-06)", () => {
     const { after, diff } = previewForecast(inputOf(yebo), [previewPlan]);
     expect(after).toEqual(expectedForecastWithPreview);
     expect(diff).toEqual(expectedPreviewDiff);
-    expect(diff.message).toBe("폭풍 1주 → 3주 (9, 10주차 추가)");
+    expect(diff.message).toBe("폭풍 2주 → 3주 (10주차 추가)");
   });
 
   it("새 폭풍 주차가 없으면 괄호 없이 요약", () => {
     const base = calculateForecast(inputOf(yebo));
-    expect(comparePreview(base, base).message).toBe("폭풍 1주 → 1주");
+    expect(comparePreview(base, base).message).toBe("폭풍 2주 → 2주");
   });
 });
 
@@ -226,11 +226,11 @@ describe("자격증 접수 일정·마감 알림 (FR-04-2, FR-04-4, F-07 화면 
 });
 
 describe("시험 회차 추천 (F-09, FR-09-1)", () => {
-  it("김예보 정보처리기사: 2027년 1회로 미루면 폭풍 1주 → 0주. 접수 끝난 3회 필기는 제외, 지금 고른 3회 실기는 비교용으로 남김", () => {
+  it("김예보 정보처리기사: 2027년 1회로 미루면 폭풍 2주 → 1주(8주차가 흐림으로). 접수 끝난 3회 필기는 제외, 지금 고른 3회 실기는 비교용으로 남김", () => {
     const recs = recommendRounds({ ...inputOf(yebo), certificates, name: "정보처리기사", today: DEMO_TODAY });
     expect(recs.map((r) => [r.certificate.round, r.storm_weeks, r.status, r.is_current])).toEqual([
-      ["2027년 정기 1회 필기 (예정)", 0, "upcoming", false],
-      ["2026년 정기 3회 실기", 1, "closed", true],
+      ["2027년 정기 1회 필기 (예정)", 1, "upcoming", false],
+      ["2026년 정기 3회 실기", 2, "closed", true],
     ]);
     expect(recs[0].prep_range.coverage).toBe("out");
   });
@@ -258,14 +258,14 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
   const BIGDATA_PRACTICAL = "c0000000-0000-4000-8000-000000000011"; // 시험 11/28 = 13주차
   const hours = (f: { weeks: { total_hours: number }[] }, week: number) => f.weeks[week - 1].total_hours;
 
-  it("자격증 고르기: 김예보가 빅데이터분석기사 실기(준비 6주, 주 10시간)를 고르면 9·10·11주차가 새로 폭풍", () => {
+  it("자격증 고르기: 김예보의 빅데이터분석기사 실기를 준비 6주·주 10시간으로 바꾸면 10·11주차가 새로 폭풍", () => {
     const { before, after, diff } = previewDraft(inputOf(yebo), {
       addCertificates: [{ certificate_id: BIGDATA_PRACTICAL, prep_weeks: 6, study_hours: 10 }],
     });
-    expect(hours(before, 9)).toBe(48); // 42 + 사촌형 결혼식 6 (10/31)
-    expect(hours(after, 9)).toBe(58);
+    expect(hours(before, 9)).toBe(54); // 수업 30 + 학회 4 + 캡스톤 6 + 결혼식 6 + SQLD 8 (발표일 이번 주)
+    expect(hours(after, 9)).toBe(64);
     expect(hours(after, 13)).toBe(44);
-    expect(diff.message).toBe("폭풍 1주 → 4주 (9, 10, 11주차 추가)");
+    expect(diff.message).toBe("폭풍 2주 → 4주 (10, 11주차 추가)");
   });
 
   it("회차 바꾸기: SQLD 63회(9~11주)를 빼고 빅데이터 실기(준비 3주 → 11~13주)를 넣음", () => {
@@ -273,7 +273,7 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
       removeCertificateIds: [SQLD63],
       addCertificates: [{ certificate_id: BIGDATA_PRACTICAL, prep_weeks: 3, study_hours: 8 }],
     });
-    expect([hours(after, 9), hours(after, 10), hours(after, 11), hours(after, 12), hours(after, 13)]).toEqual([40, 34, 42, 42, 42]); // 9주차는 결혼식 6시간
+    expect([hours(after, 9), hours(after, 10), hours(after, 11), hours(after, 12), hours(after, 13)]).toEqual([46, 40, 42, 42, 42]); // SQLD 8시간이 빠지고, 빅데이터는 12~13주 6시간 → 11~13주 8시간
     expect(after.weeks.flatMap((w) => w.items).some((i) => i.title === "SQLD 준비")).toBe(false);
   });
 
@@ -281,7 +281,7 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
     const { after } = previewDraft(inputOf(yebo), {
       addCertificates: [{ certificate_id: SQLD63, prep_weeks: 3, study_hours: 12 }],
     });
-    expect(hours(after, 9)).toBe(52); // 34 + 결혼식 6 + 12 (8시간이 남아 있으면 60)
+    expect(hours(after, 9)).toBe(58); // 54 - 8 + 12 (8시간이 남아 있으면 66)
   });
 
   it("계획 수정: 프로그래밍 학회를 주 4시간 → 20시간으로 바꾸면 원래 계획은 빼고 계산", () => {
@@ -297,7 +297,7 @@ describe("사전 검토: 자격증 고르기·회차 바꾸기·계획 수정 (p
     const input = inputOf(yebo);
     const snapshot = JSON.stringify(input);
     expect(previewDraft(input, { addPlans: [previewPlan] })).toEqual(previewForecast(input, [previewPlan]));
-    expect(previewDraft(input, {}).diff.message).toBe("폭풍 1주 → 1주");
+    expect(previewDraft(input, {}).diff.message).toBe("폭풍 2주 → 2주");
     expect(JSON.stringify(input)).toBe(snapshot);
   });
 });

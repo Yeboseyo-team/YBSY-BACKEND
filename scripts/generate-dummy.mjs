@@ -286,7 +286,7 @@ writeFileSync(join(root, 'supabase/seed.sql'), sql);
 // - 개인정보 동의 시각은 트리거가 한 번 기록되면 바꾸지 못하게 막으므로, 이 작업 동안만 트리거를 끕니다.
 const demoIds = users.map((u) => q(u.id)).join(', ');
 const resetSql = `${header}-- 데모 계정 데이터 되돌리기. Supabase SQL Editor 에서 통째로 실행하세요. 여러 번 실행해도 같은 결과.
--- 지우는 것: 데모 계정 5명의 계획·자격증 선택 / 다시 넣는 것: 학기 설정·동의, 계획, 자격증 선택, 공용 자격증 회차
+-- 지우는 것: 데모 계정 5명의 계획·내 유형·자격증 선택·직접 추가한 자격증 / 다시 넣는 것: 학기 설정·동의, 계획, 자격증 선택, 공용 자격증 회차
 -- 건드리지 않는 것: 실제 사용자(Google 로그인) 계정과 데이터
 
 begin;
@@ -294,6 +294,7 @@ begin;
 delete from public.user_certificates where user_id in (${demoIds});
 delete from public.plans where user_id in (${demoIds});
 delete from public.plan_categories where user_id in (${demoIds});
+delete from public.certificates where owner_id in (${demoIds}); -- 테스트하며 직접 추가한 자격증 (10/24 이후)
 
 alter table public.profiles disable trigger profiles_privacy_agreed_at;
 ${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}

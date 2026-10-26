@@ -8,51 +8,32 @@ import { Button } from "@/components/ui/button";
 import { useProfile, useSignOut } from "@/features/auth/api";
 import { toAuthMessage } from "@/features/auth/errors";
 import { isOnboardingDone } from "@/features/auth/onboarding";
+import { ONBOARDING_PLANS_PATH, saveOnboardingDraft } from "@/features/auth/onboarding-draft";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { SemesterForm, type SemesterFormValues } from "@/features/auth/components/SemesterForm";
-import { SemesterTalk } from "@/features/auth/components/SemesterTalk";
-import { toPlanMessage, useCreatePlans } from "@/features/plans/api";
-import { CREDITS_RANGE } from "@/features/plans/defaults";
-import type { SemesterDraft } from "@/features/plans/ai";
+import { OnboardingTexts, type OnboardingTextValues } from "@/features/auth/components/OnboardingTexts";
 import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
-import { toStudyStyle } from "@/features/auth/schemas";
+import { toStudyStyle, type SemesterValues } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, defaultSemesterStart } from "@/features/auth/semester";
-import type { SemesterValues } from "@/features/auth/schemas";
-import { ONBOARDING_PLANS_PATH } from "@/pages/OnboardingPlansPage";
-import { addDays, splitWeeklyHours, todayInKorea, TOTAL_WEEKS } from "@/features/forecast/calc";
+import { splitWeeklyHours, todayInKorea } from "@/features/forecast/calc";
+import { toEstimateMessage, useParseOnboarding } from "@/features/plans/ai";
 
 /**
- * S-07 온보딩 (경로 /onboarding) — 담당: 프론트 A
- * 첫 로그인 뒤 학기 설정 + 개인정보 수집·이용 동의 (FR-01-11, NFR-LEGAL-1).
- * 10/26: 저장하면 바로 2단계 계획 넣기(/start/plans)로 가고, 다 넣은 뒤 예보 홈으로 가요.
+ * S-07 온보딩 1단계 (경로 /onboarding) — 10/27 온보딩 개편
+ * 공부 스타일·개강일·시험 주차는 고르고, 쓸 수 있는 시간과 이번 학기 할 일(수업·프로젝트·자격증)은 글로 써요.
+ * [AI로 예보 만들기]를 누르면 학기 설정·동의를 저장하고, AI 가 만든 계획·자격증 초안을 들고 2단계(/start/plans)로 가요.
+ * 계획·자격증은 2단계에서 예상 예보를 보고 고친 뒤에 저장해요.
  */
-/** AI 가 읽은 값 중 비어 있지 않은 것만 폼 기본값으로 */
-function draftValues(draft: SemesterDraft | null): Partial<SemesterValues> {
-  if (!draft) return {};
-  const out: Partial<SemesterValues> = {};
-  if (draft.semester_start && /^\d{4}-\d{2}-\d{2}$/.test(draft.semester_start)) out.semesterStart = draft.semester_start;
-  if (draft.daily_hours && draft.daily_hours.length === 7 && draft.daily_hours.reduce((a, b) => a + b, 0) >= 1) out.dailyHours = draft.daily_hours;
-  if (draft.midterm_week && draft.final_week && draft.midterm_week < draft.final_week) {
-    out.midtermWeek = draft.midterm_week;
-    out.finalWeek = draft.final_week;
-  }
-  if (draft.study_style) out.studyStyle = draft.study_style;
-  return out;
-}
-
 export default function OnboardingPage() {
   const { user } = useAuth();
   const profile = useProfile(user?.id);
   const update = useUpdateProfile();
+  const parse = useParseOnboarding();
   const signOut = useSignOut();
   const navigate = useNavigate();
   const [preview, setPreview] = useState<Partial<SemesterFormValues> | null>(null);
   const handleValuesChange = useCallback((v: Partial<SemesterFormValues>) => setPreview(v), []);
-  // 10/26: 말로 한 번에 설정하기 — AI 가 읽은 값으로 폼을 다시 채우고(key 로 새로 그림), 읽은 계획은 시작할 때 같이 저장
-  const [draft, setDraft] = useState<SemesterDraft | null>(null);
-  const [pickedPlans, setPickedPlans] = useState<boolean[]>([]);
-  const [formKey, setFormKey] = useState(0);
-  const createPlans = useCreatePlans();
+  const [texts, setTexts] = useState<OnboardingTextValues>({ classes: "", activities: "", certificates: "", image: null });
   // 저장하면 프로필이 "온보딩 끝"으로 바뀌어 아래 홈 이동이 먼저 일어나요. 방금 저장한 경우엔 2단계로 가도록 막아 둠
   const submitted = useRef(false);
 
@@ -73,34 +54,38 @@ export default function OnboardingPage() {
     midtermWeek: profile.data?.midterm_week ?? DEFAULT_SEMESTER.midtermWeek,
     finalWeek: profile.data?.final_week ?? DEFAULT_SEMESTER.finalWeek,
     studyStyle: toStudyStyle(profile.data?.study_style),
-    ...draftValues(draft),
   };
   const shown = { ...defaults, ...preview };
+  const hasTexts = Boolean(texts.classes.trim() || texts.activities.trim() || texts.certificates.trim() || texts.image);
+  const busy = update.isPending || parse.isPending;
 
-  const finish = (semesterStart: string) => {
-    const chosen = (draft?.plans ?? []).filter((_, i) => pickedPlans[i]);
-    if (chosen.length === 0) return navigate(ONBOARDING_PLANS_PATH, { replace: true });
-    const end = addDays(semesterStart, TOTAL_WEEKS * 7 - 1);
-    createPlans.mutate(
-      chosen.map((p) => ({
-        title: p.title.slice(0, 30),
-        type: p.type,
-        credits: p.type === "class" ? Math.min(CREDITS_RANGE.max, Math.max(CREDITS_RANGE.min, Math.round(p.credits ?? 3))) : null,
-        load_level: "custom",
-        start_week: 1,
-        end_week: TOTAL_WEEKS,
-        hours_per_week: Math.min(60, Math.max(0.5, Math.round(p.hours_per_week * 2) / 2)),
-        start_date: semesterStart,
-        end_date: end,
-        priority: "normal",
-        category_id: null,
-        no_exam: p.type === "class" && Boolean(p.no_exam),
-      })),
-      // 계획 저장이 실패해도 학기 설정은 끝났으니 다음 단계로 (거기서 다시 넣으면 돼요)
+  /** 학기 설정을 저장한 뒤: 글이 있으면 AI 초안을 만들어 2단계로, 없으면 빈 2단계로 */
+  const toStep2 = (v: SemesterFormValues) => {
+    const go = () => navigate(ONBOARDING_PLANS_PATH, { replace: true });
+    if (!hasTexts) {
+      saveOnboardingDraft(user?.id, { plans: [], certificates: [], reason: null, error: null });
+      return go();
+    }
+    parse.mutate(
       {
-        onSuccess: () => navigate(ONBOARDING_PLANS_PATH, { replace: true }),
-        // 실패하면 다음 화면에서 알려 주고 거기서 다시 넣게 (조용히 0개로 보이지 않게)
-        onError: (error) => navigate(ONBOARDING_PLANS_PATH, { replace: true, state: { planError: toPlanMessage(error), missed: chosen.map((p) => p.title) } }),
+        classes: texts.classes.trim(),
+        activities: texts.activities.trim(),
+        certificates: texts.certificates.trim(),
+        ...(texts.image ? { image: { media_type: texts.image.media_type, data: texts.image.data } } : {}),
+        semester_start: v.semesterStart,
+        midterm_week: v.midtermWeek,
+        final_week: v.finalWeek,
+      },
+      {
+        onSuccess: (draft) => {
+          saveOnboardingDraft(user?.id, { plans: draft.plans, certificates: draft.certificates, reason: draft.reason || null, error: null });
+          go();
+        },
+        // AI 가 실패해도 학기 설정은 끝났으니 2단계에서 직접 넣게 해요
+        onError: (error) => {
+          saveOnboardingDraft(user?.id, { plans: [], certificates: [], reason: null, error: toEstimateMessage(error) });
+          go();
+        },
       },
     );
   };
@@ -119,51 +104,33 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* 10/26 UI 점검: 휴대폰에서는 소개 → 말로 설정하기(접힘) → 폼(벼락치기 질문이 맨 위) → 학기 미리보기 순서.
-          PC 는 왼쪽에 소개·말로 설정하기·미리보기, 오른쪽에 폼 */}
-      <main className="mx-auto grid max-w-6xl content-start gap-8 px-4 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-x-12 lg:py-14">
-          <div className="lg:col-start-1 lg:row-start-1">
-            <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">
-              {profile.data?.display_name ? `${profile.data.display_name}님, ` : ""}
-              이번 학기를
-              <br />
-              알려주세요
-            </h1>
-            <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
-              처음 한 번만 입력하면 돼요. 이 값으로 주차를 세고, 시험 주간과 가용 시간을 기준으로 바쁜 주를 판정해요.
-              나중에 설정에서 바꿀 수 있어요.
-            </p>
-          </div>
-          <SemesterTalk
-            className="lg:col-start-1 lg:row-start-2"
-            formId="onboarding-semester-form"
-            isPending={update.isPending || createPlans.isPending}
-            plans={draft?.plans ?? []}
-            picked={pickedPlans}
-            onTogglePlan={(i) => setPickedPlans((all) => all.map((v, j) => (j === i ? !v : v)))}
-            onDraft={(d) => {
-              setDraft(d);
-              setPickedPlans(d.plans.map(() => true));
-              setPreview(null);
-              setFormKey((k) => k + 1);
-            }}
-          />
-          <div className="order-last lg:order-none lg:col-start-1 lg:row-start-3">
-            <SemesterPreview semesterStart={shown.semesterStart} midtermWeek={shown.midtermWeek} finalWeek={shown.finalWeek} />
-          </div>
+      {/* 소개 → 폼. 폼은 PC 에서 왼쪽(스타일·개강일·쓸 수 있는 시간·시험 주차·미리보기), 오른쪽(수업·프로젝트·자격증 글 칸) (10/27) */}
+      <main className="mx-auto grid max-w-6xl content-start gap-8 px-4 py-8 sm:px-10 lg:py-12">
+        <div>
+          <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">
+            {profile.data?.display_name ? `${profile.data.display_name}님, ` : ""}
+            이번 학기를
+            <br />
+            알려주세요
+          </h1>
+          <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
+            고르고 쓰기만 하면 AI가 계획과 시간을 정해 예보를 만들어 드려요. 다음 단계에서 예보를 보고 고칠 수 있어요.
+          </p>
+        </div>
 
-        <div className="self-start rounded-xl border border-border bg-card p-5 sm:p-8 lg:col-start-2 lg:row-span-3 lg:row-start-1">
+        <div>
           <SemesterForm
-            key={formKey}
-            hideAiHelper
-            id="onboarding-semester-form"
+            columnClassName="rounded-xl border border-border bg-card p-5 sm:p-8"
             requirePrivacy
+            aiDailyHours
             defaultValues={defaults}
-            submitLabel="다음: 계획 넣기"
-            pendingLabel="저장하는 중…"
-            isPending={update.isPending || createPlans.isPending}
+            submitLabel={hasTexts ? "AI로 예보 만들기" : "다음: 계획 넣기"}
+            pendingLabel={parse.isPending ? "AI가 예보를 만드는 중… (10초쯤 걸려요)" : "저장하는 중…"}
+            isPending={busy}
             errorMessage={update.error ? toProfileMessage(update.error) : undefined}
             onValuesChange={handleValuesChange}
+            extra={<OnboardingTexts value={texts} onChange={setTexts} disabled={busy} />}
+            afterExams={<SemesterPreview semesterStart={shown.semesterStart} midtermWeek={shown.midtermWeek} finalWeek={shown.finalWeek} />}
             onSubmit={(v) => {
               submitted.current = true;
               update.mutate(
@@ -176,7 +143,7 @@ export default function OnboardingPage() {
                   agree_privacy: true,
                 },
                 {
-                  onSuccess: () => finish(v.semesterStart),
+                  onSuccess: () => toStep2(v),
                   onError: () => {
                     submitted.current = false;
                   },

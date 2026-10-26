@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router";
@@ -33,8 +33,14 @@ type Props = {
   secondaryAction?: ReactNode;
   /** 폼 밖 버튼이 이 폼을 제출할 때 쓰는 id (온보딩의 말로 설정하기 카드) */
   id?: string;
-  /** 온보딩은 '말로 한 번에 설정하기'가 따로 있어서 요일별 시간 AI 추천을 숨겨요 (AI 입구가 두 개라 헷갈림, 10/26 UI 점검) */
-  hideAiHelper?: boolean;
+  /** 온보딩: 쓸 수 있는 시간은 글로 쓰면 AI 가 정하는 게 기본, 칸은 [직접 고치기]를 눌러야 보여요 (10/27 온보딩 개편) */
+  aiDailyHours?: boolean;
+  /** 오른쪽 칸(PC)에 넣을 내용 — 온보딩의 수업·프로젝트·자격증 글 칸. 있으면 PC 에서 왼쪽(학기 설정)·오른쪽(글 칸·동의·버튼) 2칸 (10/27) */
+  extra?: ReactNode;
+  /** 왼쪽 칸 맨 아래(시험 주간 다음)에 넣을 내용 — 온보딩의 학기 미리보기 */
+  afterExams?: ReactNode;
+  /** 왼쪽·오른쪽 칸 각각에 붙일 class (온보딩: 칸마다 흰 박스로 나눔) */
+  columnClassName?: string;
   className?: string;
 };
 
@@ -58,9 +64,13 @@ export function SemesterForm({
   onValuesChange,
   secondaryAction,
   id,
-  hideAiHelper = false,
+  aiDailyHours = false,
+  extra,
+  afterExams,
+  columnClassName,
   className,
 }: Props) {
+  const [manualHours, setManualHours] = useState(false);
   const {
     register,
     control,
@@ -83,8 +93,20 @@ export function SemesterForm({
     errs[name] || hasHint ? `${name}-message` : undefined;
 
   return (
-    <form id={id} noValidate onSubmit={handleSubmit(onSubmit)} className={cn("grid gap-7", className)}>
-      {errorMessage ? <FormAlert>{errorMessage}</FormAlert> : null}
+    <form
+      id={id}
+      noValidate
+      onSubmit={handleSubmit(onSubmit)}
+      className={cn("grid gap-7", extra ? (columnClassName ? "lg:grid-cols-2 lg:items-start lg:gap-x-6" : "lg:grid-cols-2 lg:items-start lg:gap-x-12") : null, className)}
+    >
+      {errorMessage ? (
+        <div className="lg:col-span-2">
+          <FormAlert>{errorMessage}</FormAlert>
+        </div>
+      ) : null}
+
+      {/* 왼쪽: 공부 스타일 → 개강일 → 쓸 수 있는 시간 → 시험 주간 */}
+      <div className={cn("grid content-start gap-7", columnClassName)}>
 
       {/* 10/26 피드백: 벼락치기하는 사람도 있으니 공부 스타일에 맞춰 예보. 맨 위에서 먼저 물어봐요 */}
       <Controller
@@ -140,6 +162,38 @@ export function SemesterForm({
           const days = field.value ?? splitWeeklyHours(DEFAULT_WEEKLY);
           const total = days.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
           const setDay = (i: number, v: number) => field.onChange(days.map((d, j) => (j === i ? v : d)));
+          if (aiDailyHours && !manualHours) {
+            return (
+              <fieldset className="grid gap-2">
+                <legend className="mb-1 text-sm font-medium">요일별로 쓸 수 있는 시간</legend>
+                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                  이번 학기 생활을 쓰면 AI가 요일마다 정해 드려요. 안 쓰면 보통(한 주 {DEFAULT_WEEKLY}시간)으로 시작해요.
+                </p>
+                <AiHoursHelper
+                  defaultOpen
+                  askLabel="AI로 정하기"
+                  openLabel="AI로 정하기"
+                  label="알바·통학·쉬고 싶은 요일처럼 시간을 뺏는 일을 써 주세요"
+                  placeholder="예: 화·목 저녁에 카페 알바 5시간, 통학 왕복 2시간이에요. 주말엔 좀 쉬고 싶어요."
+                  toInput={(description) => ({ kind: "available", description })}
+                  onApply={(estimate) =>
+                    field.onChange(
+                      estimate.daily_hours && estimate.daily_hours.length === 7 ? estimate.daily_hours : splitWeeklyHours(estimate.hours_per_week),
+                    )
+                  }
+                  appliedNote="아래 요일별 시간에 넣었어요."
+                />
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+                  <span className="text-muted-foreground">{days.map((h, i) => `${WEEKDAY_LABELS[i]} ${h}`).join(" · ")}</span>
+                  <span className="font-semibold">한 주 {total}시간</span>
+                  <button type="button" className="font-semibold text-primary underline-offset-[3px] hover:underline" onClick={() => setManualHours(true)}>
+                    직접 고치기
+                  </button>
+                </p>
+                {errs.dailyHours ? <p className="text-[13px] text-destructive">{errs.dailyHours.message}</p> : null}
+              </fieldset>
+            );
+          }
           return (
             <fieldset className="grid gap-3">
               <legend className="mb-1 text-sm font-medium">요일별로 쓸 수 있는 시간</legend>
@@ -189,7 +243,7 @@ export function SemesterForm({
                 })}
               </div>
               {/* F-08: 이번 학기 사정을 말하면 AI 가 요일별 가용 시간을 추천 (10/24) */}
-              {hideAiHelper ? null : (
+              {aiDailyHours ? null : (
               <AiHoursHelper
                 openLabel="AI에게 이번 학기 얘기하고 추천받기"
                 label="이번 학기 생활을 설명하면 AI가 요일별로 쓸 수 있는 시간을 추천해요"
@@ -250,6 +304,13 @@ export function SemesterForm({
         ) : null}
       </fieldset>
 
+      {afterExams}
+      </div>
+
+      {/* 오른쪽(온보딩): 수업·프로젝트·자격증 글 칸 → 동의 → 버튼 */}
+      <div className={cn("grid content-start gap-7", columnClassName)}>
+      {extra}
+
       {requirePrivacy ? (
         <div className="grid gap-2 rounded-lg border border-border bg-background p-4">
           <div className="flex items-start gap-3">
@@ -286,6 +347,7 @@ export function SemesterForm({
           {isPending ? pendingLabel : submitLabel}
         </Button>
         {secondaryAction}
+      </div>
       </div>
     </form>
   );

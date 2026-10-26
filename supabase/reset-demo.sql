@@ -5,17 +5,18 @@
 
 begin;
 
+delete from public.study_logs where user_id in ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000005'); -- 실제로 한 시간 기록 (10/26 이후)
 delete from public.user_certificates where user_id in ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000005');
 delete from public.plans where user_id in ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000005');
 delete from public.plan_categories where user_id in ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000005');
 delete from public.certificates where owner_id in ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000005'); -- 테스트하며 직접 추가한 자격증 (10/24 이후)
 
 alter table public.profiles disable trigger profiles_privacy_agreed_at;
-update public.profiles set display_name = '김예보', available_hours = 50, daily_hours = '{8,8,8,8,8,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000001';
-update public.profiles set display_name = '이지원', available_hours = 45, daily_hours = '{7,7,7,7,7,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000002';
-update public.profiles set display_name = '박운영', available_hours = 55, daily_hours = '{9,9,9,9,9,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 16, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000003';
-update public.profiles set display_name = '최수강', available_hours = 40, daily_hours = '{6,6,6,6,6,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000004';
-update public.profiles set display_name = '정새내', available_hours = null, daily_hours = null, semester_start = null, midterm_week = 8, final_week = 15, privacy_agreed_at = null where user_id = 'a0000000-0000-4000-8000-000000000005';
+update public.profiles set display_name = '김예보', available_hours = 50, daily_hours = '{8,8,8,8,8,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000001';
+update public.profiles set display_name = '이지원', available_hours = 45, daily_hours = '{7,7,7,7,7,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000002';
+update public.profiles set display_name = '박운영', available_hours = 55, daily_hours = '{9,9,9,9,9,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 16, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000003';
+update public.profiles set display_name = '최수강', available_hours = 40, daily_hours = '{6,6,6,6,6,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000004';
+update public.profiles set display_name = '정새내', available_hours = null, daily_hours = null, semester_start = null, midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = null where user_id = 'a0000000-0000-4000-8000-000000000005';
 alter table public.profiles enable trigger profiles_privacy_agreed_at;
 
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values

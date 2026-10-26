@@ -392,8 +392,9 @@ export function calculateForecast(input: ForecastInput): Forecast {
   const weeks: WeekForecast[] = [];
   for (let week = 1; week <= TOTAL_WEEKS; week++) {
     const is_exam_week = week === midterm_week || week === final_week;
+    // 실제 기록으로 다 끝낸 계획(남은 시간 0)은 그 주 목록에서 빠져요 (10/27)
     const items: WeekItem[] = schedule
-      .filter((s) => s.base[week] > 0)
+      .filter((s) => s.base[week] > 0 && s.hours[week] > 1e-6)
       .map((s) => ({
         source: s.item.source,
         title: s.item.title,

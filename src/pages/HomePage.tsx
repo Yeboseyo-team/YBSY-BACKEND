@@ -159,7 +159,13 @@ export default function HomePage() {
 
               {/* 요일별 가용 시간·부담 (10/24 QA) */}
               <div className="border-t border-border/60 pt-4">
-                <DailyBreakdown week={selectedWeek} days={data.input ? dailyForecast(data.input, selectedWeek) : null} />
+                <DailyBreakdown
+                  week={selectedWeek}
+                  days={data.input ? dailyForecast(data.input, selectedWeek) : null}
+                  today={data.today}
+                  logs={data.logs}
+                  categories={categories}
+                />
               </div>
             </>
           )}

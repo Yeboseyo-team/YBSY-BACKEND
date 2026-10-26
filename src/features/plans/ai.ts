@@ -51,24 +51,10 @@ export function toEstimateMessage(error: unknown): string {
   return "AI 추천을 받지 못했어요. 직접 고르거나 잠시 뒤 다시 시도하세요.";
 }
 
-// ── 10/26 피드백: 말로 한 번에 설정하기 · 시간표 읽기 ─────────
+// ── 10/26 피드백: 시간표 읽기 ─────────
 
-/** 이번 학기 설명 글자 수 (서버도 같은 값으로 막음) */
-export const AI_SEMESTER_MAX = 800;
 /** 시간표 붙여넣기 글자 수 */
 export const AI_TIMETABLE_MAX = 4000;
-
-/** 말로 설명한 이번 학기 → 학기 설정과 계획 (온보딩) */
-export interface SemesterDraft {
-  semester_start: string | null;
-  midterm_week: number | null;
-  final_week: number | null;
-  daily_hours: number[] | null;
-  study_style: "steady" | "normal" | "cram" | null;
-  plans: { title: string; type: "class" | "activity" | "project"; credits: number | null; hours_per_week: number; no_exam?: boolean }[];
-  reason: string;
-  remaining: number;
-}
 
 /** 시간표에서 읽은 수업 */
 export interface TimetableClass {
@@ -95,17 +81,58 @@ async function invokeAi<T>(body: Record<string, unknown>): Promise<T> {
   return data;
 }
 
-/** "9월 1일 개강, 화목 알바, 운영체제 3학점…" → 학기 설정 + 계획 초안 */
-export function useParseSemester() {
-  return useMutation({
-    mutationFn: (description: string) => invokeAi<SemesterDraft>({ kind: "semester", description }),
-  });
-}
-
 /** 시간표 글(에브리타임·포털에서 복사) 또는 캡처 이미지 → 수업 목록 */
 export function useParseTimetable() {
   return useMutation({
     mutationFn: (input: { text?: string; image?: { media_type: string; data: string } }) =>
       invokeAi<TimetableResult>({ kind: "timetable", ...input }),
+  });
+}
+
+// ── 10/27 온보딩 개편: 글 3칸(수업·프로젝트·자격증) → 계획·자격증 초안 ─────────
+
+/** 온보딩 칸마다 글자 수 (서버도 같은 값으로 막음) */
+export const AI_ONBOARDING_MAX = 800;
+
+export interface OnboardingInput {
+  classes: string;
+  activities: string;
+  certificates: string;
+  image?: { media_type: string; data: string };
+  semester_start: string;
+  midterm_week: number;
+  final_week: number;
+}
+
+export interface DraftPlan {
+  title: string;
+  type: "class" | "activity" | "project";
+  credits: number | null;
+  hours_per_week: number;
+  start_week: number;
+  end_week: number;
+  no_exam: boolean;
+}
+
+/** certificate_id 가 있으면 공용 회차, 없으면 직접 추가할 자격증 (exam_date 는 모르면 null) */
+export interface DraftCertificate {
+  name: string;
+  certificate_id: string | null;
+  exam_date: string | null;
+  prep_weeks: number;
+  study_hours: number;
+}
+
+export interface OnboardingDraft {
+  plans: DraftPlan[];
+  certificates: DraftCertificate[];
+  reason: string;
+  remaining: number;
+}
+
+/** 온보딩 1단계 글 → 2단계에서 확인·수정할 초안 */
+export function useParseOnboarding() {
+  return useMutation({
+    mutationFn: (input: OnboardingInput) => invokeAi<OnboardingDraft>({ kind: "onboarding", ...input }),
   });
 }

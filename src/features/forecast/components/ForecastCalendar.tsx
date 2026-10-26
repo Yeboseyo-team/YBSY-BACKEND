@@ -156,12 +156,12 @@ function DayCell({
   isToday: boolean;
   selectedWeek: boolean;
 }) {
-  const level = day?.level ?? weekLevel;
-  const style = WEATHER_STYLE[level];
+  // 맑음·흐림·폭풍은 주 단위로만 (10/27) — 날짜 칸은 그 주 색, 숫자는 그날 할 공부 시간
+  const style = WEATHER_STYLE[weekLevel];
   const [, m, d] = date.split("-").map(Number);
   const label = day
-    ? `${m}월 ${d}일 ${style.label}, 예상 ${formatDuration(day.hours)}, 가용 ${day.available}시간. 하루 할 일 보기`
-    : `${m}월 ${d}일 ${style.label}(주 단위). 하루 할 일 보기`;
+    ? `${m}월 ${d}일, 그 주 ${style.label}, 할 공부 ${formatDuration(day.hours)}. 하루 할 일 보기`
+    : `${m}월 ${d}일, 그 주 ${style.label}. 하루 할 일 보기`;
   return (
     <Link
       role="gridcell"

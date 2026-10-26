@@ -36,6 +36,7 @@
   - `src/features/forecast/api.ts`(예보 화면 데이터 한 번에: useForecastData)
   - `src/features/plans/ai.ts`(F-08 AI 시간 추천: useEstimateHours → Edge Function estimate-hours, 10/24)
   - `src/features/plans/categories.ts`(내 계획 유형 만들기·지우기, 10/24), `src/features/review/semester-file.ts`(학기 회고 파일 내보내기·불러오기, 10/24)
+  - `src/features/forecast/logs.ts`(실제로 한 시간 기록, 10/26), `src/features/auth/onboarding-draft.ts`(온보딩 1→2단계 초안 넘기기, 10/27)
 
 ## 브랜치·병합
 - main이 팀 기준점. main에 직접 push·머지 금지
@@ -54,6 +55,8 @@
 - 부담 계산은 src/features/forecast/calc.ts 한 곳에서만. 단계 이름은 clear(맑음)/cloudy(흐림)/storm(폭풍)
 - 접수 마감 회차 선택 불가는 화면에서 막기(DB 에서 막으면 마감 지난 뒤 시드가 실패, 직접 추가한 자격증은 예외). 계획 30개 상한은 화면에서 먼저 막고 DB 트리거(plans_limit)도 막음 (10/22)
 - 10/24 QA: 1주차 = 개강일부터 7일(월요일 아니어도 됨). 가용 시간은 수업 시간 제외, 요일별(daily_hours) 합계. 수업 기본값 학점당 1/1.5/2시간
+- 10/26~27 피드백: 공부 스타일(steady·normal·cram), 실제 기록은 같은 계획의 남은 일정에만 반영, 학점 1~12·시험 없는 수업(no_exam), 맑음·흐림·폭풍은 주 단위로만(요일별은 할 시간만). 온보딩은 1단계(고르기 + 글 3칸 → AI 초안) → 2단계(/start/plans 예상 예보 보고 고친 뒤 저장)
+- AI 함수 estimate-hours 의 kind: plan · available · timetable · onboarding (Haiku 5.5, 하루 20회 같이 씀)
 
 ## 로그인
 - 팀 결정(10/13): 로그인은 Google만. 이메일 가입·비밀번호 찾기 화면은 만들지 않음 (docs/AUTH.md)

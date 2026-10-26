@@ -68,7 +68,7 @@ export function SemesterTalk({ onDraft, plans, picked, onTogglePlan, formId, isP
                   <span className="font-medium">{p.title}</span>
                   <span className="text-xs text-muted-foreground">
                     {PLAN_TYPE_LABEL[p.type]}
-                    {p.credits ? ` · ${p.credits}학점` : ""} · 한 주 {formatDuration(p.hours_per_week)}
+                    {p.credits ? ` · ${p.credits}학점` : ""}{p.no_exam ? " · 시험 없음" : ""} · 한 주 {formatDuration(p.hours_per_week)}
                   </span>
                 </label>
               ))}

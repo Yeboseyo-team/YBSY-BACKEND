@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { CalendarRange, X } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ export const ONBOARDING_PLANS_PATH = "/start/plans";
  */
 export default function OnboardingPlansPage() {
   const navigate = useNavigate();
+  // 1단계에서 AI 가 읽은 계획을 넣다가 실패했으면 알려 줘요
+  const failed = useLocation().state as { planError?: string; missed?: string[] } | null;
   const plans = usePlans();
   const create = useCreatePlan();
   const remove = useDeletePlan();
@@ -42,6 +44,12 @@ export default function OnboardingPlansPage() {
             수업·활동·프로젝트를 넣으면 다음 화면 예보에 한 번에 보여 드려요. 다 넣었으면 [예보 보기]를 누르세요.
           </p>
         </div>
+
+        {failed?.planError ? (
+          <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
+            1단계에서 고른 계획({failed.missed?.join(", ")})을 넣지 못했어요. {failed.planError} 아래에서 다시 넣어 주세요.
+          </p>
+        ) : null}
 
         <div className="grid items-start gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
           <section aria-label="계획 하나 넣기" className="grid gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -79,7 +87,7 @@ export default function OnboardingPlansPage() {
                     <span className="min-w-0 flex-1 truncate font-medium">{p.title}</span>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {PLAN_TYPE_LABEL[p.type as keyof typeof PLAN_TYPE_LABEL] ?? "기타"}
-                      {p.credits ? ` · ${p.credits}학점` : ""} · 한 주 {formatDuration(Number(p.hours_per_week))}
+                      {p.credits ? ` · ${p.credits}학점` : ""}{p.no_exam ? " · 시험 없음" : ""} · 한 주 {formatDuration(Number(p.hours_per_week))}
                     </span>
                     <button
                       type="button"

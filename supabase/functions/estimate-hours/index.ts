@@ -76,6 +76,7 @@ const SEMESTER_SYSTEM = `당신은 한국 대학생이 말로 설명한 "이번 
 - study_style: "steady"(꾸준히) / "normal"(조금 몰아서) / "cram"(시험·마감 직전에 몰아서). 단서가 없으면 null.
 - plans: 설명에 나온 수업·활동·프로젝트. type 은 "class" / "activity" / "project".
   title 은 30자 이내. credits 는 수업이면 1~12 정수(모르면 3), 아니면 null.
+  no_exam 은 수업인데 시험 없이 발표·과제로 평가한다고 하면 true, 그 밖에는 false.
   hours_per_week 는 수업 밖에서 쓰는 한 주 시간(0.5 단위): 수업은 학점×1.5, 활동 4, 프로젝트 6을 기본으로 설명을 보고 조정.
   최대 20개. 아르바이트·잠 같은 것은 계획이 아니라 daily_hours 에서 빼는 시간입니다.
 reason 에는 null·steady·normal·cram 같은 영어 값을 쓰지 말고(모르는 값은 "직접 골라 주세요"처럼), "꾸준히", "조금 몰아서", "벼락치기"로 쓰세요.
@@ -108,8 +109,9 @@ const SEMESTER_SCHEMA = {
           type: { type: "string", enum: ["class", "activity", "project"] },
           credits: nullable({ type: "integer" }),
           hours_per_week: { type: "number" },
+          no_exam: { type: "boolean" },
         },
-        required: ["title", "type", "credits", "hours_per_week"],
+        required: ["title", "type", "credits", "hours_per_week", "no_exam"],
         additionalProperties: false,
       },
     },
@@ -193,6 +195,7 @@ function cleanSemester(raw: Record<string, unknown>) {
       type: p.type as "class" | "activity" | "project",
       credits: p.type === "class" ? (isInt(p.credits, 1, 12) ? p.credits : 3) : null,
       hours_per_week: clampPlanHours(typeof p.hours_per_week === "number" && Number.isFinite(p.hours_per_week) ? p.hours_per_week : 3),
+      no_exam: p.type === "class" && p.no_exam === true,
     }));
   return {
     semester_start: start,

@@ -65,7 +65,7 @@ export interface SemesterDraft {
   final_week: number | null;
   daily_hours: number[] | null;
   study_style: "steady" | "normal" | "cram" | null;
-  plans: { title: string; type: "class" | "activity" | "project"; credits: number | null; hours_per_week: number }[];
+  plans: { title: string; type: "class" | "activity" | "project"; credits: number | null; hours_per_week: number; no_exam?: boolean }[];
   reason: string;
   remaining: number;
 }

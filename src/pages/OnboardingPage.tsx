@@ -11,7 +11,7 @@ import { isOnboardingDone } from "@/features/auth/onboarding";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { SemesterForm, type SemesterFormValues } from "@/features/auth/components/SemesterForm";
 import { SemesterTalk } from "@/features/auth/components/SemesterTalk";
-import { useCreatePlans } from "@/features/plans/api";
+import { toPlanMessage, useCreatePlans } from "@/features/plans/api";
 import { CREDITS_RANGE } from "@/features/plans/defaults";
 import type { SemesterDraft } from "@/features/plans/ai";
 import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
@@ -94,9 +94,14 @@ export default function OnboardingPage() {
         end_date: end,
         priority: "normal",
         category_id: null,
+        no_exam: p.type === "class" && Boolean(p.no_exam),
       })),
       // 계획 저장이 실패해도 학기 설정은 끝났으니 다음 단계로 (거기서 다시 넣으면 돼요)
-      { onSettled: () => navigate(ONBOARDING_PLANS_PATH, { replace: true }) },
+      {
+        onSuccess: () => navigate(ONBOARDING_PLANS_PATH, { replace: true }),
+        // 실패하면 다음 화면에서 알려 주고 거기서 다시 넣게 (조용히 0개로 보이지 않게)
+        onError: (error) => navigate(ONBOARDING_PLANS_PATH, { replace: true, state: { planError: toPlanMessage(error), missed: chosen.map((p) => p.title) } }),
+      },
     );
   };
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { displayNameSchema, onboardingSchema, semesterSchema } from "./schemas";
 
-const valid = { semesterStart: "2026-09-01", dailyHours: [8, 8, 8, 8, 8, 5, 5], midtermWeek: 8, finalWeek: 15 };
+const valid = { semesterStart: "2026-09-01", dailyHours: [8, 8, 8, 8, 8, 5, 5], midtermWeek: 8, finalWeek: 15, studyStyle: "steady" as const };
 
 describe("학기 설정 검증", () => {
   it("올바른 값은 통과", () => {

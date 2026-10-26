@@ -11,6 +11,7 @@ import { isOnboardingDone } from "@/features/auth/onboarding";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { SemesterForm, type SemesterFormValues } from "@/features/auth/components/SemesterForm";
 import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
+import { toStudyStyle } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, defaultSemesterStart } from "@/features/auth/semester";
 import type { SemesterValues } from "@/features/auth/schemas";
 import { splitWeeklyHours, todayInKorea } from "@/features/forecast/calc";
@@ -44,6 +45,7 @@ export default function OnboardingPage() {
     dailyHours: profile.data?.daily_hours ?? splitWeeklyHours(profile.data?.available_hours ?? DEFAULT_SEMESTER.availableHours),
     midtermWeek: profile.data?.midterm_week ?? DEFAULT_SEMESTER.midtermWeek,
     finalWeek: profile.data?.final_week ?? DEFAULT_SEMESTER.finalWeek,
+    studyStyle: toStudyStyle(profile.data?.study_style),
   };
   const shown = { ...defaults, ...preview };
 
@@ -93,6 +95,7 @@ export default function OnboardingPage() {
                   semester_start: v.semesterStart,
                   midterm_week: v.midtermWeek,
                   final_week: v.finalWeek,
+                  study_style: v.studyStyle,
                   agree_privacy: true,
                 },
                 { onSuccess: () => navigate("/", { replace: true }) },

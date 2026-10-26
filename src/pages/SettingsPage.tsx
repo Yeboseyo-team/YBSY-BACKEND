@@ -13,6 +13,7 @@ import { useProfile, useSignOut } from "@/features/auth/api";
 import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
+import { toStudyStyle } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, longDate } from "@/features/auth/semester";
 import { splitWeeklyHours, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { FormAlert } from "@/features/auth/components/FormAlert";
@@ -109,6 +110,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
               dailyHours: profile.daily_hours ?? splitWeeklyHours(profile.available_hours ?? DEFAULT_SEMESTER.availableHours),
               midtermWeek: profile.midterm_week,
               finalWeek: profile.final_week,
+              studyStyle: toStudyStyle(profile.study_style),
             }}
             submitLabel="저장"
             pendingLabel="저장하는 중…"
@@ -121,6 +123,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
                   daily_hours: v.dailyHours,
                   midterm_week: v.midtermWeek,
                   final_week: v.finalWeek,
+                  study_style: v.studyStyle,
                 },
                 {
                   onSuccess: () => {

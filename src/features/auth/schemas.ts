@@ -27,6 +27,8 @@ export const semesterSchema = z
       .refine((days) => days.reduce((a, b) => a + b, 0) >= 1, "한 주에 쓸 수 있는 시간이 1시간 이상이어야 해요."),
     midtermWeek: examWeek,
     finalWeek: examWeek,
+    /** 공부 스타일 (10/26): 예보를 주별로 나누는 모양 */
+    studyStyle: z.enum(["steady", "normal", "cram"]),
   })
   .refine((d) => d.midtermWeek < d.finalWeek, {
     path: ["finalWeek"],
@@ -48,3 +50,8 @@ export const displayNameSchema = z.object({
 export type SemesterValues = z.infer<typeof semesterSchema>;
 export type OnboardingValues = z.infer<typeof onboardingSchema>;
 export type DisplayNameValues = z.infer<typeof displayNameSchema>;
+
+/** DB 값 → 공부 스타일 (모르는 값·비어 있으면 꾸준형) */
+export function toStudyStyle(value: string | null | undefined): "steady" | "normal" | "cram" {
+  return value === "normal" || value === "cram" ? value : "steady";
+}

@@ -14,7 +14,7 @@ export const ONBOARDING_PLANS_PATH = "/start/plans";
 /**
  * 온보딩 2단계 — 이번 학기 계획 넣기 (경로 /start/plans, 10/26 피드백)
  * 로그인 → 학기 설정 → 여기서 계획을 다 넣고 → 예보 화면에서 한 번에 봐요.
- * 하나씩 넣거나 시간표로 한 번에 넣을 수 있고, 넣은 계획은 오른쪽에 쌓여요. 나중에 넣어도 돼요.
+ * 하나씩 넣거나 시간표로 한 번에 넣을 수 있고, 넣은 계획은 목록에 쌓여요. 나중에 넣어도 돼요.
  */
 export default function OnboardingPlansPage() {
   const navigate = useNavigate();
@@ -79,7 +79,7 @@ export default function OnboardingPlansPage() {
               넣은 계획 <span className="text-muted-foreground tabular-nums">{list.length}개</span>
             </h2>
             {list.length === 0 ? (
-              <p className="text-sm text-muted-foreground">아직 없어요. 왼쪽에서 넣거나 시간표로 한 번에 넣어 보세요.</p>
+              <p className="text-sm text-muted-foreground">아직 없어요. 계획을 하나씩 넣거나 시간표로 한 번에 넣어 보세요.</p>
             ) : (
               <ul className="grid gap-1.5" aria-live="polite">
                 {list.map((p) => (

@@ -124,7 +124,7 @@ export function CertificatePicker({ certificates, mine, semesterStart, today, cu
             onAdded={onAdded}
           />
         ) : (
-          <p className="py-10 text-center text-sm text-muted-foreground">왼쪽 목록에서 자격증을 고르면 회차와 준비 기간이 여기에 나와요.</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">목록에서 자격증을 고르면 회차와 준비 기간이 여기에 나와요.</p>
         )}
       </section>
     </div>

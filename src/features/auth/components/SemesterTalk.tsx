@@ -34,7 +34,7 @@ export function SemesterTalk({ onDraft, plans, picked, onTogglePlan, formId, isP
         말로 한 번에 설정하기
       </h2>
       <p className="text-[13px] leading-relaxed text-muted-foreground">
-        이번 학기를 편하게 설명해 주세요. 개강일, 시험 주차, 요일별로 쓸 수 있는 시간, 듣는 수업과 활동까지 AI가 오른쪽 폼에 채워 드려요.
+        이번 학기를 편하게 설명해 주세요. 개강일, 시험 주차, 요일별로 쓸 수 있는 시간, 듣는 수업과 활동까지 AI가 폼에 채워 드려요.
       </p>
       <textarea
         rows={5}
@@ -57,7 +57,7 @@ export function SemesterTalk({ onDraft, plans, picked, onTogglePlan, formId, isP
       {parse.data ? (
         <div className="grid gap-2" aria-live="polite">
           <p className="text-[13px]">
-            <span className="font-semibold">채웠어요.</span> {parse.data.reason} 오른쪽 폼에서 확인하고 고칠 수 있어요.
+            <span className="font-semibold">채웠어요.</span> {parse.data.reason} 폼에서 확인하고 고칠 수 있어요.
           </p>
           {plans.length > 0 ? (
             <fieldset className="grid gap-1.5 rounded-lg bg-card p-3">

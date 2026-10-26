@@ -157,7 +157,7 @@ export default function TimetableImportPage() {
         <section className="grid gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6" aria-live="polite">
           <h2 className="text-base font-semibold">읽어 온 수업</h2>
           {rows === null ? (
-            <p className="text-sm text-muted-foreground">왼쪽에서 시간표를 넣고 [AI로 수업 읽어 오기]를 누르면 여기에 나와요.</p>
+            <p className="text-sm text-muted-foreground">시간표를 붙여 넣거나 캡처를 올리고 [AI로 수업 읽어 오기]를 누르면 여기에 나와요.</p>
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">수업을 찾지 못했어요. 과목명과 학점이 보이게 다시 붙여 넣어 보세요.</p>
           ) : (

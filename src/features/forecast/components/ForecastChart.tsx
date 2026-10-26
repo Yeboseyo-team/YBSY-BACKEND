@@ -84,7 +84,8 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
               )}
             >
               {w.week}
-              <span className="hidden sm:inline">주</span>
+              {/* 16주를 다 그릴 때는 칸이 좁아 "주"를 빼요 (온보딩 2단계 오른쪽 칸에서 겹쳤음) */}
+              <span className={weeks.length > 8 ? "hidden" : "hidden sm:inline"}>주</span>
             </button>
           );
         })}

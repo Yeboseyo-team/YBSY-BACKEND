@@ -109,3 +109,51 @@ export function useParseTimetable() {
       invokeAi<TimetableResult>({ kind: "timetable", ...input }),
   });
 }
+
+// ── 10/27 온보딩 개편: 글 3칸(수업·프로젝트·자격증) → 계획·자격증 초안 ─────────
+
+/** 온보딩 칸마다 글자 수 (서버도 같은 값으로 막음) */
+export const AI_ONBOARDING_MAX = 800;
+
+export interface OnboardingInput {
+  classes: string;
+  activities: string;
+  certificates: string;
+  image?: { media_type: string; data: string };
+  semester_start: string;
+  midterm_week: number;
+  final_week: number;
+}
+
+export interface DraftPlan {
+  title: string;
+  type: "class" | "activity" | "project";
+  credits: number | null;
+  hours_per_week: number;
+  start_week: number;
+  end_week: number;
+  no_exam: boolean;
+}
+
+/** certificate_id 가 있으면 공용 회차, 없으면 직접 추가할 자격증 (exam_date 는 모르면 null) */
+export interface DraftCertificate {
+  name: string;
+  certificate_id: string | null;
+  exam_date: string | null;
+  prep_weeks: number;
+  study_hours: number;
+}
+
+export interface OnboardingDraft {
+  plans: DraftPlan[];
+  certificates: DraftCertificate[];
+  reason: string;
+  remaining: number;
+}
+
+/** 온보딩 1단계 글 → 2단계에서 확인·수정할 초안 */
+export function useParseOnboarding() {
+  return useMutation({
+    mutationFn: (input: OnboardingInput) => invokeAi<OnboardingDraft>({ kind: "onboarding", ...input }),
+  });
+}

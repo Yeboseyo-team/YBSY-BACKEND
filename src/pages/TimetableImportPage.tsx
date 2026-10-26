@@ -12,21 +12,10 @@ import { formatDuration } from "@/features/forecast/weather";
 import { AI_TIMETABLE_MAX, toEstimateMessage, useParseTimetable, type TimetableClass } from "@/features/plans/ai";
 import { toPlanMessage, useCreatePlans, usePlans, type PlanInput } from "@/features/plans/api";
 import { CREDITS_RANGE, defaultHoursPerWeek, MAX_PLANS } from "@/features/plans/defaults";
+import { imageFileProblem, toJpegBase64 } from "@/lib/image";
 import { cn } from "@/lib/utils";
 
 type Row = TimetableClass & { picked: boolean; creditsInput: string };
-
-/** 이미지를 가로 1600px 이하 JPEG 로 줄여 base64 로 (서버로 보내는 크기를 줄이려고) */
-async function toJpegBase64(file: File): Promise<{ media_type: string; data: string }> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  const url = canvas.toDataURL("image/jpeg", 0.85);
-  return { media_type: "image/jpeg", data: url.slice(url.indexOf(",") + 1) };
-}
 
 /**
  * 시간표로 수업 한 번에 추가 (경로 /plans/import) — 10/26 피드백
@@ -74,8 +63,8 @@ export default function TimetableImportPage() {
   const onFile = async (file: File | undefined) => {
     setFileError(null);
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setFileError("이미지 파일(캡처)만 올릴 수 있어요.");
-    if (file.size > 8 * 1024 * 1024) return setFileError("8MB 이하 이미지로 올려 주세요.");
+    const problem = imageFileProblem(file);
+    if (problem) return setFileError(problem);
     try {
       setImage({ name: file.name, ...(await toJpegBase64(file)) });
     } catch {

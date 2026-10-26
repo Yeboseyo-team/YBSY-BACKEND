@@ -83,3 +83,14 @@ describe("시험 없는 수업 (발표·과제로 평가, 10/26)", () => {
     expect(itemHours(cram, 16, "운영체제")).toBeGreaterThan(6);
   });
 });
+
+describe("다 끝낸 계획은 예보에서 빠진다 (10/27)", () => {
+  it("남은 시간을 미리 다 하면 다음 주 목록에서 사라진다", () => {
+    const short = { ...os, id: "short-plan", title: "짧은 과제", start_week: 9, end_week: 10, hours_per_week: 2, start_date: null, end_date: null };
+    const input: ForecastInput = { ...base, plans: [...base.plans, short], logs: [{ plan_id: "short-plan", date: "2026-10-26", hours: 4 }] };
+    expect(itemHours(input, 9, "짧은 과제")).toBe(4);
+    expect(calculateForecast(input).weeks[9].items.find((i) => i.title === "짧은 과제")).toBeUndefined();
+    expect(calculateForecast(base).weeks[9].items.find((i) => i.title === "짧은 과제")).toBeUndefined();
+    expect(calculateForecast({ ...base, plans: [...base.plans, short] }).weeks[9].items.find((i) => i.title === "짧은 과제")?.hours).toBe(2);
+  });
+});

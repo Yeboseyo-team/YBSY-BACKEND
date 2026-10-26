@@ -39,6 +39,8 @@ type Props = {
   extra?: ReactNode;
   /** 왼쪽 칸 맨 아래(시험 주간 다음)에 넣을 내용 — 온보딩의 학기 미리보기 */
   afterExams?: ReactNode;
+  /** 왼쪽·오른쪽 칸 각각에 붙일 class (온보딩: 칸마다 흰 박스로 나눔) */
+  columnClassName?: string;
   className?: string;
 };
 
@@ -65,6 +67,7 @@ export function SemesterForm({
   aiDailyHours = false,
   extra,
   afterExams,
+  columnClassName,
   className,
 }: Props) {
   const [manualHours, setManualHours] = useState(false);
@@ -94,7 +97,7 @@ export function SemesterForm({
       id={id}
       noValidate
       onSubmit={handleSubmit(onSubmit)}
-      className={cn("grid gap-7", extra ? "lg:grid-cols-2 lg:items-start lg:gap-x-12" : null, className)}
+      className={cn("grid gap-7", extra ? (columnClassName ? "lg:grid-cols-2 lg:items-start lg:gap-x-6" : "lg:grid-cols-2 lg:items-start lg:gap-x-12") : null, className)}
     >
       {errorMessage ? (
         <div className="lg:col-span-2">
@@ -103,7 +106,7 @@ export function SemesterForm({
       ) : null}
 
       {/* 왼쪽: 공부 스타일 → 개강일 → 쓸 수 있는 시간 → 시험 주간 */}
-      <div className="grid content-start gap-7">
+      <div className={cn("grid content-start gap-7", columnClassName)}>
 
       {/* 10/26 피드백: 벼락치기하는 사람도 있으니 공부 스타일에 맞춰 예보. 맨 위에서 먼저 물어봐요 */}
       <Controller
@@ -305,7 +308,7 @@ export function SemesterForm({
       </div>
 
       {/* 오른쪽(온보딩): 수업·프로젝트·자격증 글 칸 → 동의 → 버튼 */}
-      <div className="grid content-start gap-7">
+      <div className={cn("grid content-start gap-7", columnClassName)}>
       {extra}
 
       {requirePrivacy ? (

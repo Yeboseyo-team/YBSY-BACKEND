@@ -31,6 +31,8 @@ type Props = {
   onValuesChange?: (values: Partial<SemesterFormValues>) => void;
   /** 저장 버튼 옆에 둘 버튼 (예: 설정 화면의 취소) */
   secondaryAction?: ReactNode;
+  /** 폼 밖 버튼이 이 폼을 제출할 때 쓰는 id (온보딩의 말로 설정하기 카드) */
+  id?: string;
   className?: string;
 };
 
@@ -53,6 +55,7 @@ export function SemesterForm({
   onSubmit,
   onValuesChange,
   secondaryAction,
+  id,
   className,
 }: Props) {
   const {
@@ -77,7 +80,7 @@ export function SemesterForm({
     errs[name] || hasHint ? `${name}-message` : undefined;
 
   return (
-    <form noValidate onSubmit={handleSubmit(onSubmit)} className={cn("grid gap-7", className)}>
+    <form id={id} noValidate onSubmit={handleSubmit(onSubmit)} className={cn("grid gap-7", className)}>
       {errorMessage ? <FormAlert>{errorMessage}</FormAlert> : null}
 
       {/* 10/26 피드백: 벼락치기하는 사람도 있으니 공부 스타일에 맞춰 예보. 맨 위에서 먼저 물어봐요 */}

@@ -12,6 +12,9 @@ type Props = {
   plans: SemesterDraft["plans"];
   picked: boolean[];
   onTogglePlan: (index: number) => void;
+  /** 이 카드의 [넣고 다음으로] 버튼이 제출할 학기 설정 폼 id */
+  formId: string;
+  isPending: boolean;
 };
 
 /**
@@ -19,9 +22,10 @@ type Props = {
  * "9월 1일 개강, 화목 알바, 운영체제 3학점…"처럼 쓰면 AI 가 개강일·시험 주차·요일별 시간·공부 스타일·계획을 채워요.
  * 채운 값은 아래 폼에서 확인하고 고친 뒤 저장해요.
  */
-export function SemesterTalk({ onDraft, plans, picked, onTogglePlan }: Props) {
+export function SemesterTalk({ onDraft, plans, picked, onTogglePlan, formId, isPending }: Props) {
   const [text, setText] = useState("");
   const parse = useParseSemester();
+  const pickedCount = plans.filter((_, i) => picked[i]).length;
 
   return (
     <section aria-labelledby="semester-talk" className="grid gap-3 rounded-xl border border-primary/30 bg-primary/5 p-5">
@@ -57,7 +61,7 @@ export function SemesterTalk({ onDraft, plans, picked, onTogglePlan }: Props) {
           </p>
           {plans.length > 0 ? (
             <fieldset className="grid gap-1.5 rounded-lg bg-card p-3">
-              <legend className="mb-1 text-[13px] font-semibold">같이 넣을 계획 (시작하기를 누르면 저장돼요)</legend>
+              <legend className="mb-1 text-[13px] font-semibold">계획에 넣을 것 (빼려면 체크 해제)</legend>
               {plans.map((p, i) => (
                 <label key={`${p.title}-${i}`} className="flex items-center gap-2 text-sm">
                   <input type="checkbox" className="size-4 accent-primary" checked={picked[i] ?? false} onChange={() => onTogglePlan(i)} />
@@ -70,6 +74,11 @@ export function SemesterTalk({ onDraft, plans, picked, onTogglePlan }: Props) {
               ))}
             </fieldset>
           ) : null}
+          {/* 10/26 피드백: 추천받은 뒤 넣는 버튼이 안 보였음 → 카드 안에서 바로 학기 설정 저장 + 계획 넣기 */}
+          <Button type="submit" form={formId} disabled={isPending} className="justify-self-start">
+            {isPending ? "넣는 중…" : pickedCount > 0 ? `계획 ${pickedCount}개 넣고 다음으로` : "이대로 저장하고 다음으로"}
+          </Button>
+          <p className="text-xs text-muted-foreground">학기 설정이 같이 저장돼요. 개인정보 동의 체크가 필요해요.</p>
         </div>
       ) : null}
     </section>

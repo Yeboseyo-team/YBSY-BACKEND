@@ -428,6 +428,9 @@ function PlanFormInner({
           type={type}
           credits={credits}
           disabled={disabled}
+          submitLabel={submitLabel}
+          pendingLabel={pendingLabel}
+          isPending={isPending}
           onApply={(hours) => {
             setValue("load_level", "custom");
             setValue("hours_per_week", hours, { shouldValidate: true });

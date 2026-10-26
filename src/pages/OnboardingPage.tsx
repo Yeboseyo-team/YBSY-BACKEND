@@ -129,6 +129,8 @@ export default function OnboardingPage() {
             </p>
           </div>
           <SemesterTalk
+            formId="onboarding-semester-form"
+            isPending={update.isPending || createPlans.isPending}
             plans={draft?.plans ?? []}
             picked={pickedPlans}
             onTogglePlan={(i) => setPickedPlans((all) => all.map((v, j) => (j === i ? !v : v)))}
@@ -145,6 +147,7 @@ export default function OnboardingPage() {
         <div className="rounded-xl border border-border bg-card p-5 sm:p-8">
           <SemesterForm
             key={formKey}
+            id="onboarding-semester-form"
             requirePrivacy
             defaultValues={defaults}
             submitLabel="다음: 계획 넣기"

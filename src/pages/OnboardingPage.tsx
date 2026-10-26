@@ -17,17 +17,19 @@ import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
 import { toStudyStyle } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, defaultSemesterStart } from "@/features/auth/semester";
 import type { SemesterValues } from "@/features/auth/schemas";
+import { ONBOARDING_PLANS_PATH } from "@/pages/OnboardingPlansPage";
 import { addDays, splitWeeklyHours, todayInKorea, TOTAL_WEEKS } from "@/features/forecast/calc";
 
 /**
  * S-07 온보딩 (경로 /onboarding) — 담당: 프론트 A
- * 첫 로그인 뒤 학기 설정 + 개인정보 수집·이용 동의 (FR-01-11, NFR-LEGAL-1). 저장하면 예보 홈으로 갑니다.
+ * 첫 로그인 뒤 학기 설정 + 개인정보 수집·이용 동의 (FR-01-11, NFR-LEGAL-1).
+ * 10/26: 저장하면 바로 2단계 계획 넣기(/start/plans)로 가고, 다 넣은 뒤 예보 홈으로 가요.
  */
 /** AI 가 읽은 값 중 비어 있지 않은 것만 폼 기본값으로 */
 function draftValues(draft: SemesterDraft | null): Partial<SemesterValues> {
   if (!draft) return {};
   const out: Partial<SemesterValues> = {};
-  if (draft.semester_start && /^d{4}-d{2}-d{2}$/.test(draft.semester_start)) out.semesterStart = draft.semester_start;
+  if (draft.semester_start && /^\d{4}-\d{2}-\d{2}$/.test(draft.semester_start)) out.semesterStart = draft.semester_start;
   if (draft.daily_hours && draft.daily_hours.length === 7 && draft.daily_hours.reduce((a, b) => a + b, 0) >= 1) out.dailyHours = draft.daily_hours;
   if (draft.midterm_week && draft.final_week && draft.midterm_week < draft.final_week) {
     out.midtermWeek = draft.midterm_week;
@@ -74,7 +76,7 @@ export default function OnboardingPage() {
 
   const finish = (semesterStart: string) => {
     const chosen = (draft?.plans ?? []).filter((_, i) => pickedPlans[i]);
-    if (chosen.length === 0) return navigate("/", { replace: true });
+    if (chosen.length === 0) return navigate(ONBOARDING_PLANS_PATH, { replace: true });
     const end = addDays(semesterStart, TOTAL_WEEKS * 7 - 1);
     createPlans.mutate(
       chosen.map((p) => ({
@@ -90,8 +92,8 @@ export default function OnboardingPage() {
         priority: "normal",
         category_id: null,
       })),
-      // 계획 저장이 실패해도 학기 설정은 끝났으니 홈으로 (계획은 홈에서 다시 넣으면 돼요)
-      { onSettled: () => navigate("/", { replace: true }) },
+      // 계획 저장이 실패해도 학기 설정은 끝났으니 다음 단계로 (거기서 다시 넣으면 돼요)
+      { onSettled: () => navigate(ONBOARDING_PLANS_PATH, { replace: true }) },
     );
   };
 
@@ -99,6 +101,7 @@ export default function OnboardingPage() {
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pt-6 sm:px-10">
         <Logo className="text-lg font-extrabold tracking-tight" />
+        <span className="text-sm text-muted-foreground tabular-nums">1 / 2 단계</span>
         {/* 다른 계정으로 바꾸고 싶을 때 (온보딩 전에는 설정 화면에 갈 수 없음) */}
         <div className="flex items-center gap-2">
           {signOut.error ? <p className="text-[13px] text-destructive">{toAuthMessage(signOut.error)}</p> : null}
@@ -141,7 +144,7 @@ export default function OnboardingPage() {
             key={formKey}
             requirePrivacy
             defaultValues={defaults}
-            submitLabel="예보 시작하기"
+            submitLabel="다음: 계획 넣기"
             pendingLabel="저장하는 중…"
             isPending={update.isPending || createPlans.isPending}
             errorMessage={update.error ? toProfileMessage(update.error) : undefined}

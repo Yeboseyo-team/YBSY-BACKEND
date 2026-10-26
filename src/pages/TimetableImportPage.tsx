@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { ImageUp, Sparkles } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,10 @@ async function toJpegBase64(file: File): Promise<{ media_type: string; data: str
  */
 export default function TimetableImportPage() {
   const navigate = useNavigate();
+  // 온보딩 2단계에서 왔으면 거기로 돌아가요 (같은 사이트 안 경로만)
+  const [params] = useSearchParams();
+  const nextParam = params.get("next");
+  const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
   const { user } = useAuth();
   const profile = useProfile(user?.id);
   const plans = usePlans();
@@ -92,7 +96,7 @@ export default function TimetableImportPage() {
         category_id: null,
       };
     });
-    create.mutate(inputs, { onSuccess: () => navigate("/plans") });
+    create.mutate(inputs, { onSuccess: () => navigate(next ?? "/plans") });
   };
 
   return (
@@ -100,7 +104,7 @@ export default function TimetableImportPage() {
       <PageHeader
         title="시간표로 수업 추가"
         description="에브리타임·학교 포털 시간표를 복사해 붙여 넣거나 캡처를 올리면 수업을 한 번에 넣어 드려요."
-        back={{ to: "/plans/new", label: "계획 추가" }}
+        back={next ? { to: next, label: "계획 넣기로" } : { to: "/plans/new", label: "계획 추가" }}
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">

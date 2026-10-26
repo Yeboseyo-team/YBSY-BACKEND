@@ -114,6 +114,24 @@ export function useCreatePlan() {
   });
 }
 
+/** 계획 여러 개 한 번에 추가 (10/26: 시간표에서 읽은 수업, 말로 설정한 계획). 30개를 넘으면 PlanLimitError */
+export function useCreatePlans() {
+  const { key } = useUserKey();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (inputs: PlanInput[]): Promise<number> => {
+      if (inputs.length === 0) return 0;
+      const { count, error: countError } = await supabase.from("plans").select("id", { count: "exact", head: true });
+      if (countError) throw countError;
+      if ((count ?? 0) + inputs.length > MAX_PLANS) throw new PlanLimitError();
+      const { error } = await supabase.from("plans").insert(inputs.map(clean));
+      if (error) throw error;
+      return inputs.length;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}
+
 /** 계획 수정. 목록을 먼저 바꿔 보여 주고(낙관적 업데이트) 실패하면 되돌립니다. */
 export function useUpdatePlan() {
   const { key } = useUserKey();

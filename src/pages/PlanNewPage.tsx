@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { CalendarRange } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { toPlanMessage, useCreatePlan, usePlans, type PlanInput } from "@/features/plans/api";
@@ -34,6 +35,14 @@ export default function PlanNewPage() {
         title="계획 추가"
         description="수업·활동·프로젝트를 넣으면 예보 그래프에 바로 반영돼요."
         back={{ to: "/plans", label: "계획 목록으로" }}
+        action={
+          <Button asChild variant="outline">
+            <Link to="/plans/import">
+              <CalendarRange aria-hidden="true" />
+              시간표로 수업 한 번에
+            </Link>
+          </Button>
+        }
       />
 
       {full ? (

@@ -50,3 +50,62 @@ export function toEstimateMessage(error: unknown): string {
   if (error instanceof FunctionsFetchError || error instanceof TypeError) return "서버에 연결하지 못했어요. 인터넷 연결을 확인하세요.";
   return "AI 추천을 받지 못했어요. 직접 고르거나 잠시 뒤 다시 시도하세요.";
 }
+
+// ── 10/26 피드백: 말로 한 번에 설정하기 · 시간표 읽기 ─────────
+
+/** 이번 학기 설명 글자 수 (서버도 같은 값으로 막음) */
+export const AI_SEMESTER_MAX = 800;
+/** 시간표 붙여넣기 글자 수 */
+export const AI_TIMETABLE_MAX = 4000;
+
+/** 말로 설명한 이번 학기 → 학기 설정과 계획 (온보딩) */
+export interface SemesterDraft {
+  semester_start: string | null;
+  midterm_week: number | null;
+  final_week: number | null;
+  daily_hours: number[] | null;
+  study_style: "steady" | "normal" | "cram" | null;
+  plans: { title: string; type: "class" | "activity" | "project"; credits: number | null; hours_per_week: number }[];
+  reason: string;
+  remaining: number;
+}
+
+/** 시간표에서 읽은 수업 */
+export interface TimetableClass {
+  title: string;
+  credits: number | null;
+  /** 수업 요일·시간 (예: "월3 수3") — 보여 주기만 해요 */
+  schedule: string | null;
+}
+export interface TimetableResult {
+  classes: TimetableClass[];
+  remaining: number;
+}
+
+async function invokeAi<T>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke<T>("estimate-hours", { body });
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      const res = (await (error.context as Response).json().catch(() => null)) as { error?: string } | null;
+      if (res?.error) throw new EstimateError(res.error);
+    }
+    throw error;
+  }
+  if (!data) throw new Error("empty response");
+  return data;
+}
+
+/** "9월 1일 개강, 화목 알바, 운영체제 3학점…" → 학기 설정 + 계획 초안 */
+export function useParseSemester() {
+  return useMutation({
+    mutationFn: (description: string) => invokeAi<SemesterDraft>({ kind: "semester", description }),
+  });
+}
+
+/** 시간표 글(에브리타임·포털에서 복사) 또는 캡처 이미지 → 수업 목록 */
+export function useParseTimetable() {
+  return useMutation({
+    mutationFn: (input: { text?: string; image?: { media_type: string; data: string } }) =>
+      invokeAi<TimetableResult>({ kind: "timetable", ...input }),
+  });
+}

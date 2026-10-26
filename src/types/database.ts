@@ -122,6 +122,7 @@ export type Database = {
           hours_per_week: number
           id: string
           load_level: string
+          no_exam: boolean
           priority: string
           start_date: string | null
           start_week: number
@@ -139,6 +140,7 @@ export type Database = {
           hours_per_week: number
           id?: string
           load_level?: string
+          no_exam?: boolean
           priority?: string
           start_date?: string | null
           start_week: number
@@ -156,6 +158,7 @@ export type Database = {
           hours_per_week?: number
           id?: string
           load_level?: string
+          no_exam?: boolean
           priority?: string
           start_date?: string | null
           start_week?: number

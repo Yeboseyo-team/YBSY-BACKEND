@@ -165,7 +165,7 @@ export default function TimetableImportPage() {
               <ul className="grid gap-2">
                 {rows.map((r, i) => {
                   const credits = Number(r.creditsInput);
-                  const hours = Number.isInteger(credits) && credits >= 1 && credits <= 6 ? defaultHoursPerWeek("class", "normal", credits) : null;
+                  const hours = Number.isInteger(credits) && credits >= CREDITS_RANGE.min && credits <= CREDITS_RANGE.max ? defaultHoursPerWeek("class", "normal", credits) : null;
                   const update = (patch: Partial<Row>) => setRows((all) => all!.map((x, j) => (j === i ? { ...x, ...patch } : x)));
                   return (
                     <li key={i} className={cn("grid gap-2 rounded-lg border p-3", r.picked ? "border-border" : "border-dashed opacity-60")}>
@@ -180,8 +180,8 @@ export default function TimetableImportPage() {
                         <Input value={r.title} maxLength={30} aria-label="과목명" onChange={(e) => update({ title: e.target.value })} className="h-9" />
                         <Input
                           type="number"
-                          min={1}
-                          max={6}
+                          min={CREDITS_RANGE.min}
+                          max={CREDITS_RANGE.max}
                           aria-label="학점"
                           value={r.creditsInput}
                           onChange={(e) => update({ creditsInput: e.target.value })}
@@ -191,7 +191,7 @@ export default function TimetableImportPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {r.schedule ? `${r.schedule} · ` : ""}
-                        {hours !== null ? `과제·복습 한 주 ${formatDuration(hours)} (보통)로 넣어요` : "학점을 1~6으로 넣어 주세요"}
+                        {hours !== null ? `과제·복습 한 주 ${formatDuration(hours)} (보통)로 넣어요` : `학점을 ${CREDITS_RANGE.min}~${CREDITS_RANGE.max}로 넣어 주세요`}
                       </p>
                     </li>
                   );

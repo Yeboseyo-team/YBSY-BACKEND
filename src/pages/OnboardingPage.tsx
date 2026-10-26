@@ -12,6 +12,7 @@ import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api"
 import { SemesterForm, type SemesterFormValues } from "@/features/auth/components/SemesterForm";
 import { SemesterTalk } from "@/features/auth/components/SemesterTalk";
 import { useCreatePlans } from "@/features/plans/api";
+import { CREDITS_RANGE } from "@/features/plans/defaults";
 import type { SemesterDraft } from "@/features/plans/ai";
 import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
 import { toStudyStyle } from "@/features/auth/schemas";
@@ -84,7 +85,7 @@ export default function OnboardingPage() {
       chosen.map((p) => ({
         title: p.title.slice(0, 30),
         type: p.type,
-        credits: p.type === "class" ? Math.min(6, Math.max(1, Math.round(p.credits ?? 3))) : null,
+        credits: p.type === "class" ? Math.min(CREDITS_RANGE.max, Math.max(CREDITS_RANGE.min, Math.round(p.credits ?? 3))) : null,
         load_level: "custom",
         start_week: 1,
         end_week: TOTAL_WEEKS,

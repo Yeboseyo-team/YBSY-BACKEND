@@ -65,3 +65,21 @@ describe("실제 기록 반영 (같은 계획의 남은 일정에서 빼기)", (
     expect(itemHours(input, 10, "운영체제")).toBeCloseTo(6.5, 1);
   });
 });
+
+describe("시험 없는 수업 (발표·과제로 평가, 10/26)", () => {
+  const noExam = (input: ForecastInput): ForecastInput => ({
+    ...input,
+    plans: input.plans.map((p) => (p.id === os.id ? { ...p, no_exam: true } : p)),
+  });
+
+  it("시험 주간에도 1.5배를 하지 않는다", () => {
+    expect(itemHours(base, 8, "운영체제")).toBe(9);
+    expect(itemHours(noExam(base), 8, "운영체제")).toBe(6);
+  });
+
+  it("벼락치기형이면 시험 전이 아니라 수업이 끝나는 마지막 2주에 몰린다", () => {
+    const cram = noExam(withStyle("cram"));
+    expect(itemHours(cram, 8, "운영체제")).toBe(3);
+    expect(itemHours(cram, 16, "운영체제")).toBeGreaterThan(6);
+  });
+});

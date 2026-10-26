@@ -8,7 +8,7 @@ import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
-import { ForecastChart } from "@/features/forecast/components/ForecastChart";
+import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
 import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
@@ -129,7 +129,7 @@ export default function HomePage() {
             />
           ) : (
             <>
-              <ForecastChart
+              <WindowedForecastChart
                 weeks={forecast.weeks}
                 availableHours={available}
                 currentWeek={currentWeek}

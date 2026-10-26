@@ -21,7 +21,7 @@ const subscribe = (onChange: () => void) => {
   return () => media.removeEventListener("change", onChange);
 };
 
-/** 16주 막대그래프 (S-08, F-05). 막대나 아래 주차 버튼을 누르면 그 주가 선택돼요 (FR-05-4). */
+/** 주차 막대그래프 (S-08, F-05). 받은 주만 그려요 (10/26: 6주씩 보기는 WindowedForecastChart). 막대나 아래 주차 버튼을 누르면 그 주가 선택돼요 (FR-05-4). */
 export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
   // 휴대폰 폭에서는 막대 위 숫자를 빼서 겹치지 않게 (숫자는 주차 상세에서 보여요)
   const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE_QUERY).matches);
@@ -65,7 +65,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
       </div>
 
       {/* 주차 버튼: 키보드·화면 낭독기·휴대폰 탭으로도 주를 고를 수 있게 */}
-      <div className="grid grid-cols-16" role="group" aria-label="주차 선택">
+      <div className="grid" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }} role="group" aria-label="주차 선택">
         {weeks.map((w) => {
           const isCurrent = w.week === currentWeek;
           const isSelected = w.week === selectedWeek;

@@ -104,9 +104,9 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* 휴대폰: 소개 → 폼 → 학기 미리보기. PC: 왼쪽에 소개·미리보기, 오른쪽에 폼 */}
-      <main className="mx-auto grid max-w-6xl content-start gap-8 px-4 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)] lg:gap-x-12 lg:py-14">
-        <div className="lg:col-start-1 lg:row-start-1">
+      {/* 소개 → 폼. 폼은 PC 에서 왼쪽(스타일·개강일·쓸 수 있는 시간·시험 주차·미리보기), 오른쪽(수업·프로젝트·자격증 글 칸) (10/27) */}
+      <main className="mx-auto grid max-w-6xl content-start gap-8 px-4 py-8 sm:px-10 lg:py-12">
+        <div>
           <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">
             {profile.data?.display_name ? `${profile.data.display_name}님, ` : ""}
             이번 학기를
@@ -118,11 +118,7 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        <div className="order-last lg:order-none lg:col-start-1 lg:row-start-2">
-          <SemesterPreview semesterStart={shown.semesterStart} midtermWeek={shown.midtermWeek} finalWeek={shown.finalWeek} />
-        </div>
-
-        <div className="self-start rounded-xl border border-border bg-card p-5 sm:p-8 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-8">
           <SemesterForm
             requirePrivacy
             aiDailyHours
@@ -133,6 +129,7 @@ export default function OnboardingPage() {
             errorMessage={update.error ? toProfileMessage(update.error) : undefined}
             onValuesChange={handleValuesChange}
             extra={<OnboardingTexts value={texts} onChange={setTexts} disabled={busy} />}
+            afterExams={<SemesterPreview semesterStart={shown.semesterStart} midtermWeek={shown.midtermWeek} finalWeek={shown.finalWeek} />}
             onSubmit={(v) => {
               submitted.current = true;
               update.mutate(

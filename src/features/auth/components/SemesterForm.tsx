@@ -35,8 +35,10 @@ type Props = {
   id?: string;
   /** 온보딩: 쓸 수 있는 시간은 글로 쓰면 AI 가 정하는 게 기본, 칸은 [직접 고치기]를 눌러야 보여요 (10/27 온보딩 개편) */
   aiDailyHours?: boolean;
-  /** 개인정보 동의 바로 위에 넣을 내용 (온보딩의 수업·프로젝트·자격증 글 칸) */
+  /** 오른쪽 칸(PC)에 넣을 내용 — 온보딩의 수업·프로젝트·자격증 글 칸. 있으면 PC 에서 왼쪽(학기 설정)·오른쪽(글 칸·동의·버튼) 2칸 (10/27) */
   extra?: ReactNode;
+  /** 왼쪽 칸 맨 아래(시험 주간 다음)에 넣을 내용 — 온보딩의 학기 미리보기 */
+  afterExams?: ReactNode;
   className?: string;
 };
 
@@ -62,6 +64,7 @@ export function SemesterForm({
   id,
   aiDailyHours = false,
   extra,
+  afterExams,
   className,
 }: Props) {
   const [manualHours, setManualHours] = useState(false);
@@ -87,8 +90,20 @@ export function SemesterForm({
     errs[name] || hasHint ? `${name}-message` : undefined;
 
   return (
-    <form id={id} noValidate onSubmit={handleSubmit(onSubmit)} className={cn("grid gap-7", className)}>
-      {errorMessage ? <FormAlert>{errorMessage}</FormAlert> : null}
+    <form
+      id={id}
+      noValidate
+      onSubmit={handleSubmit(onSubmit)}
+      className={cn("grid gap-7", extra ? "lg:grid-cols-2 lg:items-start lg:gap-x-12" : null, className)}
+    >
+      {errorMessage ? (
+        <div className="lg:col-span-2">
+          <FormAlert>{errorMessage}</FormAlert>
+        </div>
+      ) : null}
+
+      {/* 왼쪽: 공부 스타일 → 개강일 → 쓸 수 있는 시간 → 시험 주간 */}
+      <div className="grid content-start gap-7">
 
       {/* 10/26 피드백: 벼락치기하는 사람도 있으니 공부 스타일에 맞춰 예보. 맨 위에서 먼저 물어봐요 */}
       <Controller
@@ -286,6 +301,11 @@ export function SemesterForm({
         ) : null}
       </fieldset>
 
+      {afterExams}
+      </div>
+
+      {/* 오른쪽(온보딩): 수업·프로젝트·자격증 글 칸 → 동의 → 버튼 */}
+      <div className="grid content-start gap-7">
       {extra}
 
       {requirePrivacy ? (
@@ -324,6 +344,7 @@ export function SemesterForm({
           {isPending ? pendingLabel : submitLabel}
         </Button>
         {secondaryAction}
+      </div>
       </div>
     </form>
   );

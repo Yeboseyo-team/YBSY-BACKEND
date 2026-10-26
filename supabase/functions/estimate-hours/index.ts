@@ -78,6 +78,7 @@ const SEMESTER_SYSTEM = `당신은 한국 대학생이 말로 설명한 "이번 
   title 은 30자 이내. credits 는 수업이면 1~6 정수(모르면 3), 아니면 null.
   hours_per_week 는 수업 밖에서 쓰는 한 주 시간(0.5 단위): 수업은 학점×1.5, 활동 4, 프로젝트 6을 기본으로 설명을 보고 조정.
   최대 20개. 아르바이트·잠 같은 것은 계획이 아니라 daily_hours 에서 빼는 시간입니다.
+reason 에는 steady·normal·cram 같은 영어 값을 쓰지 말고 "꾸준히", "조금 몰아서", "벼락치기"로 쓰세요.
 ${GUARD}`;
 
 const TIMETABLE_SYSTEM = `당신은 한국 대학생의 수업 시간표(에브리타임·학교 포털에서 복사한 글이나 캡처 이미지)에서 수업 목록을 뽑는 도우미입니다.
@@ -200,7 +201,13 @@ function cleanSemester(raw: Record<string, unknown>) {
     daily_hours: raw.daily_hours === null ? null : clampDaily(raw.daily_hours),
     study_style: style,
     plans,
-    reason: String(raw.reason ?? "").trim().slice(0, 200),
+    // 프롬프트로 막아도 영어 값이 섞여 나올 때를 대비해 한 번 더 바꿈
+    reason: String(raw.reason ?? "")
+      .replace(/\bsteady\b/gi, "꾸준히")
+      .replace(/\bnormal\b/gi, "조금 몰아서")
+      .replace(/\bcram\b/gi, "벼락치기")
+      .trim()
+      .slice(0, 200),
   };
 }
 

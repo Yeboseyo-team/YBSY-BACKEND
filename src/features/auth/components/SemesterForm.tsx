@@ -143,41 +143,6 @@ export function SemesterForm({
         )}
       />
 
-      {/* 10/26 피드백: 벼락치기하는 사람도 있으니 공부 스타일에 맞춰 예보. 맨 위에서 먼저 물어봐요 */}
-      <Controller
-        control={control}
-        name="studyStyle"
-        render={({ field }) => (
-          <fieldset className="grid gap-2">
-            <legend className="mb-1 text-sm font-medium">이번 학기, 벼락치기 할 건가요?</legend>
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
-              고른 스타일대로 예보를 나눠 그려요. 한 학기 공부 시간 합계는 같아요.
-            </p>
-            <div role="radiogroup" aria-label="공부 스타일" className="grid gap-2 sm:grid-cols-3">
-              {STUDY_STYLE_OPTIONS.map((option) => {
-                const selected = field.value === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => field.onChange(option.value)}
-                    className={cn(
-                      "grid gap-0.5 rounded-lg border bg-card px-3 py-2.5 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-                      selected ? "border-2 border-ink" : "border-input hover:bg-accent",
-                    )}
-                  >
-                    <span className="text-sm font-semibold">{option.label}</span>
-                    <span className="text-xs leading-snug text-muted-foreground">{option.hint}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-        )}
-      />
-
       <FormField id="semesterStart" label="개강일" error={errs.semesterStart?.message} hint="이 날부터 7일씩 1주차, 2주차로 세요.">
         <Input
           id="semesterStart"

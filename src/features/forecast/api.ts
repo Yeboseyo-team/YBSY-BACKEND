@@ -6,6 +6,7 @@ import { useProfile } from "@/features/auth/api";
 import { isOnboardingDone } from "@/features/auth/onboarding";
 import { useCertificates, useMyCertificates } from "@/features/certificates/api";
 import { usePlans } from "@/features/plans/api";
+import { useStudyLogs } from "./logs";
 import {
   calculateForecast,
   semesterWeekOf,
@@ -15,7 +16,7 @@ import {
   type Forecast,
   type ForecastInput,
 } from "./calc";
-import type { Certificate, Plan, Profile, UserCertificate } from "@/types/database";
+import type { Certificate, Plan, Profile, StudyLogRow, UserCertificate } from "@/types/database";
 
 export type ForecastDataStatus =
   /** 불러오는 중 → 화면 틀(스켈레톤)을 먼저 보여 주세요 (6.1) */
@@ -34,6 +35,8 @@ export interface ForecastData {
   plans: Plan[];
   userCertificates: UserCertificate[];
   certificates: Certificate[];
+  /** 실제로 한 시간 기록 (10/26). 아직 표가 없거나 못 불러오면 빈 목록 → 계획대로 예보 */
+  logs: StudyLogRow[];
   /** 학기 16주 예보 (status 가 "ready"·"empty" 일 때) */
   forecast: Forecast | null;
   /** 사전 검토(previewForecast)·회차 추천(recommendRounds)에 그대로 넘길 입력 */
@@ -54,6 +57,8 @@ export function useForecastData(): ForecastData {
   const plansQuery = usePlans();
   const mineQuery = useMyCertificates();
   const certificatesQuery = useCertificates();
+  // 기록은 없어도 예보를 낼 수 있어서 불러오기 실패를 화면 오류로 치지 않아요
+  const logsQuery = useStudyLogs();
   const today = todayInKorea();
 
   const queries = [profileQuery, plansQuery, mineQuery, certificatesQuery];
@@ -64,13 +69,14 @@ export function useForecastData(): ForecastData {
   const plans = useMemo(() => plansQuery.data ?? [], [plansQuery.data]);
   const userCertificates = useMemo(() => mineQuery.data ?? [], [mineQuery.data]);
   const certificates = useMemo(() => certificatesQuery.data ?? [], [certificatesQuery.data]);
+  const logs = useMemo(() => logsQuery.data ?? [], [logsQuery.data]);
   const ready = !isLoading && !isError && isOnboardingDone(profile);
 
   const computed = useMemo(() => {
     if (!ready || !profile) return { forecast: null, input: null };
-    const input: ForecastInput = { profile, plans, userCertificates, certificates };
+    const input: ForecastInput = { profile, plans, userCertificates, certificates, logs };
     return { forecast: calculateForecast(input), input };
-  }, [ready, profile, plans, userCertificates, certificates]);
+  }, [ready, profile, plans, userCertificates, certificates, logs]);
 
   const deadlines = useMemo(
     () => (ready ? upcomingDeadlines(userCertificates, certificates, today) : []),
@@ -93,6 +99,7 @@ export function useForecastData(): ForecastData {
     plans,
     userCertificates,
     certificates,
+    logs,
     forecast: computed.forecast,
     input: computed.input,
     deadlines,

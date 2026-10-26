@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, dailyForecast, isInSemester, WEEKDAY_LABELS, weekOf } from "@/features/forecast/calc";
 import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
+import { LogControl } from "@/features/forecast/components/LogControl";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
@@ -156,6 +157,16 @@ export default function DayPage() {
                     <span className="h-2 rounded-full bg-muted" aria-hidden="true">
                       <span className="block h-full rounded-full" style={{ width: `${(item.hours / scale) * 100}%`, backgroundColor: tag.color }} />
                     </span>
+                    {/* 10/26: 실제로 한 시간 기록 → 같은 계획의 남은 일정이 다시 계산돼요 */}
+                    <LogControl
+                      key={`${item.plan_id ?? item.certificate_id}-${date}`}
+                      item={item}
+                      date={date}
+                      future={date > data.today}
+                      log={data.logs.find(
+                        (l) => l.date === date && ((item.plan_id && l.plan_id === item.plan_id) || (item.certificate_id && l.certificate_id === item.certificate_id)),
+                      )}
+                    />
                   </li>
                 );
               })}
@@ -163,7 +174,7 @@ export default function DayPage() {
           )}
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             계획에는 요일이 정해져 있지 않아서, 한 주 시간을 요일별로 쓸 수 있는 시간에 맞춰 나눴어요. 날짜를 정한 일정(예: 결혼식)은 그날에만
-            들어가요.
+            들어가요. 실제로 한 시간을 기록하면 더 하거나 덜 한 만큼 같은 계획의 남은 일정이 다시 계산돼요.
           </p>
         </section>
       </div>

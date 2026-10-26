@@ -5,8 +5,8 @@ import type { Plan, PlanCategory, PlanLoadLevel, PlanPriority, PlanType } from "
 export const MAX_PLANS = 30;
 /** 사용자 지정 유형 상한 (10/24 QA, DB 트리거와 같은 값) */
 export const MAX_CATEGORIES = 10;
-/** 학점 범위 (10/24 QA: 1~6 정수 직접 입력) */
-export const CREDITS_RANGE = { min: 1, max: 6 } as const;
+/** 학점 범위 (10/24 QA: 정수 직접 입력. 10/26: 9학점 프로젝트형 수업 때문에 6 → 12) */
+export const CREDITS_RANGE = { min: 1, max: 12 } as const;
 
 /** 기본 시간이 있는 유형 (사용자 지정 유형은 시간을 직접 넣어요) */
 export type BuiltinPlanType = Exclude<PlanType, "custom">;

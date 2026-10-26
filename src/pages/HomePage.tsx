@@ -8,7 +8,7 @@ import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
-import { ForecastChart } from "@/features/forecast/components/ForecastChart";
+import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
 import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
@@ -129,7 +129,7 @@ export default function HomePage() {
             />
           ) : (
             <>
-              <ForecastChart
+              <WindowedForecastChart
                 weeks={forecast.weeks}
                 availableHours={available}
                 currentWeek={currentWeek}
@@ -137,11 +137,25 @@ export default function HomePage() {
                 onSelect={setPicked}
               />
 
-              <p className="border-t border-border/60 pt-3 text-[13px] text-muted-foreground">
-                {empty
-                  ? "계획을 하나 넣을 때마다 이 자리에 막대가 쌓여요."
-                  : "막대나 주차를 누르면 그 주의 내역이 나와요. 진한 원은 이번 주예요."}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+                <p className="text-[13px] text-muted-foreground">
+                  {empty
+                    ? "계획을 하나 넣을 때마다 이 자리에 막대가 쌓여요."
+                    : "막대나 주차를 누르면 그 주의 내역이 나와요. 진한 원은 이번 주예요."}
+                </p>
+                {/* 휴대폰에서는 주차 내역이 한참 아래라 바로 가는 버튼 (10/26 UI 점검) */}
+                {!empty ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="lg:hidden"
+                    onClick={() => document.getElementById("week-detail")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  >
+                    {selectedWeek}주차 내역 보기
+                  </Button>
+                ) : null}
+              </div>
 
               {/* 요일별 가용 시간·부담 (10/24 QA) */}
               <div className="border-t border-border/60 pt-4">
@@ -151,7 +165,7 @@ export default function HomePage() {
           )}
         </section>
 
-        <aside className="grid min-w-0 flex-[1_1_320px] gap-4">
+        <aside id="week-detail" className="grid min-w-0 scroll-mt-20 flex-[1_1_320px] gap-4">
           {empty ? (
             <EmptyActions />
           ) : (

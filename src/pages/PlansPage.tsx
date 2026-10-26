@@ -11,6 +11,7 @@ import { formatDuration } from "@/features/forecast/weather";
 import { toPlanMessage, useDeletePlan, usePlans } from "@/features/plans/api";
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { toCategoryMessage, useDeleteCategory, usePlanCategories } from "@/features/plans/categories";
+import { typeTagOf } from "@/features/plans/colors";
 import { canAddPlan, groupPlansByType, LOAD_LEVEL_LABEL, MAX_PLANS, PRIORITY_LABEL } from "@/features/plans/defaults";
 import { cn } from "@/lib/utils";
 import type { Plan, PlanLoadLevel, PlanPriority } from "@/types/database";
@@ -29,9 +30,9 @@ export default function PlansPage() {
   const list = plans.data ?? [];
   const canAdd = canAddPlan(list.length);
 
-  // PC 는 상단 메뉴에 [계획 추가]가 바로 옆에 있어서 이 버튼은 휴대폰에서만 (30개가 차면 안내 버튼은 PC 에도 보여요)
+  // 위쪽 메뉴(휴대폰·PC 모두)에 [계획 추가]가 있어서, 본문 버튼은 빈 목록일 때와 30개가 찼을 때만 (10/26 UI 점검: 휴대폰에서 두 번 보였음)
   const addButton = canAdd ? (
-    <Button asChild size="lg" className="bg-ink hover:bg-ink/90 lg:hidden">
+    <Button asChild size="lg" className="bg-ink hover:bg-ink/90">
       <Link to="/plans/new">
         <Plus aria-hidden="true" />
         계획 추가
@@ -51,7 +52,7 @@ export default function PlansPage() {
         description={
           list.length > 0 ? `계획 ${list.length}개를 넣었어요. ${MAX_PLANS}개까지 넣을 수 있어요.` : "수업·활동·프로젝트를 담아두면 예보에 반영돼요."
         }
-        action={plans.isPending || plans.isError || list.length === 0 ? null : addButton}
+        action={plans.isPending || plans.isError || list.length === 0 || canAdd ? null : addButton}
       />
 
       {!canAdd && plans.data ? (
@@ -100,7 +101,7 @@ export default function PlansPage() {
               </h2>
               <ul>
                 {group.plans.map((plan) => (
-                  <PlanRow key={plan.id} plan={plan} onDelete={() => setDeleting(plan)} />
+                  <PlanRow key={plan.id} plan={plan} color={typeTagOf({ plan_type: plan.type, category_id: plan.category_id }, categories.data ?? []).color} onDelete={() => setDeleting(plan)} />
                 ))}
               </ul>
             </section>
@@ -124,7 +125,7 @@ export default function PlansPage() {
   );
 }
 
-function PlanRow({ plan, onDelete }: { plan: Plan; onDelete: () => void }) {
+function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelete: () => void }) {
   const left = ((plan.start_week - 1) / TOTAL_WEEKS) * 100;
   const width = ((plan.end_week - plan.start_week + 1) / TOTAL_WEEKS) * 100;
   return (
@@ -134,6 +135,7 @@ function PlanRow({ plan, onDelete }: { plan: Plan; onDelete: () => void }) {
         <p className="flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted-foreground">
           <PriorityBadge priority={plan.priority as PlanPriority} />
           {plan.credits ? `${plan.credits}학점 · ` : ""}
+          {plan.no_exam ? "시험 없음 · " : ""}
           {LOAD_LEVEL_LABEL[plan.load_level as PlanLoadLevel]}
           {plan.start_date && plan.end_date ? <span>· {dateRange(plan.start_date, plan.end_date)}</span> : null}
         </p>
@@ -141,7 +143,8 @@ function PlanRow({ plan, onDelete }: { plan: Plan; onDelete: () => void }) {
 
       <div className="col-span-2 row-start-2 flex items-center gap-3 sm:col-span-1 sm:row-start-auto">
         <span className="relative h-2 flex-1 rounded bg-muted" aria-hidden="true">
-          <span className="absolute inset-y-0 rounded bg-[#9aa6ba]" style={{ left: `${left}%`, width: `${width}%` }} />
+          {/* 유형 색으로 (10/26 UI 점검: 회색 막대가 다 똑같아 보였음) */}
+          <span className="absolute inset-y-0 rounded opacity-70" style={{ left: `${left}%`, width: `${width}%`, backgroundColor: color }} />
         </span>
         <span className="w-14 shrink-0 text-[13px] text-muted-foreground tabular-nums">
           {plan.start_week === plan.end_week ? plan.start_week : `${plan.start_week}~${plan.end_week}`}주

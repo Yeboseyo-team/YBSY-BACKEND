@@ -1,0 +1,77 @@
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TOTAL_WEEKS, type WeekForecast } from "../calc";
+import { ForecastChart } from "./ForecastChart";
+
+/** 한 번에 보여 줄 주 수 (10/26 피드백: 16주를 한꺼번에 보여 주지 말고 나눠서) */
+export const WINDOW_WEEKS = 6;
+
+type Props = {
+  weeks: WeekForecast[];
+  availableHours: number;
+  currentWeek: number | null;
+  selectedWeek: number;
+  onSelect: (week: number) => void;
+};
+
+/** 이번 주가 두 번째 칸에 오도록 (지난주 1주 + 이번 주 + 앞으로 4주) */
+const firstWeekAround = (week: number) => Math.min(Math.max(1, week - 1), TOTAL_WEEKS - WINDOW_WEEKS + 1);
+
+/**
+ * 예보 막대그래프를 6주씩 나눠 보여 줘요 (10/26). ◀ ▶ 로 넘기고, [학기 전체]로 16주를 한 번에 볼 수도 있어요.
+ * 막대 계산·그리기는 ForecastChart 그대로예요.
+ */
+export function WindowedForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
+  // PC 는 화면이 넓어 학기 전체가 기본, 휴대폰은 6주씩 (10/26 UI 점검)
+  const [whole, setWhole] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  const [first, setFirst] = useState(() => firstWeekAround(currentWeek ?? selectedWeek));
+  const last = Math.min(TOTAL_WEEKS, first + WINDOW_WEEKS - 1);
+  const shown = whole ? weeks : weeks.slice(first - 1, last);
+  const move = (by: number) => setFirst((f) => Math.min(Math.max(1, f + by), TOTAL_WEEKS - WINDOW_WEEKS + 1));
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {whole ? (
+          <p className="text-sm font-semibold">1~{TOTAL_WEEKS}주차 전체</p>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="icon" aria-label="앞 주들 보기" disabled={first <= 1} onClick={() => move(-WINDOW_WEEKS)}>
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <p className="min-w-24 text-center text-sm font-semibold tabular-nums" aria-live="polite">
+              {first}~{last}주차
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="뒤 주들 보기"
+              disabled={last >= TOTAL_WEEKS}
+              onClick={() => move(WINDOW_WEEKS)}
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+            {currentWeek && (currentWeek < first || currentWeek > last) ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setFirst(firstWeekAround(currentWeek))}>
+                이번 주로
+              </Button>
+            ) : null}
+          </div>
+        )}
+        <Button type="button" variant="ghost" size="sm" aria-pressed={whole} onClick={() => setWhole((w) => !w)}>
+          {whole ? "6주씩 보기" : "학기 전체"}
+        </Button>
+      </div>
+
+      <ForecastChart
+        weeks={shown}
+        availableHours={availableHours}
+        currentWeek={currentWeek}
+        selectedWeek={selectedWeek}
+        onSelect={onSelect}
+      />
+    </div>
+  );
+}

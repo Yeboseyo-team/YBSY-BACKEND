@@ -23,6 +23,8 @@ const PlanEditPage = lazy(() => import("@/pages/PlanEditPage")); // S-09 수정
 
 // ── 10/24 QA ──
 const ReviewPage = lazy(() => import("@/pages/ReviewPage")); // 학기 회고·내보내기
+const TimetableImportPage = lazy(() => import("@/pages/TimetableImportPage")); // 시간표로 수업 한 번에 (10/26)
+const OnboardingPlansPage = lazy(() => import("@/pages/OnboardingPlansPage")); // 온보딩 2단계 계획 넣기 (10/26)
 const DayPage = lazy(() => import("@/pages/DayPage")); // 하루 할 일 (요일별 부담에서 누르면)
 
 export default function App() {
@@ -36,11 +38,13 @@ export default function App() {
 
           {/* 학기 설정·동의가 비어 있으면 /onboarding 으로 */}
           <Route element={<OnboardingGuard />}>
+            <Route path="start/plans" element={<OnboardingPlansPage />} />
             {/* 메뉴가 있는 화면들 */}
             <Route element={<AppShell />}>
               <Route index element={<HomePage />} />
               <Route path="plans" element={<PlansPage />} />
               <Route path="plans/new" element={<PlanNewPage />} />
+              <Route path="plans/import" element={<TimetableImportPage />} />
               <Route path="plans/:id/edit" element={<PlanEditPage />} />
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="settings" element={<SettingsPage />} />

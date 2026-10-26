@@ -35,11 +35,12 @@ type Props = {
   isPending: boolean;
   errorMessage?: string | null;
   onSubmit: (values: PlanInput) => void;
-  /** 사전 검토 (F-06). 없으면 버튼이 꺼진 채로 보여요. */
+  /** 사전 검토 (F-06). 없으면 버튼을 숨겨요 (10/26 UI 점검: 꺼진 버튼만 보여서 헷갈렸음) */
   onPreview?: (values: PlanInput) => void;
   /** 입력이 바뀔 때마다 (사전 검토 실시간 미리보기용). 아직 올바르지 않은 값이면 null */
   onValuesChange?: (values: PlanInput | null) => void;
-  cancelTo?: string;
+  /** 취소 버튼이 갈 곳. null 이면 취소 버튼을 숨겨요 (온보딩 2단계) */
+  cancelTo?: string | null;
   /** 수정 화면의 삭제 버튼 같은 추가 버튼 */
   extraActions?: ReactNode;
   disabled?: boolean;
@@ -63,6 +64,7 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     end_date: null,
     priority: "normal" as PlanPriority,
     category_id: null,
+    no_exam: false,
   };
   return {
     title: p.title,
@@ -74,6 +76,7 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     end_date: p.end_date ?? weekDates(p.end_week, semesterStart)[6],
     hours_per_week: p.hours_per_week,
     priority: p.priority,
+    no_exam: p.no_exam ?? false,
   };
 }
 
@@ -117,6 +120,7 @@ function PlanFormInner({
 
   const type = watch("type");
   const credits = watch("credits");
+  const noExam = watch("no_exam");
   const level = watch("load_level");
   const categoryId = watch("category_id");
   const priority = watch("priority");
@@ -301,6 +305,18 @@ function PlanFormInner({
           </FormField>
         ) : null}
       </div>
+      {/* 10/26: 캡스톤처럼 시험 대신 발표·과제로 평가하는 수업 */}
+      {isClass ? (
+        <label className="-mt-3 flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-primary" disabled={disabled} {...register("no_exam")} />
+          <span>
+            시험 없는 수업이에요
+            <span className="block text-[13px] text-muted-foreground">
+              발표·과제로 평가하면 체크하세요. 시험 주간 1.5배를 빼고, 벼락치기는 끝나는 날 전 2주에 몰아요.
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       <fieldset className="grid gap-2" disabled={disabled}>
         <legend className="mb-2 text-sm font-semibold">기간</legend>
@@ -393,7 +409,7 @@ function PlanFormInner({
         ) : (
           <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
             {isClass
-              ? `${credits ?? 3}학점 기준, 수업 시간은 빼고 과제·복습 시간이에요. 시험 주간에는 1.5배로 계산해요. `
+              ? `${credits ?? 3}학점 기준, 수업 시간은 빼고 과제·복습 시간이에요. ${noExam ? "시험이 없어 시험 주간도 그대로 계산해요." : "시험 주간에는 1.5배로 계산해요."} `
               : "유형별 기본값으로 채웠어요. "}
             <button
               type="button"
@@ -413,6 +429,9 @@ function PlanFormInner({
           type={type}
           credits={credits}
           disabled={disabled}
+          submitLabel={submitLabel}
+          pendingLabel={pendingLabel}
+          isPending={isPending}
           onApply={(hours) => {
             setValue("load_level", "custom");
             setValue("hours_per_week", hours, { shouldValidate: true });
@@ -443,19 +462,17 @@ function PlanFormInner({
       </fieldset>
 
       <div className="grid gap-2 pt-1">
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          disabled={disabled || !onPreview}
-          onClick={() => void preview()}
-        >
-          사전 검토
-        </Button>
-        <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" size="lg">
-            <Link to={cancelTo}>취소</Link>
+        {onPreview ? (
+          <Button type="button" variant="outline" size="lg" disabled={disabled} onClick={() => void preview()}>
+            사전 검토
           </Button>
+        ) : null}
+        <div className={cn("grid gap-2", cancelTo !== null && "grid-cols-2")}>
+          {cancelTo !== null ? (
+            <Button asChild variant="outline" size="lg">
+              <Link to={cancelTo}>취소</Link>
+            </Button>
+          ) : null}
           <Button type="submit" size="lg" className="bg-ink hover:bg-ink/90" disabled={disabled || isPending}>
             {isPending ? pendingLabel : submitLabel}
           </Button>

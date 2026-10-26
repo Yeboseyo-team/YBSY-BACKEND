@@ -23,6 +23,8 @@ export interface PlanInput {
   end_date: string | null;
   priority: PlanPriority;
   category_id: string | null;
+  /** 시험 없는 수업 (발표·과제로 평가, 10/26). 시험 주간 1.5배를 빼고 벼락치기는 끝나는 날 전으로. 수업만 */
+  no_exam?: boolean;
 }
 
 export const planKeys = {
@@ -41,7 +43,7 @@ export function toPlanMessage(error: unknown): string {
   if (error instanceof TypeError) return "서버에 연결하지 못했어요. 인터넷 연결을 확인하세요.";
   const code = (error as { code?: string } | null)?.code;
   if (code === "P0030") return new PlanLimitError().message; // DB 의 30개 상한 트리거 (plans_limit)
-  if (code === "23514") return "입력값을 확인하세요. 계획명 1~30자, 기간(시작 ≤ 끝), 주당 시간 0.5~60(0.5 단위), 학점은 수업만 1~6이에요.";
+  if (code === "23514") return "입력값을 확인하세요. 계획명 1~30자, 기간(시작 ≤ 끝), 주당 시간 0.5~60(0.5 단위), 학점은 수업만 1~12예요.";
   if (code === "23503") return "고른 유형을 찾을 수 없어요. 유형을 다시 골라 주세요.";
   return "계획을 저장하지 못했어요. 잠시 뒤 다시 시도하세요.";
 }
@@ -52,6 +54,7 @@ function clean(input: PlanInput): PlanInput {
     ...input,
     title: input.title.trim(),
     credits: input.type === "class" ? input.credits : null,
+    no_exam: input.type === "class" ? Boolean(input.no_exam) : false,
     category_id: input.type === "custom" ? input.category_id : null,
     load_level: input.type === "custom" ? "custom" : input.load_level,
   };
@@ -109,6 +112,24 @@ export function useCreatePlan() {
       const { data, error } = await supabase.from("plans").insert(clean(input)).select().single();
       if (error) throw error;
       return data;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}
+
+/** 계획 여러 개 한 번에 추가 (10/26: 시간표에서 읽은 수업, 말로 설정한 계획). 30개를 넘으면 PlanLimitError */
+export function useCreatePlans() {
+  const { key } = useUserKey();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (inputs: PlanInput[]): Promise<number> => {
+      if (inputs.length === 0) return 0;
+      const { count, error: countError } = await supabase.from("plans").select("id", { count: "exact", head: true });
+      if (countError) throw countError;
+      if ((count ?? 0) + inputs.length > MAX_PLANS) throw new PlanLimitError();
+      const { error } = await supabase.from("plans").insert(inputs.map(clean));
+      if (error) throw error;
+      return inputs.length;
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });

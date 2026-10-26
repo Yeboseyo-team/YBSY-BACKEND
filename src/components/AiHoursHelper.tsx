@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/features/forecast/weather";
@@ -16,11 +16,13 @@ type Props = {
   onApply: (estimate: Estimate) => void;
   /** 채운 뒤 안내 (예: "직접 입력에 채웠어요.") */
   appliedNote: string;
+  /** 추천을 채운 뒤 바로 누를 버튼 (예: 계획 폼의 [추가하기]) — 10/26: 추천받고 저장 버튼을 못 찾는다는 피드백 */
+  action?: ReactNode;
   disabled?: boolean;
 };
 
 /** F-08 말로 설명하면 AI 가 시간을 추천 (FR-08-1). 계획 폼과 학기 설정(온보딩·설정)이 같이 써요. */
-export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply, appliedNote, disabled = false }: Props) {
+export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply, appliedNote, action, disabled = false }: Props) {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const estimate = useEstimateHours();
@@ -78,6 +80,7 @@ export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply,
             </span>
           </p>
         ) : null}
+        {estimate.isSuccess && action ? <div className="mt-2">{action}</div> : null}
       </div>
     </div>
   );

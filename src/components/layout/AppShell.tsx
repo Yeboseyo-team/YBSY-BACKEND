@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { CalendarCheck, CloudSun, ListTodo, NotebookPen, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/Logo";
@@ -21,6 +21,11 @@ const NAV: NavItem[] = [
  * 본문은 각 화면의 PageContainer(<main>)가 그립니다.
  */
 export function AppShell() {
+  const { pathname } = useLocation();
+  // 하루 할 일(/day/...)은 예보에서 들어오는 화면이라 '예보' 메뉴를 켜 둬요
+  const isOn = (to: string, active: boolean) => active || (to === "/" && pathname.startsWith("/day/"));
+  // 계획을 넣는 화면에서는 위쪽 [계획 추가]가 겹쳐서 숨겨요 (10/26 UI 점검)
+  const hideAdd = /^\/plans\/(new|import|[^/]+\/edit)/.test(pathname);
   return (
     <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
       <a
@@ -45,7 +50,7 @@ export function AppShell() {
                 className={({ isActive }) =>
                   cn(
                     "inline-flex h-10 items-center rounded-lg px-3.5 text-[15px] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-                    isActive ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:bg-secondary/60",
+                    isOn(item.to, isActive) ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:bg-secondary/60",
                   )
                 }
               >
@@ -60,19 +65,23 @@ export function AppShell() {
               aria-label="설정"
               className={({ isActive }) =>
                 cn(
-                  "grid size-11 place-items-center rounded-lg outline-none hover:bg-secondary/60 focus-visible:ring-[3px] focus-visible:ring-ring/40",
-                  isActive ? "bg-secondary text-foreground" : "text-foreground",
+                  "inline-flex size-11 items-center justify-center gap-1.5 rounded-lg text-[15px] outline-none hover:bg-secondary/60 focus-visible:ring-[3px] focus-visible:ring-ring/40 lg:w-auto lg:px-3",
+                  isActive ? "bg-secondary font-semibold text-foreground" : "text-foreground",
                 )
               }
             >
               <SlidersHorizontal className="size-5" aria-hidden="true" />
+              {/* PC 에서는 아이콘만으로 알기 어려워 글자도 (10/26 UI 점검) */}
+              <span className="hidden lg:inline">설정</span>
             </NavLink>
-            <Button asChild className="h-10 px-3 sm:px-4 lg:h-11">
-              <Link to="/plans/new">
-                <Plus aria-hidden="true" />
-                <span>계획 추가</span>
-              </Link>
-            </Button>
+            {hideAdd ? null : (
+              <Button asChild className="h-10 px-3 sm:px-4 lg:h-11">
+                <Link to="/plans/new">
+                  <Plus aria-hidden="true" />
+                  <span>계획 추가</span>
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -94,13 +103,13 @@ export function AppShell() {
                 className={({ isActive }) =>
                   cn(
                     "flex h-full flex-col items-center justify-center gap-1 text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:ring-inset",
-                    isActive ? "font-semibold text-foreground" : "text-muted-foreground",
+                    isOn(to, isActive) ? "font-semibold text-foreground" : "text-muted-foreground",
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={cn("size-6", isActive && "text-primary")} strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
+                    <Icon className={cn("size-6", isOn(to, isActive) && "text-primary")} strokeWidth={isOn(to, isActive) ? 2.2 : 1.8} aria-hidden="true" />
                     {label}
                   </>
                 )}

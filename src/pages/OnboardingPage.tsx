@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { FullScreenSpinner } from "@/components/FullScreenSpinner";
 import { LoadError } from "@/components/LoadError";
@@ -52,6 +52,8 @@ export default function OnboardingPage() {
   const [pickedPlans, setPickedPlans] = useState<boolean[]>([]);
   const [formKey, setFormKey] = useState(0);
   const createPlans = useCreatePlans();
+  // 저장하면 프로필이 "온보딩 끝"으로 바뀌어 아래 홈 이동이 먼저 일어나요. 방금 저장한 경우엔 2단계로 가도록 막아 둠
+  const submitted = useRef(false);
 
   if (profile.isPending) return <FullScreenSpinner />;
   if (profile.isError) {
@@ -62,7 +64,7 @@ export default function OnboardingPage() {
     );
   }
   // 이미 마쳤으면 홈으로 (바꾸기는 설정 화면에서)
-  if (isOnboardingDone(profile.data)) return <Navigate to="/" replace />;
+  if (isOnboardingDone(profile.data) && !submitted.current) return <Navigate to="/" replace />;
 
   const defaults: SemesterValues = {
     semesterStart: profile.data?.semester_start ?? defaultSemesterStart(todayInKorea()),
@@ -149,7 +151,8 @@ export default function OnboardingPage() {
             isPending={update.isPending || createPlans.isPending}
             errorMessage={update.error ? toProfileMessage(update.error) : undefined}
             onValuesChange={handleValuesChange}
-            onSubmit={(v) =>
+            onSubmit={(v) => {
+              submitted.current = true;
               update.mutate(
                 {
                   daily_hours: v.dailyHours,
@@ -159,9 +162,14 @@ export default function OnboardingPage() {
                   study_style: v.studyStyle,
                   agree_privacy: true,
                 },
-                { onSuccess: () => finish(v.semesterStart) },
-              )
-            }
+                {
+                  onSuccess: () => finish(v.semesterStart),
+                  onError: () => {
+                    submitted.current = false;
+                  },
+                },
+              );
+            }}
           />
         </div>
       </main>

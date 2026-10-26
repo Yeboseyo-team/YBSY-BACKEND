@@ -33,6 +33,8 @@ type Props = {
   secondaryAction?: ReactNode;
   /** 폼 밖 버튼이 이 폼을 제출할 때 쓰는 id (온보딩의 말로 설정하기 카드) */
   id?: string;
+  /** 온보딩은 '말로 한 번에 설정하기'가 따로 있어서 요일별 시간 AI 추천을 숨겨요 (AI 입구가 두 개라 헷갈림, 10/26 UI 점검) */
+  hideAiHelper?: boolean;
   className?: string;
 };
 
@@ -56,6 +58,7 @@ export function SemesterForm({
   onValuesChange,
   secondaryAction,
   id,
+  hideAiHelper = false,
   className,
 }: Props) {
   const {
@@ -186,6 +189,7 @@ export function SemesterForm({
                 })}
               </div>
               {/* F-08: 이번 학기 사정을 말하면 AI 가 요일별 가용 시간을 추천 (10/24) */}
+              {hideAiHelper ? null : (
               <AiHoursHelper
                 openLabel="AI에게 이번 학기 얘기하고 추천받기"
                 label="이번 학기 생활을 설명하면 AI가 요일별로 쓸 수 있는 시간을 추천해요"
@@ -200,6 +204,7 @@ export function SemesterForm({
                 }
                 appliedNote="요일별 칸에 채웠어요. 마음에 안 들면 직접 바꿔도 돼요."
               />
+              )}
             </fieldset>
           );
         }}

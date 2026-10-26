@@ -13,7 +13,7 @@ import { useProfile, useSignOut } from "@/features/auth/api";
 import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
-import { toStudyStyle } from "@/features/auth/schemas";
+import { STUDY_STYLE_LABEL, toStudyStyle } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, longDate } from "@/features/auth/semester";
 import { splitWeeklyHours, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { FormAlert } from "@/features/auth/components/FormAlert";
@@ -151,6 +151,10 @@ function SemesterSection({ profile }: { profile: Profile }) {
   };
   return (
     <Section title="학기 설정" notice={saved ? "저장했어요. 예보에 바로 반영돼요." : undefined}>
+      {/* 10/26 UI 점검: 고른 공부 스타일이 요약에 안 보였음 */}
+      <Row label="공부 스타일" onEdit={edit}>
+        {STUDY_STYLE_LABEL[toStudyStyle(profile.study_style)]}
+      </Row>
       <Row label="개강일" onEdit={edit}>
         {profile.semester_start ? longDate(profile.semester_start) : "-"}
       </Row>

@@ -23,7 +23,7 @@ const subscribe = (onChange: () => void) => {
 
 /** 주차 막대그래프 (S-08, F-05). 받은 주만 그려요 (10/26: 6주씩 보기는 WindowedForecastChart). 막대나 아래 주차 버튼을 누르면 그 주가 선택돼요 (FR-05-4). */
 export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
-  // 휴대폰 폭에서는 막대 위 숫자를 빼서 겹치지 않게 (숫자는 주차 상세에서 보여요)
+  // 휴대폰 폭에서 16주를 다 그릴 때는 막대 위 숫자를 빼서 겹치지 않게. 6주씩 볼 때는 자리가 넉넉해서 보여 줘요 (10/26 UI 점검)
   const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE_QUERY).matches);
   const maxHours = Math.max(availableHours, ...weeks.map((w) => w.total_hours));
 
@@ -50,7 +50,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
                   strokeWidth={2}
                 />
               ))}
-              {wide ? (
+              {wide || weeks.length <= 8 ? (
                 <LabelList
                   dataKey="total_hours"
                   position="top"
@@ -77,7 +77,8 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
               aria-pressed={isSelected}
               aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} ${formatDuration(w.total_hours)}${isCurrent ? ", 이번 주" : ""}`}
               className={cn(
-                "mx-auto flex h-7 min-w-0 items-center justify-center rounded-full px-0.5 text-[11px] tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2 sm:text-xs",
+                // 칸 너비를 다 써서 누르기 쉽게 (10/26 UI 점검: 휴대폰에서 폭 11px 이었음)
+                "mx-auto flex h-9 w-full max-w-16 min-w-0 items-center justify-center rounded-full px-0.5 text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2",
                 isCurrent ? "bg-ink font-bold text-white" : "text-muted-foreground hover:bg-muted",
                 isSelected && !isCurrent && "bg-muted font-bold text-foreground",
               )}

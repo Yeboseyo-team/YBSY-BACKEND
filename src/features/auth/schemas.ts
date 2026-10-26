@@ -55,3 +55,6 @@ export type DisplayNameValues = z.infer<typeof displayNameSchema>;
 export function toStudyStyle(value: string | null | undefined): "steady" | "normal" | "cram" {
   return value === "normal" || value === "cram" ? value : "steady";
 }
+
+/** 설정 화면 요약에 보여 줄 공부 스타일 이름 */
+export const STUDY_STYLE_LABEL = { steady: "꾸준히 해요", normal: "조금 몰아서", cram: "벼락치기" } as const;

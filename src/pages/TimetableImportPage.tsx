@@ -45,6 +45,7 @@ export default function TimetableImportPage() {
   const parse = useParseTimetable();
   const create = useCreatePlans();
   const fileRef = useRef<HTMLInputElement>(null);
+  const resultRef = useRef<HTMLElement>(null);
   const [text, setText] = useState("");
   const [image, setImage] = useState<{ name: string; media_type: string; data: string } | null>(null);
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -59,8 +60,13 @@ export default function TimetableImportPage() {
     parse.mutate(
       { ...(text.trim() ? { text: text.trim() } : {}), ...(image ? { image: { media_type: image.media_type, data: image.data } } : {}) },
       {
-        onSuccess: (result) =>
-          setRows(result.classes.map((c) => ({ ...c, picked: true, creditsInput: String(c.credits ?? 3) }))),
+        onSuccess: (result) => {
+          setRows(result.classes.map((c) => ({ ...c, picked: true, creditsInput: String(c.credits ?? 3) })));
+          // 휴대폰에서는 결과 칸이 화면 아래(하단 메뉴 뒤)라 결과로 내려가 줘요 (10/26 UI 점검)
+          if (!window.matchMedia("(min-width: 1024px)").matches) {
+            setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+          }
+        },
       },
     );
   };
@@ -154,7 +160,7 @@ export default function TimetableImportPage() {
           </p>
         </section>
 
-        <section className="grid gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6" aria-live="polite">
+        <section ref={resultRef} className="grid scroll-mt-20 gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6" aria-live="polite">
           <h2 className="text-base font-semibold">읽어 온 수업</h2>
           {rows === null ? (
             <p className="text-sm text-muted-foreground">시간표를 붙여 넣거나 캡처를 올리고 [AI로 수업 읽어 오기]를 누르면 여기에 나와요.</p>

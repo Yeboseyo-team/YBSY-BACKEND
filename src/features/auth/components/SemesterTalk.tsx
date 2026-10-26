@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/features/forecast/weather";
 import { AI_SEMESTER_MAX, toEstimateMessage, useParseSemester, type SemesterDraft } from "@/features/plans/ai";
@@ -15,6 +16,7 @@ type Props = {
   /** 이 카드의 [넣고 다음으로] 버튼이 제출할 학기 설정 폼 id */
   formId: string;
   isPending: boolean;
+  className?: string;
 };
 
 /**
@@ -22,13 +24,35 @@ type Props = {
  * "9월 1일 개강, 화목 알바, 운영체제 3학점…"처럼 쓰면 AI 가 개강일·시험 주차·요일별 시간·공부 스타일·계획을 채워요.
  * 채운 값은 아래 폼에서 확인하고 고친 뒤 저장해요.
  */
-export function SemesterTalk({ onDraft, plans, picked, onTogglePlan, formId, isPending }: Props) {
+export function SemesterTalk({ onDraft, plans, picked, onTogglePlan, formId, isPending, className }: Props) {
+  // 휴대폰은 접어 두고 눌러서 펼쳐요 — 펼쳐 두면 아래 폼(벼락치기 질문)이 두 화면 밑으로 밀려서 (10/26 UI 점검). PC 는 펼친 채로
+  const [open, setOpen] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   const [text, setText] = useState("");
   const parse = useParseSemester();
   const pickedCount = plans.filter((_, i) => picked[i]).length;
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(
+          "flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3.5 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
+          className,
+        )}
+      >
+        <Sparkles aria-hidden="true" className="size-5 shrink-0 text-primary" />
+        <span className="grid gap-0.5">
+          <span className="text-[15px] font-semibold">말로 한 번에 설정하기</span>
+          <span className="text-[13px] text-muted-foreground">이번 학기를 글로 쓰면 AI가 아래 칸을 채워 드려요</span>
+        </span>
+        <ChevronDown aria-hidden="true" className="ml-auto size-5 shrink-0 text-muted-foreground" />
+      </button>
+    );
+  }
+
   return (
-    <section aria-labelledby="semester-talk" className="grid gap-3 rounded-xl border border-primary/30 bg-primary/5 p-5">
+    <section aria-labelledby="semester-talk" className={cn("grid gap-3 rounded-xl border border-primary/30 bg-primary/5 p-5", className)}>
       <h2 id="semester-talk" className="flex items-center gap-1.5 text-base font-semibold">
         <Sparkles aria-hidden="true" className="size-4 text-primary" />
         말로 한 번에 설정하기

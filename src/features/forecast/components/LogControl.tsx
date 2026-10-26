@@ -21,7 +21,13 @@ type Props = {
  */
 export function LogControl({ item, date, log, future }: Props) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(() => String(log ? Number(log.hours) : Math.round(item.hours * 2) / 2));
+  // 화면은 "N시간 M분"으로 보여 주니 입력도 시간·분으로 (10/26 UI 점검: 1시간 17분인데 1.5 로 넣어야 했음)
+  const [start] = useState(() => {
+    const total = Math.round((log ? Number(log.hours) : item.hours) * 60 / 5) * 5;
+    return { h: Math.floor(total / 60), m: total % 60 };
+  });
+  const [hoursText, setHoursText] = useState(String(start.h));
+  const [minutesText, setMinutesText] = useState(String(start.m));
   const [notice, setNotice] = useState<string | null>(null);
   const save = useSaveLog();
   const remove = useDeleteLog();
@@ -30,9 +36,11 @@ export function LogControl({ item, date, log, future }: Props) {
   if (future) return <p className="text-xs text-muted-foreground">아직 오지 않은 날이라 기록은 그날 이후에 할 수 있어요.</p>;
 
   const submit = () => {
-    const hours = Number(value);
-    if (!Number.isFinite(hours) || hours < 0 || hours > 24) {
-      setNotice("0~24시간 사이로 넣어 주세요.");
+    const h = Number(hoursText || 0);
+    const m = Number(minutesText || 0);
+    const hours = Math.round((h + m / 60) * 100) / 100;
+    if (!Number.isInteger(h) || !Number.isInteger(m) || m < 0 || m > 59 || h < 0 || hours > 24) {
+      setNotice("0~24시간 사이로, 분은 0~59로 넣어 주세요.");
       return;
     }
     // 저장 전 이날 예상(기록이 있으면 그 기록이 아닌 원래 계획은 알 수 없어 현재 값과 비교)
@@ -66,43 +74,61 @@ export function LogControl({ item, date, log, future }: Props) {
             submit();
           }}
         >
-          <label className="flex items-center gap-1.5 text-[13px]">
-            실제로 한 시간
+          <span className="text-[13px]">실제로 한 시간</span>
+          <label className="flex items-center gap-1 text-[13px]">
             <Input
               type="number"
-              inputMode="decimal"
+              inputMode="numeric"
               min={0}
               max={24}
-              step={0.5}
+              step={1}
               autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className="h-8 w-20 text-sm"
+              aria-label="시간"
+              value={hoursText}
+              onChange={(e) => setHoursText(e.target.value)}
+              className="h-10 w-16 text-center"
             />
             시간
           </label>
-          <Button type="submit" size="sm" disabled={save.isPending}>
+          <label className="flex items-center gap-1 text-[13px]">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={59}
+              step={5}
+              aria-label="분"
+              value={minutesText}
+              onChange={(e) => setMinutesText(e.target.value)}
+              className="h-10 w-16 text-center"
+            />
+            분
+          </label>
+          <Button type="submit" disabled={save.isPending}>
             {save.isPending ? "저장하는 중…" : "기록"}
           </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
             취소
           </Button>
         </form>
       ) : (
         <div className="flex flex-wrap items-center gap-2 text-[13px]">
           {item.logged ? <span className="rounded bg-primary/10 px-1.5 py-px text-xs font-semibold text-primary">기록함</span> : null}
-          <button type="button" className="font-semibold text-primary underline-offset-[3px] hover:underline" onClick={() => setOpen(true)}>
+          {/* 글자 링크는 휴대폰에서 누르기 작아서 버튼으로 (10/26 UI 점검) */}
+          <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => setOpen(true)}>
             {item.logged ? "기록 고치기" : "실제로 한 시간 기록"}
-          </button>
+          </Button>
           {log ? (
-            <button
+            <Button
               type="button"
-              className="text-muted-foreground underline-offset-[3px] hover:underline"
+              variant="ghost"
+              size="sm"
+              className="h-9 text-muted-foreground"
               disabled={remove.isPending}
               onClick={() => remove.mutate(log.id, { onSuccess: () => setNotice("기록을 지웠어요. 계획대로 다시 계산했어요.") })}
             >
               기록 지우기
-            </button>
+            </Button>
           ) : null}
         </div>
       )}

@@ -25,10 +25,19 @@ export default function OnboardingPlansPage() {
   const remove = useDeletePlan();
   // 하나 넣을 때마다 폼을 새로 그려 비워요
   const [formKey, setFormKey] = useState(0);
+  const [added, setAdded] = useState<string | null>(null);
   const list = plans.data ?? [];
   const full = !canAddPlan(list.length);
 
-  const save = (values: PlanInput) => create.mutate(values, { onSuccess: () => setFormKey((k) => k + 1) });
+  const save = (values: PlanInput) =>
+    create.mutate(values, {
+      onSuccess: () => {
+        setFormKey((k) => k + 1);
+        setAdded(values.title);
+        // 휴대폰에서는 넣은 목록이 폼 위에 있어서, 넣은 게 보이게 위로 올려 줘요 (10/26 UI 점검)
+        if (!window.matchMedia("(min-width: 1024px)").matches) window.scrollTo({ top: 0, behavior: "smooth" });
+      },
+    });
 
   return (
     <div className="min-h-dvh">
@@ -52,7 +61,7 @@ export default function OnboardingPlansPage() {
         ) : null}
 
         <div className="grid items-start gap-6 lg:grid-cols-[520px_minmax(0,1fr)]">
-          <section aria-label="계획 하나 넣기" className="grid gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
+          <section aria-label="계획 하나 넣기" className="order-2 grid gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:order-none">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-semibold">계획 하나 넣기</h2>
               <Button asChild variant="outline" size="sm">
@@ -70,14 +79,21 @@ export default function OnboardingPlansPage() {
               isPending={create.isPending}
               errorMessage={create.error ? toPlanMessage(create.error) : null}
               disabled={full}
+              cancelTo={null}
               onSubmit={save}
             />
           </section>
 
-          <section aria-labelledby="added-plans" className="grid gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:sticky lg:top-6">
+          {/* 휴대폰에서는 넣은 목록과 [예보 보기]를 폼 위에 (10/26 UI 점검: 긴 폼 아래라 안 보였음) */}
+          <section aria-labelledby="added-plans" className="order-1 grid gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:sticky lg:top-6 lg:order-none">
             <h2 id="added-plans" className="text-base font-semibold">
               넣은 계획 <span className="text-muted-foreground tabular-nums">{list.length}개</span>
             </h2>
+            {added ? (
+              <p role="status" className="rounded-md bg-clear/10 px-3 py-2 text-[13px]">
+                &lsquo;{added}&rsquo;을(를) 넣었어요. 더 넣거나 [예보 보기]를 누르세요.
+              </p>
+            ) : null}
             {list.length === 0 ? (
               <p className="text-sm text-muted-foreground">아직 없어요. 계획을 하나씩 넣거나 시간표로 한 번에 넣어 보세요.</p>
             ) : (

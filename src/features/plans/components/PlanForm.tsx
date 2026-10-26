@@ -35,11 +35,12 @@ type Props = {
   isPending: boolean;
   errorMessage?: string | null;
   onSubmit: (values: PlanInput) => void;
-  /** 사전 검토 (F-06). 없으면 버튼이 꺼진 채로 보여요. */
+  /** 사전 검토 (F-06). 없으면 버튼을 숨겨요 (10/26 UI 점검: 꺼진 버튼만 보여서 헷갈렸음) */
   onPreview?: (values: PlanInput) => void;
   /** 입력이 바뀔 때마다 (사전 검토 실시간 미리보기용). 아직 올바르지 않은 값이면 null */
   onValuesChange?: (values: PlanInput | null) => void;
-  cancelTo?: string;
+  /** 취소 버튼이 갈 곳. null 이면 취소 버튼을 숨겨요 (온보딩 2단계) */
+  cancelTo?: string | null;
   /** 수정 화면의 삭제 버튼 같은 추가 버튼 */
   extraActions?: ReactNode;
   disabled?: boolean;
@@ -461,19 +462,17 @@ function PlanFormInner({
       </fieldset>
 
       <div className="grid gap-2 pt-1">
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          disabled={disabled || !onPreview}
-          onClick={() => void preview()}
-        >
-          사전 검토
-        </Button>
-        <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" size="lg">
-            <Link to={cancelTo}>취소</Link>
+        {onPreview ? (
+          <Button type="button" variant="outline" size="lg" disabled={disabled} onClick={() => void preview()}>
+            사전 검토
           </Button>
+        ) : null}
+        <div className={cn("grid gap-2", cancelTo !== null && "grid-cols-2")}>
+          {cancelTo !== null ? (
+            <Button asChild variant="outline" size="lg">
+              <Link to={cancelTo}>취소</Link>
+            </Button>
+          ) : null}
           <Button type="submit" size="lg" className="bg-ink hover:bg-ink/90" disabled={disabled || isPending}>
             {isPending ? pendingLabel : submitLabel}
           </Button>

@@ -119,9 +119,10 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-12 lg:py-14">
-        <div className="grid content-start gap-8">
-          <div>
+      {/* 10/26 UI 점검: 휴대폰에서는 소개 → 말로 설정하기(접힘) → 폼(벼락치기 질문이 맨 위) → 학기 미리보기 순서.
+          PC 는 왼쪽에 소개·말로 설정하기·미리보기, 오른쪽에 폼 */}
+      <main className="mx-auto grid max-w-6xl content-start gap-8 px-4 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-x-12 lg:py-14">
+          <div className="lg:col-start-1 lg:row-start-1">
             <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">
               {profile.data?.display_name ? `${profile.data.display_name}님, ` : ""}
               이번 학기를
@@ -134,6 +135,7 @@ export default function OnboardingPage() {
             </p>
           </div>
           <SemesterTalk
+            className="lg:col-start-1 lg:row-start-2"
             formId="onboarding-semester-form"
             isPending={update.isPending || createPlans.isPending}
             plans={draft?.plans ?? []}
@@ -146,12 +148,14 @@ export default function OnboardingPage() {
               setFormKey((k) => k + 1);
             }}
           />
-          <SemesterPreview semesterStart={shown.semesterStart} midtermWeek={shown.midtermWeek} finalWeek={shown.finalWeek} />
-        </div>
+          <div className="order-last lg:order-none lg:col-start-1 lg:row-start-3">
+            <SemesterPreview semesterStart={shown.semesterStart} midtermWeek={shown.midtermWeek} finalWeek={shown.finalWeek} />
+          </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 sm:p-8">
+        <div className="self-start rounded-xl border border-border bg-card p-5 sm:p-8 lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <SemesterForm
             key={formKey}
+            hideAiHelper
             id="onboarding-semester-form"
             requirePrivacy
             defaultValues={defaults}

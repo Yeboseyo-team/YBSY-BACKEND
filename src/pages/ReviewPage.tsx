@@ -179,7 +179,8 @@ export default function ReviewPage() {
             />
             <Stat
               label="날씨"
-              value={WEATHER_ORDER.map((l) => `${WEATHER_STYLE[l].label} ${summary.summary[l]}`).join(" · ")}
+              // 항목 중간에서 줄이 바뀌지 않게 (10/26 UI 점검: "· 맑음 4"가 따로 떨어졌음)
+              value={WEATHER_ORDER.map((l) => `${WEATHER_STYLE[l].label}\u00a0${summary.summary[l]}`).join("\u00a0· ")}
             />
           </dl>
 

@@ -255,7 +255,7 @@ values (${q(u.id)}, ${q(u.id)}, ${q(u.id)}, ${q(JSON.stringify({ sub: u.id, emai
 on conflict do nothing;`).join('\n')}
 
 -- 2) 학기 설정·개인정보 동의 (정새내는 비워 둠 → 온보딩)
-${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
+${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, study_style = 'steady', privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
 
 -- 3) 자격증 회차 (공용)
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values
@@ -291,13 +291,14 @@ const resetSql = `${header}-- 데모 계정 데이터 되돌리기. Supabase SQL
 
 begin;
 
+delete from public.study_logs where user_id in (${demoIds}); -- 실제로 한 시간 기록 (10/26 이후)
 delete from public.user_certificates where user_id in (${demoIds});
 delete from public.plans where user_id in (${demoIds});
 delete from public.plan_categories where user_id in (${demoIds});
 delete from public.certificates where owner_id in (${demoIds}); -- 테스트하며 직접 추가한 자격증 (10/24 이후)
 
 alter table public.profiles disable trigger profiles_privacy_agreed_at;
-${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
+${profiles.map((p) => `update public.profiles set display_name = ${q(p.display_name)}, available_hours = ${q(p.available_hours)}, daily_hours = ${q(p.daily_hours)}, semester_start = ${q(p.semester_start)}, midterm_week = ${p.midterm_week}, final_week = ${p.final_week}, study_style = 'steady', privacy_agreed_at = ${q(p.privacy_agreed_at)} where user_id = ${q(p.user_id)};`).join('\n')}
 alter table public.profiles enable trigger profiles_privacy_agreed_at;
 
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values

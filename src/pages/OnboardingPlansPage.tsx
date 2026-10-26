@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { CalendarRange, Plus, X } from "lucide-react";
 import { FullScreenSpinner } from "@/components/FullScreenSpinner";
@@ -6,9 +6,10 @@ import { LoadError } from "@/components/LoadError";
 import { Logo } from "@/components/layout/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/features/auth/auth-context";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { NativeSelect } from "@/features/auth/components/NativeSelect";
-import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH } from "@/features/auth/onboarding-draft";
+import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveOnboardingDraft } from "@/features/auth/onboarding-draft";
 import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
@@ -30,6 +31,12 @@ const WEATHER_ORDER = ["storm", "cloudy", "clear"] as const;
 let seq = 0;
 const nextKey = () => `draft-${++seq}`;
 const blankPlan = (): PlanRow => ({ key: nextKey(), title: "", type: "class", credits: 3, hours_per_week: 4.5, start_week: 1, end_week: TOTAL_WEEKS, no_exam: false });
+/** 저장소에 넣을 때는 화면용 key 를 빼요 */
+function withoutKey<T extends { key: string }>(row: T): Omit<T, "key"> {
+  const { key, ...rest } = row;
+  void key;
+  return rest;
+}
 const blankCert = (): CertRow => ({ key: nextKey(), name: "", certificate_id: null, exam_date: null, prep_weeks: 6, study_hours: 8 });
 
 /** 저장할 수 있는 값인지. 문제가 있으면 안내 문장 */
@@ -55,16 +62,29 @@ function certProblem(c: CertRow, today: string): string | null {
  */
 export default function OnboardingPlansPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const data = useForecastData();
   const createPlans = useCreatePlans();
   const addCertificate = useAddCertificate();
   const createOwn = useCreateOwnCertificate();
-  const [handoff] = useState(loadOnboardingDraft);
+  const [handoff] = useState(() => loadOnboardingDraft(user?.id));
   const [plans, setPlans] = useState<PlanRow[]>(() => (handoff?.plans ?? []).map((p) => ({ ...p, key: nextKey() })));
   const [certs, setCerts] = useState<CertRow[]>(() => (handoff?.certificates ?? []).map((c) => ({ ...c, key: nextKey() })));
   const [picked, setPicked] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const finished = useRef(false);
+
+  // 고친 내용을 바로 저장해 둬요 — [시간표로 수업 추가]에 갔다 오거나 새로고침해도 그대로 (10/27)
+  useEffect(() => {
+    if (finished.current) return;
+    saveOnboardingDraft(user?.id, {
+      plans: plans.map(withoutKey),
+      certificates: certs.map(withoutKey),
+      reason: handoff?.reason ?? null,
+      error: handoff?.error ?? null,
+    });
+  }, [plans, certs, handoff, user?.id]);
 
   const semesterStart = data.profile?.semester_start ?? null;
   const catalogById = useMemo(() => new Map(data.certificates.map((c) => [c.id, c])), [data.certificates]);
@@ -166,7 +186,8 @@ export default function OnboardingPlansPage() {
         }
         setCerts((all) => all.filter((x) => x.key !== c.key));
       }
-      clearOnboardingDraft();
+      finished.current = true;
+      clearOnboardingDraft(user?.id);
       navigate("/", { replace: true });
     } catch (error) {
       setSaveError(step === "plans" ? toPlanMessage(error) : toCertificateMessage(error));

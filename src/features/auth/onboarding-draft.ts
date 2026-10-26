@@ -11,19 +11,20 @@ export interface OnboardingHandoff {
   error: string | null;
 }
 
-const KEY = "hakgi-yebo:onboarding-draft";
+/** 사용자마다 따로 — 같은 탭에서 다른 계정으로 바꿔도 남의 초안이 보이지 않게 */
+const keyOf = (userId: string | undefined) => `hakgi-yebo:onboarding-draft:${userId ?? "anonymous"}`;
 
-export function saveOnboardingDraft(handoff: OnboardingHandoff) {
+export function saveOnboardingDraft(userId: string | undefined, handoff: OnboardingHandoff) {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(handoff));
+    sessionStorage.setItem(keyOf(userId), JSON.stringify(handoff));
   } catch {
     // 저장소를 못 쓰면 2단계에서 빈 목록으로 시작해요
   }
 }
 
-export function loadOnboardingDraft(): OnboardingHandoff | null {
+export function loadOnboardingDraft(userId: string | undefined): OnboardingHandoff | null {
   try {
-    const raw = sessionStorage.getItem(KEY);
+    const raw = sessionStorage.getItem(keyOf(userId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<OnboardingHandoff>;
     return {
@@ -37,9 +38,9 @@ export function loadOnboardingDraft(): OnboardingHandoff | null {
   }
 }
 
-export function clearOnboardingDraft() {
+export function clearOnboardingDraft(userId: string | undefined) {
   try {
-    sessionStorage.removeItem(KEY);
+    sessionStorage.removeItem(keyOf(userId));
   } catch {
     // 무시
   }

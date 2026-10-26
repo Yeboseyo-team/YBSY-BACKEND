@@ -63,7 +63,7 @@ export default function OnboardingPage() {
   const toStep2 = (v: SemesterFormValues) => {
     const go = () => navigate(ONBOARDING_PLANS_PATH, { replace: true });
     if (!hasTexts) {
-      saveOnboardingDraft({ plans: [], certificates: [], reason: null, error: null });
+      saveOnboardingDraft(user?.id, { plans: [], certificates: [], reason: null, error: null });
       return go();
     }
     parse.mutate(
@@ -78,12 +78,12 @@ export default function OnboardingPage() {
       },
       {
         onSuccess: (draft) => {
-          saveOnboardingDraft({ plans: draft.plans, certificates: draft.certificates, reason: draft.reason || null, error: null });
+          saveOnboardingDraft(user?.id, { plans: draft.plans, certificates: draft.certificates, reason: draft.reason || null, error: null });
           go();
         },
         // AI 가 실패해도 학기 설정은 끝났으니 2단계에서 직접 넣게 해요
         onError: (error) => {
-          saveOnboardingDraft({ plans: [], certificates: [], reason: null, error: toEstimateMessage(error) });
+          saveOnboardingDraft(user?.id, { plans: [], certificates: [], reason: null, error: toEstimateMessage(error) });
           go();
         },
       },

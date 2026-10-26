@@ -26,9 +26,9 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-semibold">
           {week.week}주차{examLabel}
-          {isCurrent ? <span className="ml-2 text-xs font-medium text-muted-foreground">이번 주</span> : null}
+          {isCurrent ? <span className="ml-2 text-xs font-medium whitespace-nowrap text-muted-foreground">이번 주</span> : null}
         </h2>
-        <span className={cn("text-[26px] font-bold tracking-tight tabular-nums", style.text)}>
+        <span className={cn("shrink-0 text-[22px] font-bold tracking-tight whitespace-nowrap tabular-nums sm:text-[26px]", style.text)}>
           {formatDuration(week.total_hours)}
         </span>
       </div>

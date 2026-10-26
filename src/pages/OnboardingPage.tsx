@@ -24,6 +24,20 @@ import { toEstimateMessage, useParseOnboarding } from "@/features/plans/ai";
  * [AI로 예보 만들기]를 누르면 학기 설정·동의를 저장하고, AI 가 만든 계획·자격증 초안을 들고 2단계(/start/plans)로 가요.
  * 계획·자격증은 2단계에서 예상 예보를 보고 고친 뒤에 저장해요.
  */
+/** AI 가 읽은 값 중 비어 있지 않은 것만 폼 기본값으로 */
+function draftValues(draft: SemesterDraft | null): Partial<SemesterValues> {
+  if (!draft) return {};
+  const out: Partial<SemesterValues> = {};
+  if (draft.semester_start && /^\d{4}-\d{2}-\d{2}$/.test(draft.semester_start)) out.semesterStart = draft.semester_start;
+  if (draft.daily_hours && draft.daily_hours.length === 7 && draft.daily_hours.reduce((a, b) => a + b, 0) >= 1) out.dailyHours = draft.daily_hours;
+  if (draft.midterm_week && draft.final_week && draft.midterm_week < draft.final_week) {
+    out.midtermWeek = draft.midterm_week;
+    out.finalWeek = draft.final_week;
+  }
+  if (draft.study_style) out.studyStyle = draft.study_style;
+  return out;
+}
+
 export default function OnboardingPage() {
   const { user } = useAuth();
   const profile = useProfile(user?.id);
@@ -86,6 +100,34 @@ export default function OnboardingPage() {
           saveOnboardingDraft(user?.id, { plans: [], certificates: [], reason: null, error: toEstimateMessage(error) });
           go();
         },
+      },
+    );
+  };
+
+  const finish = (semesterStart: string) => {
+    const chosen = (draft?.plans ?? []).filter((_, i) => pickedPlans[i]);
+    if (chosen.length === 0) return navigate(ONBOARDING_PLANS_PATH, { replace: true });
+    const end = addDays(semesterStart, TOTAL_WEEKS * 7 - 1);
+    createPlans.mutate(
+      chosen.map((p) => ({
+        title: p.title.slice(0, 30),
+        type: p.type,
+        credits: p.type === "class" ? Math.min(CREDITS_RANGE.max, Math.max(CREDITS_RANGE.min, Math.round(p.credits ?? 3))) : null,
+        load_level: "custom",
+        start_week: 1,
+        end_week: TOTAL_WEEKS,
+        hours_per_week: Math.min(60, Math.max(0.5, Math.round(p.hours_per_week * 2) / 2)),
+        start_date: semesterStart,
+        end_date: end,
+        priority: "normal",
+        category_id: null,
+        no_exam: p.type === "class" && Boolean(p.no_exam),
+      })),
+      // 계획 저장이 실패해도 학기 설정은 끝났으니 다음 단계로 (거기서 다시 넣으면 돼요)
+      {
+        onSuccess: () => navigate(ONBOARDING_PLANS_PATH, { replace: true }),
+        // 실패하면 다음 화면에서 알려 주고 거기서 다시 넣게 (조용히 0개로 보이지 않게)
+        onError: (error) => navigate(ONBOARDING_PLANS_PATH, { replace: true, state: { planError: toPlanMessage(error), missed: chosen.map((p) => p.title) } }),
       },
     );
   };

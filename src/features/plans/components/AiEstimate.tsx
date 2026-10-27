@@ -22,12 +22,12 @@ const PLACEHOLDER: Record<PlanType, string> = {
   custom: "예: 토요일 사촌 결혼식, 지방이라 왕복 이동까지 하루 종일이에요.",
 };
 
-/** F-08 계획을 말로 설명하면 AI 가 주당 시간을 추천 (FR-08-1). 계획 폼의 "한 주에 쓰는 시간" 아래에 붙어요. */
+/** F-08 계획을 말로 설명하면 AI 가 주당 시간을 추천 (FR-08-1). 계획 폼의 "이 계획에 쓰는 시간" 아래에 붙어요. */
 export function AiEstimate({ title, type, credits, disabled, onApply, submitLabel, pendingLabel, isPending = false }: Props) {
   return (
     <AiHoursHelper
       openLabel="AI로 시간 추천받기"
-      label="계획을 설명하면 AI가 한 주 시간을 추천해요"
+      label="계획을 설명하면 AI가 쓰는 시간을 추천해요"
       placeholder={PLACEHOLDER[type]}
       toInput={(description) => ({ kind: "plan", title: title.trim(), type, credits, description })}
       onApply={(estimate) => onApply(estimate.hours_per_week)}

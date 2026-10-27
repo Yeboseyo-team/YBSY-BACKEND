@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { TOTAL_WEEKS, type WeekForecast } from "../calc";
 import { ForecastChart } from "./ForecastChart";
 
-/** 한 번에 보여 줄 주 수 (10/26 피드백: 16주를 한꺼번에 보여 주지 말고 나눠서) */
-export const WINDOW_WEEKS = 6;
+/** 한 번에 보여 줄 주 수 (10/26 피드백: 16주를 한꺼번에 보여 주지 말고 나눠서, 10/27: 4주씩 1~4·5~8·9~12·13~16 으로 끊기) */
+export const WINDOW_WEEKS = 4;
 
 type Props = {
   weeks: WeekForecast[];
@@ -16,15 +16,15 @@ type Props = {
 };
 
 /** 이번 주가 두 번째 칸에 오도록 (지난주 1주 + 이번 주 + 앞으로 4주) */
-const firstWeekAround = (week: number) => Math.min(Math.max(1, week - 1), TOTAL_WEEKS - WINDOW_WEEKS + 1);
+const firstWeekAround = (week: number) => Math.floor((Math.min(Math.max(1, week), TOTAL_WEEKS) - 1) / WINDOW_WEEKS) * WINDOW_WEEKS + 1;
 
 /**
- * 예보 막대그래프를 6주씩 나눠 보여 줘요 (10/26). ◀ ▶ 로 넘기고, [학기 전체]로 16주를 한 번에 볼 수도 있어요.
+ * 예보 막대그래프를 4주씩 끊어 보여 줘요 (10/26, 10/27 6주 → 4주). ◀ ▶ 로 넘기고, [학기 전체]로 16주를 한 번에 볼 수도 있어요.
  * 막대 계산·그리기는 ForecastChart 그대로예요.
  */
 export function WindowedForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
-  // PC 는 화면이 넓어 학기 전체가 기본, 휴대폰은 6주씩 (10/26 UI 점검)
-  const [whole, setWhole] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  // 10/27: PC·휴대폰 모두 이번 주가 든 4주가 기본. [학기 전체]로 16주를 한 번에
+  const [whole, setWhole] = useState(false);
   const [first, setFirst] = useState(() => firstWeekAround(currentWeek ?? selectedWeek));
   const last = Math.min(TOTAL_WEEKS, first + WINDOW_WEEKS - 1);
   const shown = whole ? weeks : weeks.slice(first - 1, last);
@@ -61,7 +61,7 @@ export function WindowedForecastChart({ weeks, availableHours, currentWeek, sele
           </div>
         )}
         <Button type="button" variant="ghost" size="sm" aria-pressed={whole} onClick={() => setWhole((w) => !w)}>
-          {whole ? "6주씩 보기" : "학기 전체"}
+          {whole ? `${WINDOW_WEEKS}주씩 보기` : "학기 전체"}
         </Button>
       </div>
 

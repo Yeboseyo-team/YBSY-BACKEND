@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { NativeSelect } from "@/features/auth/components/NativeSelect";
 import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveOnboardingDraft } from "@/features/auth/onboarding-draft";
+import { CatalogQuickPick } from "@/features/certificates/components/CatalogQuickPick";
 import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
@@ -44,7 +45,7 @@ const blankCert = (): CertRow => ({ key: nextKey(), name: "", certificate_id: nu
 /** 저장할 수 있는 값인지. 문제가 있으면 안내 문장 */
 function planProblem(p: PlanRow): string | null {
   if (!p.title.trim()) return "이름을 써 주세요.";
-  if (!(p.hours_per_week >= 0.5 && p.hours_per_week <= 60 && Number.isInteger(p.hours_per_week * 2))) return "한 주 시간은 0.5~60시간(30분 단위)이에요.";
+  if (!(p.hours_per_week >= 0.5 && p.hours_per_week <= 60 && Number.isInteger(p.hours_per_week * 2))) return "쓰는 시간은 0.5~60시간(30분 단위)이에요.";
   if (p.type === "class" && !(Number.isInteger(p.credits) && p.credits! >= CREDITS_RANGE.min && p.credits! <= CREDITS_RANGE.max))
     return `학점은 ${CREDITS_RANGE.min}~${CREDITS_RANGE.max}이에요.`;
   if (p.start_week > p.end_week) return "끝나는 주차가 시작보다 앞이에요.";
@@ -73,6 +74,7 @@ export default function OnboardingPlansPage() {
   const [plans, setPlans] = useState<PlanRow[]>(() => (handoff?.plans ?? []).map((p) => ({ ...p, key: nextKey() })));
   const [certs, setCerts] = useState<CertRow[]>(() => (handoff?.certificates ?? []).map((c) => ({ ...c, key: nextKey() })));
   const [picked, setPicked] = useState<number | null>(null);
+  const [pickingCert, setPickingCert] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const finished = useRef(false);
@@ -320,14 +322,14 @@ export default function OnboardingPlansPage() {
                         </label>
                       ) : null}
                       <label className="flex items-center gap-1">
-                        한 주
+                        {p.start_week === p.end_week ? "그 주에" : "매주"}
                         <Input
                           type="number"
                           inputMode="decimal"
                           min={0.5}
                           max={60}
                           step={0.5}
-                          aria-label="한 주 시간"
+                          aria-label="이 계획에 쓰는 시간"
                           value={Number.isFinite(p.hours_per_week) ? p.hours_per_week : ""}
                           onChange={(e) => updatePlan(p.key, { hours_per_week: Number(e.target.value) })}
                           className="h-9 w-20 text-center"
@@ -444,10 +446,30 @@ export default function OnboardingPlansPage() {
                   );
                 })}
               </ul>
-              <Button type="button" variant="outline" className="justify-self-start" onClick={() => setCerts((all) => [...all, blankCert()])}>
-                <Plus aria-hidden="true" />
-                자격증 추가
-              </Button>
+              {/* 10/27: 정기 시험 일정 목록에서 고르기, 없으면 직접 쓰기 */}
+              {pickingCert ? (
+                <CatalogQuickPick
+                  certificates={data.certificates}
+                  today={data.today}
+                  pickedIds={new Set([...certs.map((c) => c.certificate_id), ...data.input?.userCertificates.map((u) => u.certificate_id) ?? []].filter((id): id is string => !!id))}
+                  onPick={(c) =>
+                    setCerts((all) => [
+                      ...all,
+                      { key: nextKey(), name: c.name, certificate_id: c.id, exam_date: null, prep_weeks: c.prep_weeks, study_hours: c.default_study_hours },
+                    ])
+                  }
+                  onWriteOwn={() => {
+                    setCerts((all) => [...all, blankCert()]);
+                    setPickingCert(false);
+                  }}
+                  onClose={() => setPickingCert(false)}
+                />
+              ) : (
+                <Button type="button" variant="outline" className="justify-self-start" onClick={() => setPickingCert(true)}>
+                  <Plus aria-hidden="true" />
+                  자격증 추가
+                </Button>
+              )}
             </section>
 
             <div className="grid gap-2">

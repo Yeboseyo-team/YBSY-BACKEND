@@ -21,9 +21,9 @@ const subscribe = (onChange: () => void) => {
   return () => media.removeEventListener("change", onChange);
 };
 
-/** 주차 막대그래프 (S-08, F-05). 받은 주만 그려요 (10/26: 6주씩 보기는 WindowedForecastChart). 막대나 아래 주차 버튼을 누르면 그 주가 선택돼요 (FR-05-4). */
+/** 주차 막대그래프 (S-08, F-05). 받은 주만 그려요 (10/26: 4주씩 보기는 WindowedForecastChart). 막대나 아래 주차 버튼을 누르면 그 주가 선택돼요 (FR-05-4). */
 export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
-  // 휴대폰 폭에서 16주를 다 그릴 때는 막대 위 숫자를 빼서 겹치지 않게. 6주씩 볼 때는 자리가 넉넉해서 보여 줘요 (10/26 UI 점검)
+  // 휴대폰 폭에서 16주를 다 그릴 때는 막대 위 숫자를 빼서 겹치지 않게. 4주씩 볼 때는 자리가 넉넉해서 보여 줘요 (10/26 UI 점검)
   const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE_QUERY).matches);
   const maxHours = Math.max(availableHours, ...weeks.map((w) => w.total_hours));
 

@@ -94,3 +94,25 @@ describe("다 끝낸 계획은 예보에서 빠진다 (10/27)", () => {
     expect(calculateForecast({ ...base, plans: [...base.plans, short] }).weeks[9].items.find((i) => i.title === "짧은 과제")?.hours).toBe(2);
   });
 });
+
+describe("주로 하는 요일 (10/27 개인화)", () => {
+  const withDays = (days: number[]): ForecastInput => ({
+    ...base,
+    plans: base.plans.map((p) => (p.id === os.id ? { ...p, study_days: days } : p)),
+  });
+  const osOn = (input: ForecastInput) =>
+    dailyForecast(input, 9)!.map((d) => d.items.find((i) => i.title === "운영체제")?.hours ?? 0);
+
+  it("월·수만 고르면 그 두 날에만 나누고, 한 주 합계는 그대로", () => {
+    const days = osOn(withDays([0, 2]));
+    expect(days.filter((h) => h > 0)).toHaveLength(2);
+    expect(days[0]).toBeGreaterThan(0);
+    expect(days[2]).toBeGreaterThan(0);
+    expect(days.reduce((a, b) => a + b, 0)).toBeCloseTo(6, 1);
+    expect(itemHours(withDays([0, 2]), 9, "운영체제")).toBe(itemHours(base, 9, "운영체제"));
+  });
+
+  it("안 고르면 지금처럼 여러 요일에 나눈다", () => {
+    expect(osOn(withDays([])).filter((h) => h > 0).length).toBeGreaterThan(2);
+  });
+});

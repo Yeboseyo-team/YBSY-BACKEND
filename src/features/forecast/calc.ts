@@ -36,6 +36,8 @@ export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_wee
   priority?: PlanPriority | string;
   /** 시험 없는 수업 (10/26). 시험 주간 가중치 없음, 벼락치기는 프로젝트처럼 끝나는 날 전으로 */
   no_exam?: boolean | null;
+  /** 주로 공부·과제를 하는 요일 (10/27, 0=월 … 6=일). 비어 있으면 아무 요일이나 쓸 수 있는 시간 비율대로 */
+  study_days?: number[] | null;
 };
 export type ForecastUserCertificate = Pick<UserCertificate, "certificate_id" | "study_hours" | "prep_weeks">;
 export type ForecastCertificate = Pick<Certificate, "id" | "name" | "exam_date">;
@@ -294,7 +296,11 @@ function buildSchedule(
       base: shaped,
       hours: shaped.map((h, w) => h * (weighted[w] ? EXAM_WEIGHT : 1)),
       weighted,
-      activeOn: (d) => (!plan.start_date || d >= plan.start_date) && (!plan.end_date || d <= plan.end_date),
+      // 기간 안이고, 주로 하는 요일을 정했으면 그 요일만 (10/27). 그 주에 맞는 날이 없으면 dailyForecast 가 그 주 모든 날로 나눠요
+      activeOn: (d) =>
+        (!plan.start_date || d >= plan.start_date) &&
+        (!plan.end_date || d <= plan.end_date) &&
+        (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d))),
       logged: new Map(),
     });
   }

@@ -17,6 +17,7 @@ import { WindowedForecastChart } from "@/features/forecast/components/WindowedFo
 import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import type { DraftCertificate, DraftPlan } from "@/features/plans/ai";
 import { toPlanMessage, useCreatePlans, type PlanInput } from "@/features/plans/api";
+import { WeekdayPicker } from "@/features/plans/components/WeekdayPicker";
 import { CREDITS_RANGE, MAX_PLANS, PLAN_TYPE_LABEL } from "@/features/plans/defaults";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ const WEATHER_ORDER = ["storm", "cloudy", "clear"] as const;
 
 let seq = 0;
 const nextKey = () => `draft-${++seq}`;
-const blankPlan = (): PlanRow => ({ key: nextKey(), title: "", type: "class", credits: 3, hours_per_week: 4.5, start_week: 1, end_week: TOTAL_WEEKS, no_exam: false });
+const blankPlan = (): PlanRow => ({ key: nextKey(), title: "", type: "class", credits: 3, hours_per_week: 4.5, start_week: 1, end_week: TOTAL_WEEKS, no_exam: false, study_days: [] });
 /** 저장소에 넣을 때는 화면용 key 를 빼요 */
 function withoutKey<T extends { key: string }>(row: T): Omit<T, "key"> {
   const { key, ...rest } = row;
@@ -105,6 +106,7 @@ export default function OnboardingPlansPage() {
         priority: "normal",
         category_id: null,
         no_exam: p.type === "class" && p.no_exam,
+        study_days: p.study_days ?? [],
       }));
     const usable = certs.filter((c) => !certProblem(c, data.today) && (c.certificate_id ? catalogById.has(c.certificate_id) : true));
     const input: ForecastInput = {
@@ -161,6 +163,7 @@ export default function OnboardingPlansPage() {
           priority: "normal",
           category_id: null,
           no_exam: p.type === "class" && p.no_exam,
+          study_days: p.study_days?.length ? p.study_days : null,
         }));
         await createPlans.mutateAsync(inputs);
         setPlans([]);
@@ -347,6 +350,11 @@ export default function OnboardingPlansPage() {
                           시험 없음
                         </label>
                       ) : null}
+                    </div>
+                    {/* 10/27 개인화: 주로 공부·과제를 하는 요일 */}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+                      <span className="text-muted-foreground">주로 하는 요일</span>
+                      <WeekdayPicker compact value={p.study_days ?? []} onChange={(study_days) => updatePlan(p.key, { study_days })} />
                     </div>
                     {planProblem(p) ? <p className="text-[13px] text-destructive">{planProblem(p)}</p> : null}
                   </li>

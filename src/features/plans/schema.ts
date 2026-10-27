@@ -32,6 +32,7 @@ export function makePlanSchema(semesterStart: string | null) {
         .refine((h) => Number.isInteger(h * 2), "0.5시간 단위로 입력하세요."),
       priority: z.enum(["high", "normal", "low"]),
       no_exam: z.boolean(),
+      study_days: z.array(z.number().int().min(0).max(6)),
     })
     .refine((d) => d.start_date <= d.end_date, { path: ["end_date"], message: "끝나는 날은 시작하는 날과 같거나 뒤로 고르세요." })
     .refine((d) => !semesterStart || weeksFromDates(d.start_date, d.end_date, semesterStart) !== null, {
@@ -60,5 +61,6 @@ export function toPlanInput(values: PlanFormValues, semesterStart: string): Plan
     priority: values.priority,
     category_id: values.type === "custom" ? values.category_id : null,
     no_exam: values.type === "class" ? values.no_exam : false,
+    study_days: values.study_days.length ? values.study_days : null,
   };
 }

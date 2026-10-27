@@ -26,6 +26,7 @@ import {
 } from "../defaults";
 import { makePlanSchema, toPlanInput, type PlanFormValues } from "../schema";
 import { AiEstimate } from "./AiEstimate";
+import { WeekdayPicker } from "./WeekdayPicker";
 
 type Props = {
   /** 수정 화면에서는 저장된 값, 등록 화면에서는 비워 두면 3학점 수업 보통·학기 전체로 시작 */
@@ -65,6 +66,7 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     priority: "normal" as PlanPriority,
     category_id: null,
     no_exam: false,
+    study_days: null,
   };
   return {
     title: p.title,
@@ -77,6 +79,7 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     hours_per_week: p.hours_per_week,
     priority: p.priority,
     no_exam: p.no_exam ?? false,
+    study_days: p.study_days ?? [],
   };
 }
 
@@ -121,6 +124,7 @@ function PlanFormInner({
   const type = watch("type");
   const credits = watch("credits");
   const noExam = watch("no_exam");
+  const studyDays = watch("study_days") ?? [];
   const level = watch("load_level");
   const categoryId = watch("category_id");
   const priority = watch("priority");
@@ -352,6 +356,17 @@ function PlanFormInner({
               : "학기(1~16주차) 안의 날짜를 고르세요.")}
         </p>
       </fieldset>
+
+      {/* 10/27 개인화: 주로 공부·과제를 하는 요일. 고르면 그 요일에만 한 주 시간을 나눠요 */}
+      <div className="grid gap-2">
+        <p className="text-sm font-semibold">주로 하는 요일</p>
+        <WeekdayPicker
+          value={studyDays}
+          disabled={disabled}
+          onChange={(next) => setValue("study_days", next, { shouldDirty: true, shouldValidate: true })}
+        />
+        <p className="text-[13px] text-muted-foreground">고른 요일에만 이 계획의 한 주 시간을 나눠서, 요일별 할 공부에 그날만 보여요.</p>
+      </div>
 
       <fieldset className="grid gap-2" disabled={disabled}>
         <legend className="mb-2 text-sm font-semibold">한 주에 쓰는 시간</legend>

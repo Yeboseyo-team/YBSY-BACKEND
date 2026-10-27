@@ -308,6 +308,7 @@ export type Database = {
     Functions: {
       consume_ai_quota: { Args: never; Returns: number }
       hook_google_only_signup: { Args: { event: Json }; Returns: Json }
+      reset_demo_account: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

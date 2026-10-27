@@ -10,12 +10,10 @@ import { useAuth } from "@/features/auth/auth-context";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { NativeSelect } from "@/features/auth/components/NativeSelect";
 import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveOnboardingDraft } from "@/features/auth/onboarding-draft";
-import { useUpdateProfile } from "@/features/auth/profile-api";
 import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
-import type { Advice } from "@/features/forecast/advice";
-import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput, type ForecastPlan } from "@/features/forecast/calc";
-import { AdvicePanel } from "@/features/forecast/components/AdvicePanel";
+import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
+import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import type { DraftCertificate, DraftPlan } from "@/features/plans/ai";
@@ -41,8 +39,6 @@ function withoutKey<T extends { key: string }>(row: T): Omit<T, "key"> {
   void key;
   return rest;
 }
-/** 해결 제안에서 줄이거나 빼자고 해도 되는 계획 — 아직 저장 안 한 초안만 (이미 저장한 계획은 [계획] 화면에서) */
-const isDraftPlan = (p: ForecastPlan) => p.id?.startsWith("draft-") ?? false;
 const blankCert = (): CertRow => ({ key: nextKey(), name: "", certificate_id: null, exam_date: null, prep_weeks: 6, study_hours: 8 });
 
 /** 저장할 수 있는 값인지. 문제가 있으면 안내 문장 */
@@ -73,7 +69,6 @@ export default function OnboardingPlansPage() {
   const createPlans = useCreatePlans();
   const addCertificate = useAddCertificate();
   const createOwn = useCreateOwnCertificate();
-  const updateProfile = useUpdateProfile();
   const [handoff] = useState(() => loadOnboardingDraft(user?.id));
   const [plans, setPlans] = useState<PlanRow[]>(() => (handoff?.plans ?? []).map((p) => ({ ...p, key: nextKey() })));
   const [certs, setCerts] = useState<CertRow[]>(() => (handoff?.certificates ?? []).map((c) => ({ ...c, key: nextKey() })));
@@ -96,14 +91,14 @@ export default function OnboardingPlansPage() {
   const semesterStart = data.profile?.semester_start ?? null;
   const catalogById = useMemo(() => new Map(data.certificates.map((c) => [c.id, c])), [data.certificates]);
 
-  // 초안을 넣었을 때의 예보 입력 (이미 저장한 계획·자격증도 함께). 초안 계획 id 는 화면 key — 해결 제안이 줄을 가리킬 때 써요
+  // 초안을 넣었을 때의 예보 입력 (이미 저장한 계획·자격증도 함께)
   const previewInput = useMemo(() => {
     if (!data.input || !semesterStart) return null;
     const draftPlans = plans
       .filter((p) => !planProblem(p))
       .map((p) => ({
-        id: p.key,
         title: p.title.trim(),
+        credits: p.type === "class" ? p.credits : null,
         type: p.type,
         start_week: p.start_week,
         end_week: p.end_week,
@@ -147,14 +142,6 @@ export default function OnboardingPlansPage() {
     ...plans.map((p) => planProblem(p) && `${p.title.trim() || "이름 없는 계획"}: ${planProblem(p)}`),
     ...certs.map((c) => certProblem(c, data.today) && `${c.name.trim() || "이름 없는 자격증"}: ${certProblem(c, data.today)}`),
   ].filter(Boolean) as string[];
-  /** 해결 제안 [적용] — 초안 줄은 화면에서 바로, 공부 스타일·쓸 수 있는 시간은 설정에 저장 */
-  const applyAdvice = async (advice: Advice) => {
-    const act = advice.action;
-    if (act.type === "plan_hours") updatePlan(act.planKey, { hours_per_week: act.hours });
-    else if (act.type === "remove_plan") setPlans((all) => all.filter((p) => p.key !== act.planKey));
-    else if (act.type === "style") await updateProfile.mutateAsync({ study_style: act.style });
-    else await updateProfile.mutateAsync({ daily_hours: act.daily_hours });
-  };
   const tooMany = data.plans.length + plans.length > MAX_PLANS;
   const selectedWeek = picked ?? data.currentWeek ?? 1;
 
@@ -234,7 +221,7 @@ export default function OnboardingPlansPage() {
         {handoff?.error ? <FormAlert>AI가 초안을 만들지 못했어요. {handoff.error} 아래에서 직접 넣어 주세요.</FormAlert> : null}
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-          {/* 예상 예보 (휴대폰은 위, PC 는 오른쪽에 고정). 진단·제안까지 화면보다 길어지면 카드 안에서 스크롤 — 끝까지 안 내려도 다 보여요 */}
+          {/* 예상 예보 (휴대폰은 위, PC 는 오른쪽에 고정). 왜 바쁜지 설명까지 화면보다 길어지면 카드 안에서 스크롤 — 끝까지 안 내려도 다 보여요 */}
           <section
             aria-labelledby="preview-title"
             className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-6 lg:sticky lg:top-6 lg:order-2 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:overscroll-contain"
@@ -265,7 +252,7 @@ export default function OnboardingPlansPage() {
             ) : (
               <p className="text-sm text-muted-foreground">계획을 넣으면 예보가 그려져요.</p>
             )}
-            {previewInput ? <AdvicePanel input={previewInput} canChangePlan={isDraftPlan} onApply={applyAdvice} className="mt-1" /> : null}
+            {previewInput ? <BusyExplain input={previewInput} className="mt-1" /> : null}
           </section>
 
           <div className="grid gap-5 lg:order-1">

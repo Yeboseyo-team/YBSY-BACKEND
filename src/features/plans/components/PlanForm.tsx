@@ -365,7 +365,6 @@ function PlanFormInner({
           disabled={disabled}
           onChange={(next) => setValue("study_days", next, { shouldDirty: true, shouldValidate: true })}
         />
-        <p className="text-[13px] text-muted-foreground">고른 요일에 해야 할 공부량을 정해줘요.</p>
       </div>
 
       <fieldset className="grid gap-2" disabled={disabled}>

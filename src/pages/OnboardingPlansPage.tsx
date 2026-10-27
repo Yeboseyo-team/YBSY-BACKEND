@@ -352,7 +352,7 @@ export default function OnboardingPlansPage() {
                       ) : null}
                     </div>
                     {/* 10/27 개인화: 주로 공부·과제를 하는 요일 */}
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+                    <div className="grid gap-1 text-[13px]">
                       <span className="text-muted-foreground">주로 하는 요일</span>
                       <WeekdayPicker compact value={p.study_days ?? []} onChange={(study_days) => updatePlan(p.key, { study_days })} />
                     </div>

@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { NativeSelect } from "@/features/auth/components/NativeSelect";
 import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveOnboardingDraft } from "@/features/auth/onboarding-draft";
+import { CatalogQuickPick } from "@/features/certificates/components/CatalogQuickPick";
 import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
@@ -73,6 +74,7 @@ export default function OnboardingPlansPage() {
   const [plans, setPlans] = useState<PlanRow[]>(() => (handoff?.plans ?? []).map((p) => ({ ...p, key: nextKey() })));
   const [certs, setCerts] = useState<CertRow[]>(() => (handoff?.certificates ?? []).map((c) => ({ ...c, key: nextKey() })));
   const [picked, setPicked] = useState<number | null>(null);
+  const [pickingCert, setPickingCert] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const finished = useRef(false);
@@ -444,10 +446,30 @@ export default function OnboardingPlansPage() {
                   );
                 })}
               </ul>
-              <Button type="button" variant="outline" className="justify-self-start" onClick={() => setCerts((all) => [...all, blankCert()])}>
-                <Plus aria-hidden="true" />
-                자격증 추가
-              </Button>
+              {/* 10/27: 정기 시험 일정 목록에서 고르기, 없으면 직접 쓰기 */}
+              {pickingCert ? (
+                <CatalogQuickPick
+                  certificates={data.certificates}
+                  today={data.today}
+                  pickedIds={new Set([...certs.map((c) => c.certificate_id), ...data.input?.userCertificates.map((u) => u.certificate_id) ?? []].filter((id): id is string => !!id))}
+                  onPick={(c) =>
+                    setCerts((all) => [
+                      ...all,
+                      { key: nextKey(), name: c.name, certificate_id: c.id, exam_date: null, prep_weeks: c.prep_weeks, study_hours: c.default_study_hours },
+                    ])
+                  }
+                  onWriteOwn={() => {
+                    setCerts((all) => [...all, blankCert()]);
+                    setPickingCert(false);
+                  }}
+                  onClose={() => setPickingCert(false)}
+                />
+              ) : (
+                <Button type="button" variant="outline" className="justify-self-start" onClick={() => setPickingCert(true)}>
+                  <Plus aria-hidden="true" />
+                  자격증 추가
+                </Button>
+              )}
             </section>
 
             <div className="grid gap-2">

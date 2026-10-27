@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { certificateEvents } from "@/features/forecast/calendar-events";
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
@@ -56,6 +57,9 @@ export default function HomePage() {
   const empty = data.status === "empty";
   const selectedWeek = picked ?? currentWeek ?? 1;
   const selected = forecast.weeks[selectedWeek - 1];
+  // 달력에 넣을 내 자격증 일정 (접수 시작·마감·시험일, 10/27)
+  const myCertIds = new Set(data.input?.userCertificates.map((u) => u.certificate_id) ?? []);
+  const certEvents = certificateEvents(data.certificates.filter((c) => myCertIds.has(c.id)));
 
 
   return (
@@ -130,6 +134,7 @@ export default function HomePage() {
               currentWeek={currentWeek}
               selectedWeek={selectedWeek}
               onSelectWeek={setPicked}
+              events={certEvents}
             />
           ) : (
             <>

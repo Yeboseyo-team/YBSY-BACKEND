@@ -10,8 +10,10 @@ export interface BusyReason {
   kind: BusyKind;
   /** 그 주에 드는 시간 */
   hours: number;
-  /** 왜 그만큼 드는지 한두 문장 */
+  /** 보통 이 정도는 해야 한다는 기준 한 문장 */
   text: string;
+  /** 지금 내 계획은 어떻게 잡혀 있는지 (평소 한 주 시간, 기준과 비교, 이번 주에 늘어난 까닭, 지금까지 기록) */
+  now: string;
 }
 
 export interface BusyExplanation {
@@ -29,7 +31,20 @@ export interface BusyExplanation {
 /** 몰아서 늘어났다고 볼 만큼 평소보다 많은지 */
 const grew = (now: number, usual: number) => now > usual + 0.05;
 
-function reasonOf(item: WeekItem, input: ForecastInput, isExamWeek: boolean): BusyReason {
+/** 기준과 비교한 말 (30분 넘게 차이 날 때만) */
+function compare(usual: number, standard: number): string {
+  const diff = Math.round((usual - standard) * 2) / 2;
+  if (Math.abs(diff) < 0.5) return "기준과 비슷해요";
+  return diff > 0 ? `기준보다 ${formatDuration(diff)} 많아요` : `기준보다 ${formatDuration(-diff)} 적어요`;
+}
+
+/** 지금까지 기록한 시간 문장 (기록이 없으면 빈 문자열) */
+function doneText(input: ForecastInput, match: (log: NonNullable<ForecastInput["logs"]>[number]) => boolean): string {
+  const done = (input.logs ?? []).filter(match).reduce((sum, l) => sum + l.hours, 0);
+  return done > 0 ? ` 지금까지 ${formatDuration(done)} 기록했어요.` : "";
+}
+
+function reasonOf(item: WeekItem, input: ForecastInput, week: number, isExamWeek: boolean): BusyReason {
   const hours = item.hours;
   if (item.source === "certificate") {
     const name = item.title.replace(/ 준비$/, "");
@@ -39,28 +54,42 @@ function reasonOf(item: WeekItem, input: ForecastInput, isExamWeek: boolean): Bu
     const text = uc
       ? `${name} 시험은 시험 전 ${uc.prep_weeks}주 동안 매주 ${formatDuration(usual)}씩 꾸준히 해야 붙을 수 있어요.`
       : `${name} 시험 준비에 매주 꾸준히 시간이 들어요.`;
-    return { title: item.title, kind: "certificate", hours, text: grew(item.base_hours, usual) ? `${text} 시험이 다가와서 이번 주는 더 늘었어요.` : text };
+    let now = `지금은 매주 ${formatDuration(usual)}으로 잡혀 있어요.`;
+    if (grew(item.base_hours, usual)) now += ` 시험이 다가와서 ${week}주차는 ${formatDuration(hours)}으로 늘었어요.`;
+    now += doneText(input, (l) => l.certificate_id === uc?.certificate_id && !!uc);
+    return { title: item.title, kind: "certificate", hours, text, now };
   }
 
   const plan: ForecastPlan | undefined = input.plans.find((p) => p.title === item.title);
   const kind = (item.plan_type ?? plan?.type ?? "custom") as BusyKind;
   const usual = plan?.hours_per_week ?? item.base_hours;
   const crunch = grew(item.base_hours, usual);
+  const weighted = item.weighted && isExamWeek;
+  const credits = (plan as { credits?: number | null } | undefined)?.credits;
+  // 기준: 서비스 기본값과 같아요 (수업 학점×1.5, 프로젝트 6시간, 활동 4시간)
+  const standard = kind === "class" && credits ? credits * 1.5 : kind === "project" ? 6 : kind === "activity" ? 4 : null;
+
   let text: string;
   if (kind === "class") {
-    const credits = (plan as { credits?: number | null } | undefined)?.credits;
-    text = `${credits ? `${credits}학점 ` : ""}수업은 과제·복습까지 수업 밖에서 매주 ${formatDuration(usual)} 정도 해야 A+를 노릴 수 있어요.`;
-    if (crunch) text += " 벼락치기 스타일이라 시험 전 주에 공부가 몰렸어요.";
-    if (item.weighted && isExamWeek) text += " 시험 주간이라 평소의 1.5배예요.";
+    text = credits
+      ? `${credits}학점 수업은 과제·복습까지 수업 밖에서 매주 ${formatDuration(standard!)} 정도 해야 A+를 노릴 수 있어요.`
+      : "수업은 과제·복습까지 수업 밖에서 매주 꾸준히 해야 A+를 노릴 수 있어요.";
   } else if (kind === "project") {
-    text = `팀플·공모전 같은 프로젝트는 보통 매주 ${formatDuration(usual)}은 해야 마감 직전에 덜 쫓기고 수월해요.`;
-    if (crunch) text += " 마감이 가까워서 이번 주에 몰렸어요.";
+    text = "팀플·공모전 같은 프로젝트는 보통 매주 6시간은 해야 마감 직전에 덜 쫓기고 수월해요.";
   } else if (kind === "activity") {
-    text = `동아리·학회 같은 활동은 모임과 준비로 매주 ${formatDuration(usual)} 정도 들어요.`;
+    text = "동아리·학회 같은 활동은 모임과 준비로 보통 매주 4시간 정도 들어요.";
   } else {
-    text = "이 주에 잡혀 있는 일정이에요.";
+    text = "날짜가 정해진 일정이라 그 주에 시간이 들어요.";
   }
-  return { title: item.title, kind, hours, text };
+
+  let now = kind === "custom" ? `${week}주차에 ${formatDuration(hours)}으로 잡혀 있어요.` : `지금은 매주 ${formatDuration(usual)}으로 잡혀 있어요${standard ? ` (${compare(usual, standard)})` : ""}.`;
+  if (kind !== "custom" && (crunch || weighted)) {
+    const piled = kind === "class" ? "벼락치기라 시험 전에 몰리" : "마감이 가까워 몰리";
+    const why = crunch && weighted ? `${piled}고 시험 주간 1.5배까지 붙어서` : crunch ? `${piled}어서` : "시험 주간이라 1.5배가 돼서";
+    now += ` ${week}주차는 ${why} ${formatDuration(hours)}이에요.`;
+  }
+  if (plan?.id) now += doneText(input, (l) => l.plan_id === plan.id);
+  return { title: item.title, kind, hours, text, now };
 }
 
 /** 폭풍 주가 없으면 null. fromWeek: 이 주차부터만 봐요 (홈은 이번 주부터 — 지난 주는 이제 못 바꾸니까) */
@@ -75,7 +104,7 @@ export function explainBusy(input: ForecastInput, fromWeek = 1, limit = 5): Busy
   const reasons = [...peak.items]
     .filter((i) => i.hours > 0)
     .sort((a, b) => b.hours - a.hours)
-    .map((i) => reasonOf(i, input, peak.is_exam_week));
+    .map((i) => reasonOf(i, input, peak.week, peak.is_exam_week));
 
   const why: string[] = [];
   if (peak.is_exam_week) why.push(`${peak.week}주차는 시험 주간이라 수업 공부가 평소의 1.5배로 늘어요.`);

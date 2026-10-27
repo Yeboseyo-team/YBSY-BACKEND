@@ -52,3 +52,14 @@ describe("왜 바쁜지 설명", () => {
     expect(explainBusy(cram, 10)?.stormWeeks ?? []).toEqual(all.filter((w) => w >= 10));
   });
 });
+
+describe("지금 내 계획 상태", () => {
+  it("평소 한 주 시간과 기준 비교, 기록한 시간을 알려 준다", () => {
+    const os = base.plans.find((p) => p.title === "운영체제")!;
+    const withLog: ForecastInput = { ...cram, logs: [{ plan_id: os.id, date: "2026-10-26", hours: 3 }] };
+    const r = explainBusy(withLog, 1, 20)!.reasons.find((x) => x.title === "운영체제");
+    if (!r) return;
+    expect(r.now).toMatch(/^지금은 매주 .+으로 잡혀 있어요 \(기준/);
+    expect(r.now).toContain("지금까지 3시간 기록했어요");
+  });
+});

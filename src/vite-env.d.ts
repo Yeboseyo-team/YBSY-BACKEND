@@ -10,3 +10,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** 데모 로그인 버튼을 켤지 (빌드 때 정해짐, vite.config.ts). Vercel 운영 배포에서는 항상 false */
+declare const __DEMO_LOGIN__: boolean;

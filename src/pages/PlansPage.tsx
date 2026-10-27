@@ -6,7 +6,7 @@ import { LoadError } from "@/components/LoadError";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormAlert } from "@/features/auth/components/FormAlert";
-import { TOTAL_WEEKS } from "@/features/forecast/calc";
+import { TOTAL_WEEKS, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { formatDuration } from "@/features/forecast/weather";
 import { toPlanMessage, useDeletePlan, usePlans } from "@/features/plans/api";
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
@@ -136,6 +136,7 @@ function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelet
           <PriorityBadge priority={plan.priority as PlanPriority} />
           {plan.credits ? `${plan.credits}학점 · ` : ""}
           {plan.no_exam ? "시험 없음 · " : ""}
+          {plan.study_days?.length ? `${plan.study_days.map((d) => WEEKDAY_LABELS[d]).join("·")} · ` : ""}
           {LOAD_LEVEL_LABEL[plan.load_level as PlanLoadLevel]}
           {plan.start_date && plan.end_date ? <span>· {dateRange(plan.start_date, plan.end_date)}</span> : null}
         </p>

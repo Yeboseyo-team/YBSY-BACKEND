@@ -4,6 +4,7 @@ import { CalendarDays, ChartColumn, CloudLightning, CloudSun, Plus, RotateCw, Su
 import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
+import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
@@ -56,9 +57,12 @@ export default function HomePage() {
   const selectedWeek = picked ?? currentWeek ?? 1;
   const selected = forecast.weeks[selectedWeek - 1];
 
+
   return (
     <PageContainer>
       {empty ? <EmptyHeadline /> : <Headline forecast={forecast} currentWeek={currentWeek} available={available} />}
+
+      {!empty && data.input ? <BusyExplain input={data.input} fromWeek={currentWeek ?? 1} /> : null}
 
       <DeadlineBanner deadlines={deadlines} semesterStart={profile.semester_start ?? ""} />
 
@@ -194,6 +198,7 @@ export default function HomePage() {
 }
 
 /** 맨 위 요약: 다가오는 폭풍(없으면 흐림) 주와 "폭풍 n주 · 흐림 n주" (FR-05-3) */
+
 function Headline({ forecast, currentWeek, available }: { forecast: Forecast; currentWeek: number | null; available: number }) {
   const from = currentWeek ?? 1;
   const upcoming = forecast.weeks.filter((w) => w.week >= from);

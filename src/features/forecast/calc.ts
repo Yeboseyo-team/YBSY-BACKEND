@@ -36,6 +36,8 @@ export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_wee
   priority?: PlanPriority | string;
   /** 시험 없는 수업 (10/26). 시험 주간 가중치 없음, 벼락치기는 프로젝트처럼 끝나는 날 전으로 */
   no_exam?: boolean | null;
+  /** 주로 공부·과제를 하는 요일 (10/27, 0=월 … 6=일). 비어 있으면 아무 요일이나 쓸 수 있는 시간 비율대로 */
+  study_days?: number[] | null;
 };
 export type ForecastUserCertificate = Pick<UserCertificate, "certificate_id" | "study_hours" | "prep_weeks">;
 export type ForecastCertificate = Pick<Certificate, "id" | "name" | "exam_date">;
@@ -190,6 +192,8 @@ export const STUDY_STYLES: StudyStyle[] = ["steady", "normal", "cram"];
 export const STUDY_STYLE_SHIFT: Record<StudyStyle, number> = { steady: 0, normal: 0.25, cram: 0.5 };
 /** 몰아서 하는 주 수 (시험 주·마감 주 포함) */
 export const CRUNCH_WEEKS = 2;
+/** 몰아서 하는 주도 평소 한 주 시간의 이 배수까지만 (10/27 현실적인 숫자). 넘친 건 그 앞 주들로 */
+export const CRUNCH_MAX = 1.8;
 
 /** 실제로 한 시간 기록 — 계획이나 자격증 준비 하나의 하루치 */
 export interface StudyLog {
@@ -217,7 +221,19 @@ function shapeSegments(base: number[], segments: number[][], shift: number): num
     const normal = weeks.slice(0, -CRUNCH_WEEKS);
     const moved = normal.reduce((sum, w) => sum + base[w] * shift, 0);
     for (const w of normal) out[w] = base[w] * (1 - shift);
-    for (const w of crunch) out[w] = base[w] + moved / crunch.length;
+    // 몰리는 주도 평소의 CRUNCH_MAX 배까지만 (10/27: 벼락치기로 한 주 126시간 같은 숫자가 나와서). 넘친 건 바로 앞 주들로
+    let leftover = 0;
+    for (const w of crunch) {
+      const target = base[w] + moved / crunch.length;
+      out[w] = Math.min(target, base[w] * CRUNCH_MAX);
+      leftover += target - out[w];
+    }
+    for (const w of [...normal].reverse()) {
+      if (leftover <= 1e-9) break;
+      const add = Math.min(leftover, base[w] * CRUNCH_MAX - out[w]);
+      out[w] += add;
+      leftover -= add;
+    }
   }
   return out;
 }
@@ -294,7 +310,11 @@ function buildSchedule(
       base: shaped,
       hours: shaped.map((h, w) => h * (weighted[w] ? EXAM_WEIGHT : 1)),
       weighted,
-      activeOn: (d) => (!plan.start_date || d >= plan.start_date) && (!plan.end_date || d <= plan.end_date),
+      // 기간 안이고, 주로 하는 요일을 정했으면 그 요일만 (10/27). 그 주에 맞는 날이 없으면 dailyForecast 가 그 주 모든 날로 나눠요
+      activeOn: (d) =>
+        (!plan.start_date || d >= plan.start_date) &&
+        (!plan.end_date || d <= plan.end_date) &&
+        (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d))),
       logged: new Map(),
     });
   }
@@ -447,6 +467,55 @@ export interface DayItem extends WeekItem {
 }
 
 /**
+ * 하루가 그날 쓸 수 있는 시간을 넘으면, 넘친 만큼을 같은 주에 여유 있는 날로 옮겨요 (10/27 현실적인 숫자).
+ * 그 계획을 할 수 있는 날(기간 안, 주로 하는 요일)로만 옮기고, 날짜가 정해진 일정·실제로 기록한 시간은 그대로예요.
+ * 옮길 곳이 없으면(폭풍 주) 넘친 채로 둬요. 주 합계는 그대로.
+ */
+function spillOverflow(
+  dates: string[],
+  available: number[],
+  hours: number[],
+  items: DayItem[][],
+  canDo: (item: DayItem, date: string) => boolean,
+) {
+  const spare = hours.map((h, i) => Math.max(0, available[i] - h));
+  const keyOf = (item: DayItem) => item.plan_id ?? item.certificate_id ?? item.title;
+
+  dates.forEach((_, i) => {
+    let over = hours[i] - available[i];
+    if (over <= 1e-6) return;
+    const movable = items[i].filter((item) => !item.logged);
+    const movableSum = movable.reduce((s, item) => s + item.hours, 0);
+    if (movableSum <= 0) return;
+    for (const item of movable) {
+      if (over <= 1e-6) break;
+      const want = Math.min(item.hours, (item.hours / movableSum) * (hours[i] - available[i]));
+      const targets = dates.map((d, j) => (j !== i && spare[j] > 1e-6 && canDo(item, d) ? j : -1)).filter((j) => j >= 0);
+      const room = targets.reduce((s, j) => s + spare[j], 0);
+      const move = Math.min(want, room, over);
+      if (move <= 1e-6) continue;
+      for (const j of targets) {
+        const add = move * (spare[j] / room);
+        const existing = items[j].find((x) => !x.logged && keyOf(x) === keyOf(item));
+        if (existing) {
+          existing.hours += add;
+          existing.base_hours = existing.hours;
+        } else {
+          items[j].push({ ...item, logged: undefined, hours: add, base_hours: add });
+        }
+        hours[j] += add;
+        spare[j] -= add;
+      }
+      item.hours -= move;
+      item.base_hours = item.hours;
+      hours[i] -= move;
+      over -= move;
+    }
+    items[i] = items[i].filter((item) => item.logged || item.hours > 1e-6);
+  });
+}
+
+/**
  * 한 주의 부담을 요일별로 나눠 봅니다. 계획은 정해진 요일이 없으므로
  * 그 계획이 걸친 날들(날짜로 정했으면 그 날짜만)에 요일별 가용 시간 비율대로 나눠 넣습니다.
  * 실제로 기록한 날은 기록한 시간, 나머지 날은 그 주에 남은 시간을 나눠요. 요일별 가용 시간이 없으면 null.
@@ -464,8 +533,11 @@ export function dailyForecast(input: ForecastInput, week: number): DayForecast[]
   const hours = new Array<number>(7).fill(0);
   const items: DayItem[][] = dates.map(() => []);
 
+  // 넘친 시간을 옮길 때 그 계획을 할 수 있는 날인지 (기간·주로 하는 요일)
+  const activeByKey = new Map<string, (date: string) => boolean>();
   for (const s of buildSchedule(input, false)) {
     if (s.base[week] <= 0) continue;
+    activeByKey.set(s.plan_id ?? s.certificate_id ?? s.item.title, s.activeOn);
     const base: DayItem = {
       ...s.item,
       base_hours: 0,
@@ -486,6 +558,10 @@ export function dailyForecast(input: ForecastInput, week: number): DayForecast[]
       if (value > 0 || fixed[i] !== undefined) items[i].push({ ...base, base_hours: value, hours: value, ...(fixed[i] !== undefined ? { logged: true } : {}) });
     });
   }
+
+  spillOverflow(dates, available, hours, items, (item, date) =>
+    activeByKey.get(item.plan_id ?? item.certificate_id ?? item.title)?.(date) ?? false,
+  );
 
   return dates.map((date, i) => {
     const ratio = available[i] > 0 ? hours[i] / available[i] : null;

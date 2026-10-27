@@ -112,6 +112,8 @@ export interface DraftPlan {
   start_week: number;
   end_week: number;
   no_exam: boolean;
+  /** 주로 하는 요일 (0=월 … 6=일). 빈 배열이면 아무 요일 */
+  study_days: number[];
 }
 
 /** certificate_id 가 있으면 공용 회차, 없으면 직접 추가할 자격증 (exam_date 는 모르면 null) */

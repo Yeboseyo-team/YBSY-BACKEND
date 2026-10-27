@@ -13,10 +13,12 @@ import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveO
 import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
+import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import type { DraftCertificate, DraftPlan } from "@/features/plans/ai";
 import { toPlanMessage, useCreatePlans, type PlanInput } from "@/features/plans/api";
+import { WeekdayPicker } from "@/features/plans/components/WeekdayPicker";
 import { CREDITS_RANGE, MAX_PLANS, PLAN_TYPE_LABEL } from "@/features/plans/defaults";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +32,7 @@ const WEATHER_ORDER = ["storm", "cloudy", "clear"] as const;
 
 let seq = 0;
 const nextKey = () => `draft-${++seq}`;
-const blankPlan = (): PlanRow => ({ key: nextKey(), title: "", type: "class", credits: 3, hours_per_week: 4.5, start_week: 1, end_week: TOTAL_WEEKS, no_exam: false });
+const blankPlan = (): PlanRow => ({ key: nextKey(), title: "", type: "class", credits: 3, hours_per_week: 4.5, start_week: 1, end_week: TOTAL_WEEKS, no_exam: false, study_days: [] });
 /** 저장소에 넣을 때는 화면용 key 를 빼요 */
 function withoutKey<T extends { key: string }>(row: T): Omit<T, "key"> {
   const { key, ...rest } = row;
@@ -89,13 +91,14 @@ export default function OnboardingPlansPage() {
   const semesterStart = data.profile?.semester_start ?? null;
   const catalogById = useMemo(() => new Map(data.certificates.map((c) => [c.id, c])), [data.certificates]);
 
-  // 초안을 넣었을 때의 예보 (이미 저장한 계획·자격증도 함께)
-  const forecast = useMemo(() => {
+  // 초안을 넣었을 때의 예보 입력 (이미 저장한 계획·자격증도 함께)
+  const previewInput = useMemo(() => {
     if (!data.input || !semesterStart) return null;
     const draftPlans = plans
       .filter((p) => !planProblem(p))
       .map((p) => ({
         title: p.title.trim(),
+        credits: p.type === "class" ? p.credits : null,
         type: p.type,
         start_week: p.start_week,
         end_week: p.end_week,
@@ -105,6 +108,7 @@ export default function OnboardingPlansPage() {
         priority: "normal",
         category_id: null,
         no_exam: p.type === "class" && p.no_exam,
+        study_days: p.study_days ?? [],
       }));
     const usable = certs.filter((c) => !certProblem(c, data.today) && (c.certificate_id ? catalogById.has(c.certificate_id) : true));
     const input: ForecastInput = {
@@ -119,8 +123,9 @@ export default function OnboardingPlansPage() {
         ...usable.filter((c) => !c.certificate_id).map((c) => ({ id: c.key, name: c.name.trim(), exam_date: c.exam_date! })),
       ],
     };
-    return calculateForecast(input);
+    return input;
   }, [data.input, data.today, semesterStart, plans, certs, catalogById]);
+  const forecast = useMemo(() => (previewInput ? calculateForecast(previewInput) : null), [previewInput]);
 
   if (data.status === "loading") return <FullScreenSpinner />;
   if (data.status === "error") {
@@ -161,6 +166,7 @@ export default function OnboardingPlansPage() {
           priority: "normal",
           category_id: null,
           no_exam: p.type === "class" && p.no_exam,
+          study_days: p.study_days?.length ? p.study_days : null,
         }));
         await createPlans.mutateAsync(inputs);
         setPlans([]);
@@ -215,8 +221,11 @@ export default function OnboardingPlansPage() {
         {handoff?.error ? <FormAlert>AI가 초안을 만들지 못했어요. {handoff.error} 아래에서 직접 넣어 주세요.</FormAlert> : null}
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-          {/* 예상 예보 (휴대폰은 위, PC 는 오른쪽에 고정) */}
-          <section aria-labelledby="preview-title" className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-6 lg:sticky lg:top-6 lg:order-2">
+          {/* 예상 예보 (휴대폰은 위, PC 는 오른쪽에 고정). 왜 바쁜지 설명까지 화면보다 길어지면 카드 안에서 스크롤 — 끝까지 안 내려도 다 보여요 */}
+          <section
+            aria-labelledby="preview-title"
+            className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-6 lg:sticky lg:top-6 lg:order-2 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:overscroll-contain"
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 id="preview-title" className="text-base font-semibold">
                 예상 예보
@@ -243,6 +252,7 @@ export default function OnboardingPlansPage() {
             ) : (
               <p className="text-sm text-muted-foreground">계획을 넣으면 예보가 그려져요.</p>
             )}
+            {previewInput ? <BusyExplain input={previewInput} className="mt-1" /> : null}
           </section>
 
           <div className="grid gap-5 lg:order-1">
@@ -347,6 +357,11 @@ export default function OnboardingPlansPage() {
                           시험 없음
                         </label>
                       ) : null}
+                    </div>
+                    {/* 10/27 개인화: 주로 공부·과제를 하는 요일 */}
+                    <div className="grid gap-1 text-[13px]">
+                      <span className="text-muted-foreground">주로 하는 요일</span>
+                      <WeekdayPicker compact value={p.study_days ?? []} onChange={(study_days) => updatePlan(p.key, { study_days })} />
                     </div>
                     {planProblem(p) ? <p className="text-[13px] text-destructive">{planProblem(p)}</p> : null}
                   </li>

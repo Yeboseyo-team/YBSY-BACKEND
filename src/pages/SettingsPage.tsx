@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ExternalLink, LogOut } from "lucide-react";
+import { ExternalLink, LogOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ import { LoadError } from "@/components/LoadError";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/features/auth/auth-context";
 import { useProfile, useSignOut } from "@/features/auth/api";
+import { DEMO_RESET_USER_ID, useResetDemoAccount } from "@/features/auth/demo-reset";
 import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
@@ -41,7 +42,7 @@ export default function SettingsPage() {
         // 마지막 줄(1fr)이 남는 높이를 받아서, 학기 설정이 길어도 왼쪽 카드 사이가 벌어지지 않아요
         <div className="grid max-w-2xl gap-6 lg:max-w-none lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr] lg:items-start">
           <div className="lg:col-start-1 lg:row-start-1">
-            <AccountCard profile={profile.data} email={user?.email} />
+            <AccountCard profile={profile.data} email={user?.email} userId={user?.id} />
           </div>
           <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1">
             <SemesterSection profile={profile.data} />
@@ -69,8 +70,10 @@ export default function SettingsPage() {
   );
 }
 
-function AccountCard({ profile, email }: { profile: Profile; email?: string }) {
+function AccountCard({ profile, email, userId }: { profile: Profile; email?: string; userId?: string }) {
   const signOut = useSignOut();
+  const reset = useResetDemoAccount(userId);
+  const isDemo = userId === DEMO_RESET_USER_ID;
   const name = profile.display_name?.trim() || "이름 없음";
   return (
     <section className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-5">
@@ -90,6 +93,23 @@ function AccountCard({ profile, email }: { profile: Profile; email?: string }) {
           {signOut.isPending ? "로그아웃하는 중…" : "로그아웃"}
         </Button>
         {signOut.error ? <p className="text-[13px] text-destructive">{toAuthMessage(signOut.error)}</p> : null}
+        {/* 체험 계정(정새내)만: 시연·테스트용 초기화 (10/27) */}
+        {isDemo ? (
+          <>
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              disabled={reset.isPending}
+              onClick={() => {
+                if (window.confirm("계획·자격증·기록·학기 설정을 모두 지우고 온보딩 첫 화면으로 돌아갈까요? 되돌릴 수 없어요.")) reset.mutate();
+              }}
+            >
+              <RotateCcw aria-hidden="true" />
+              {reset.isPending ? "초기화하는 중…" : "데이터 초기화"}
+            </Button>
+            {reset.error ? <p className="text-[13px] text-destructive">초기화하지 못했어요. 잠시 뒤 다시 시도하세요.</p> : null}
+          </>
+        ) : null}
       </div>
     </section>
   );

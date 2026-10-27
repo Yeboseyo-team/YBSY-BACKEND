@@ -123,7 +123,7 @@ export default function ReviewPage() {
           </p>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" className="size-4 accent-primary" checked={withSettings} onChange={(e) => setWithSettings(e.target.checked)} />
-            요일별 가용 시간·시험 주차도 파일 값으로 바꾸기
+            요일별 쓸 수 있는 시간·시험 주차도 파일 값으로 바꾸기
           </label>
           <div className="flex gap-2">
             <Button
@@ -171,7 +171,7 @@ export default function ReviewPage() {
 
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="16주 예상 합계" value={`${formatDuration(summary.total_hours)}`} />
-            <Stat label="한 주 평균" value={`${formatDuration(summary.average_hours)}`} sub={`가용 ${profile.available_hours ?? "-"}시간`} />
+            <Stat label="한 주 평균" value={`${formatDuration(summary.average_hours)}`} sub={`쓸 수 있는 시간 ${profile.available_hours ?? "-"}시간`} />
             <Stat
               label="가장 바쁜 주"
               value={`${summary.busiest.week}주차`}

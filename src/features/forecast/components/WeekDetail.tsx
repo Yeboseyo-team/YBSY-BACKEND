@@ -39,7 +39,7 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
       </div>
       <p className="text-[13px] text-muted-foreground">
         <span className={cn("mr-2 rounded-full px-2 py-0.5 text-xs font-semibold", style.badge)}>{style.label}</span>
-        가용 {availableHours}시간 대비 {Math.round(week.ratio * 100)}%
+        쓸 수 있는 시간({availableHours}시간)의 {Math.round(week.ratio * 100)}%
       </p>
 
       {week.items.length === 0 ? (

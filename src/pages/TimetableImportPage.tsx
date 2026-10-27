@@ -186,7 +186,7 @@ export default function TimetableImportPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {r.schedule ? `${r.schedule} · ` : ""}
-                        {hours !== null ? `과제·복습 한 주 ${formatDuration(hours)} (보통)로 넣어요` : `학점을 ${CREDITS_RANGE.min}~${CREDITS_RANGE.max}로 넣어 주세요`}
+                        {hours !== null ? `과제·복습 매주 ${formatDuration(hours)}(보통)으로 넣어요` : `학점을 ${CREDITS_RANGE.min}~${CREDITS_RANGE.max}로 넣어 주세요`}
                       </p>
                     </li>
                   );

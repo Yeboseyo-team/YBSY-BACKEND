@@ -188,7 +188,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
       <Row label="개강일" onEdit={edit}>
         {profile.semester_start ? longDate(profile.semester_start) : "-"}
       </Row>
-      <Row label="한 주 가용 시간" onEdit={edit}>
+      <Row label="한 주에 쓸 수 있는 시간" onEdit={edit}>
         {profile.available_hours ?? "-"}시간
         {profile.daily_hours ? <span className="block text-xs text-muted-foreground">{profile.daily_hours.map((h, i) => `${WEEKDAY_LABELS[i]} ${h}`).join(" · ")}</span> : null}
       </Row>

@@ -365,7 +365,7 @@ function PlanFormInner({
           disabled={disabled}
           onChange={(next) => setValue("study_days", next, { shouldDirty: true, shouldValidate: true })}
         />
-        <p className="text-[13px] text-muted-foreground">고른 요일에만 이 계획의 한 주 시간을 나눠서, 요일별 할 공부에 그날만 보여요.</p>
+        <p className="text-[13px] text-muted-foreground">고른 요일에 해야 할 공부량을 정해줘요.</p>
       </div>
 
       <fieldset className="grid gap-2" disabled={disabled}>

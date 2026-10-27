@@ -46,7 +46,7 @@ export function WeekdayPicker({ value, onChange, disabled = false, compact = fal
           아무 요일
         </button>
       ) : (
-        <span className="ml-1 text-xs text-muted-foreground">안 고르면 아무 요일</span>
+        <span className="ml-1 text-xs text-muted-foreground">안 고르면, 공부량을 한 주에 동일하게 분배해요</span>
       )}
     </div>
   );

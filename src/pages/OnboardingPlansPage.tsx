@@ -234,8 +234,11 @@ export default function OnboardingPlansPage() {
         {handoff?.error ? <FormAlert>AI가 초안을 만들지 못했어요. {handoff.error} 아래에서 직접 넣어 주세요.</FormAlert> : null}
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-          {/* 예상 예보 (휴대폰은 위, PC 는 오른쪽에 고정) */}
-          <section aria-labelledby="preview-title" className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-6 lg:sticky lg:top-6 lg:order-2">
+          {/* 예상 예보 (휴대폰은 위, PC 는 오른쪽에 고정). 진단·제안까지 화면보다 길어지면 카드 안에서 스크롤 — 끝까지 안 내려도 다 보여요 */}
+          <section
+            aria-labelledby="preview-title"
+            className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:p-6 lg:sticky lg:top-6 lg:order-2 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:overscroll-contain"
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 id="preview-title" className="text-base font-semibold">
                 예상 예보

@@ -10,7 +10,7 @@ import { LoadError } from "@/components/LoadError";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/features/auth/auth-context";
 import { useProfile, useSignOut } from "@/features/auth/api";
-import { DEMO_RESET_USER_ID, useResetDemoAccount } from "@/features/auth/demo-reset";
+import { useResetMyData } from "@/features/auth/reset-data";
 import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
@@ -28,7 +28,8 @@ import type { Profile } from "@/types/database";
  */
 export default function SettingsPage() {
   const { user } = useAuth();
-  const profile = useProfile(user?.id);
+  const userId = user?.id;
+  const profile = useProfile(userId);
 
   return (
     <PageContainer>
@@ -42,7 +43,7 @@ export default function SettingsPage() {
         // 마지막 줄(1fr)이 남는 높이를 받아서, 학기 설정이 길어도 왼쪽 카드 사이가 벌어지지 않아요
         <div className="grid max-w-2xl gap-6 lg:max-w-none lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr] lg:items-start">
           <div className="lg:col-start-1 lg:row-start-1">
-            <AccountCard profile={profile.data} email={user?.email} userId={user?.id} />
+            <AccountCard profile={profile.data} email={user?.email} />
           </div>
           <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1">
             <SemesterSection profile={profile.data} />
@@ -50,7 +51,13 @@ export default function SettingsPage() {
           <div className="lg:col-start-1 lg:row-start-2">
             <NameSection profile={profile.data} />
           </div>
-          <div className="lg:col-start-1 lg:row-start-3">
+          <div className="grid gap-6 lg:col-start-1 lg:row-start-3">
+            <Section title="데이터">
+              <Row label="데이터 초기화">
+                <ResetDataButton userId={userId} />
+              </Row>
+              <p className="px-5 py-3 text-[13px] text-muted-foreground">계획·자격증·기록·학기 설정을 모두 지우고 초기 설정부터 다시 해요.</p>
+            </Section>
             <Section title="안내">
               <Row label="자격증 일정 출처">
                 <span className="text-sm text-muted-foreground">각 회차의 시행 기관 공고 (자격증 화면에서 링크 확인)</span>
@@ -70,10 +77,8 @@ export default function SettingsPage() {
   );
 }
 
-function AccountCard({ profile, email, userId }: { profile: Profile; email?: string; userId?: string }) {
+function AccountCard({ profile, email }: { profile: Profile; email?: string }) {
   const signOut = useSignOut();
-  const reset = useResetDemoAccount(userId);
-  const isDemo = userId === DEMO_RESET_USER_ID;
   const name = profile.display_name?.trim() || "이름 없음";
   return (
     <section className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-5">
@@ -93,25 +98,30 @@ function AccountCard({ profile, email, userId }: { profile: Profile; email?: str
           {signOut.isPending ? "로그아웃하는 중…" : "로그아웃"}
         </Button>
         {signOut.error ? <p className="text-[13px] text-destructive">{toAuthMessage(signOut.error)}</p> : null}
-        {/* 체험 계정(정새내)만: 시연·테스트용 초기화 (10/27) */}
-        {isDemo ? (
-          <>
-            <Button
-              variant="outline"
-              className="text-destructive hover:text-destructive"
-              disabled={reset.isPending}
-              onClick={() => {
-                if (window.confirm("계획·자격증·기록·학기 설정을 모두 지우고 온보딩 첫 화면으로 돌아갈까요? 되돌릴 수 없어요.")) reset.mutate();
-              }}
-            >
-              <RotateCcw aria-hidden="true" />
-              {reset.isPending ? "초기화하는 중…" : "데이터 초기화"}
-            </Button>
-            {reset.error ? <p className="text-[13px] text-destructive">초기화하지 못했어요. 잠시 뒤 다시 시도하세요.</p> : null}
-          </>
-        ) : null}
       </div>
     </section>
+  );
+}
+
+/** 데이터 초기화 (10/27) — 확인 창 뒤 계획·자격증·기록·학기 설정을 지우고 초기 설정으로 */
+function ResetDataButton({ userId }: { userId?: string }) {
+  const reset = useResetMyData(userId);
+  return (
+    <div className="grid justify-items-end gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-destructive hover:text-destructive"
+        disabled={reset.isPending}
+        onClick={() => {
+          if (window.confirm("계획·자격증·기록·학기 설정을 모두 지우고 초기 설정으로 돌아가요. 지운 데이터는 되돌릴 수 없어요. 초기화할까요?")) reset.mutate();
+        }}
+      >
+        <RotateCcw aria-hidden="true" />
+        {reset.isPending ? "초기화하는 중…" : "초기화"}
+      </Button>
+      {reset.error ? <p className="text-[13px] text-destructive">초기화하지 못했어요. 잠시 뒤 다시 시도하세요.</p> : null}
+    </div>
   );
 }
 

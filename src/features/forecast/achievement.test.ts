@@ -60,3 +60,12 @@ describe("학기 달성률·계획별 부담", () => {
     expect(later.need_hours).toBeCloseTo(f.weeks.filter((w) => w.week >= 10).reduce((a, w) => a + w.total_hours, 0));
   });
 });
+
+describe("달성률 표시", () => {
+  it("다 못 하면 반올림해도 100% 가 아니라 최대 99%", async () => {
+    const { toPercent } = await import("./weather");
+    expect(toPercent(1)).toBe(100);
+    expect(toPercent(0.996)).toBe(99);
+    expect(toPercent(0.724)).toBe(72);
+  });
+});

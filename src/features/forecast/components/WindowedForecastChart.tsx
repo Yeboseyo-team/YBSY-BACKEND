@@ -61,7 +61,7 @@ export function WindowedForecastChart({ weeks, availableHours, currentWeek, sele
           </div>
         )}
         <Button type="button" variant="ghost" size="sm" aria-pressed={whole} onClick={() => setWhole((w) => !w)}>
-          {whole ? "6주씩 보기" : "학기 전체"}
+          {whole ? `${WINDOW_WEEKS}주씩 보기` : "학기 전체"}
         </Button>
       </div>
 

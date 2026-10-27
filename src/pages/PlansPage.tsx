@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
@@ -6,8 +6,9 @@ import { LoadError } from "@/components/LoadError";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormAlert } from "@/features/auth/components/FormAlert";
-import { TOTAL_WEEKS, WEEKDAY_LABELS } from "@/features/forecast/calc";
-import { formatDuration } from "@/features/forecast/weather";
+import { useForecastData } from "@/features/forecast/api";
+import { planLoads, semesterAchievement, TOTAL_WEEKS, WEEKDAY_LABELS, type PlanLoad } from "@/features/forecast/calc";
+import { formatDuration, WEATHER_STYLE, toPercent } from "@/features/forecast/weather";
 import { toPlanMessage, useDeletePlan, usePlans } from "@/features/plans/api";
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { toCategoryMessage, useDeleteCategory, usePlanCategories } from "@/features/plans/categories";
@@ -26,6 +27,14 @@ export default function PlansPage() {
   const categories = usePlanCategories();
   const deleteCategory = useDeleteCategory();
   const [deleting, setDeleting] = useState<Plan | null>(null);
+  // 10/27: 계획마다 학기 부담(비중)·가장 바쁜 주·달성률
+  const forecastData = useForecastData();
+  const available = forecastData.profile?.available_hours ?? 0;
+  const loads = useMemo(() => {
+    if (!forecastData.forecast) return new Map<string, PlanLoad>();
+    return new Map(planLoads(forecastData.forecast, available).filter((l) => l.source === "plan").map((l) => [l.title, l]));
+  }, [forecastData.forecast, available]);
+  const semesterRate = forecastData.forecast ? semesterAchievement(forecastData.forecast, available) : null;
 
   const list = plans.data ?? [];
   const canAdd = canAddPlan(list.length);
@@ -50,7 +59,9 @@ export default function PlansPage() {
       <PageHeader
         title="계획"
         description={
-          list.length > 0 ? `계획 ${list.length}개를 넣었어요. ${MAX_PLANS}개까지 넣을 수 있어요.` : "수업·활동·프로젝트를 담아두면 예보에 반영돼요."
+          list.length > 0
+            ? `계획 ${list.length}개를 넣었어요. ${MAX_PLANS}개까지 넣을 수 있어요.${semesterRate && semesterRate.need_hours > 0 ? ` 이대로면 학기 계획의 ${toPercent(semesterRate.rate)}%를 해낼 수 있어요 (시간이 모자란 주는 우선순위 높은 계획부터).` : ""}`
+            : "수업·활동·프로젝트를 담아두면 예보에 반영돼요."
         }
         action={plans.isPending || plans.isError || list.length === 0 || canAdd ? null : addButton}
       />
@@ -101,7 +112,13 @@ export default function PlansPage() {
               </h2>
               <ul>
                 {group.plans.map((plan) => (
-                  <PlanRow key={plan.id} plan={plan} color={typeTagOf({ plan_type: plan.type, category_id: plan.category_id }, categories.data ?? []).color} onDelete={() => setDeleting(plan)} />
+                  <PlanRow
+                    key={plan.id}
+                    plan={plan}
+                    load={loads.get(plan.title)}
+                    color={typeTagOf({ plan_type: plan.type, category_id: plan.category_id }, categories.data ?? []).color}
+                    onDelete={() => setDeleting(plan)}
+                  />
                 ))}
               </ul>
             </section>
@@ -125,7 +142,7 @@ export default function PlansPage() {
   );
 }
 
-function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelete: () => void }) {
+function PlanRow({ plan, load, color, onDelete }: { plan: Plan; load?: PlanLoad; color: string; onDelete: () => void }) {
   const left = ((plan.start_week - 1) / TOTAL_WEEKS) * 100;
   const width = ((plan.end_week - plan.start_week + 1) / TOTAL_WEEKS) * 100;
   return (
@@ -167,7 +184,36 @@ function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelet
           <Trash2 aria-hidden="true" />
         </Button>
       </div>
+
+      {load ? <PlanLoadLine load={load} color={color} /> : null}
     </li>
+  );
+}
+
+/**
+ * 계획마다 부담 (10/27 피드백): 학기 전체 공부 중 이 계획의 비중(막대), 가장 많이 드는 주, 달성률.
+ * 달성률은 시간이 모자란 주에 우선순위 높은 계획부터 시간을 준다고 계산해요 (calc.ts planLoads).
+ */
+function PlanLoadLine({ load, color }: { load: PlanLoad; color: string }) {
+  const share = Math.round(load.share * 100);
+  const rate = toPercent(load.rate);
+  const tone = rate >= 100 ? WEATHER_STYLE.clear.text : rate >= 80 ? WEATHER_STYLE.cloudy.text : WEATHER_STYLE.storm.text;
+  return (
+    <div className="col-span-full flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5">
+        학기 부담
+        <span className="relative h-1.5 w-16 rounded bg-muted" aria-hidden="true">
+          <span className="absolute inset-y-0 left-0 rounded" style={{ width: `${Math.max(4, Math.min(100, share * 3))}%`, backgroundColor: color }} />
+        </span>
+        <strong className="font-semibold text-foreground tabular-nums">{share}%</strong>
+      </span>
+      <span>
+        가장 바쁜 주 {load.peak_week}주차 {formatDuration(load.peak_hours)}
+      </span>
+      <span>
+        예상 달성률 <strong className={cn("font-semibold tabular-nums", tone)}>{rate}%</strong>
+      </span>
+    </div>
   );
 }
 

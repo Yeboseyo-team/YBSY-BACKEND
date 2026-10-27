@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 import { weekAchievement, type WeekForecast } from "../calc";
-import { formatDuration, WEATHER_STYLE } from "../weather";
+import { formatDuration, WEATHER_STYLE, toPercent } from "../weather";
 
 type Props = {
   weeks: WeekForecast[];
@@ -29,7 +29,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
   // 휴대폰 폭에서 16주를 다 그릴 때는 막대 위 숫자를 빼서 겹치지 않게. 4주씩 볼 때는 자리가 넉넉해서 보여 줘요 (10/26 UI 점검)
   const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE_QUERY).matches);
   // 할 일이 없는 주는 막대 없이 (100% 로 꽉 채우면 계획이 있는 것처럼 보여요)
-  const data = weeks.map((w) => ({ ...w, rate: w.total_hours > 0 ? Math.round(weekAchievement(w, availableHours) * 100) : null }));
+  const data = weeks.map((w) => ({ ...w, rate: w.total_hours > 0 ? toPercent(weekAchievement(w, availableHours)) : null }));
 
   return (
     <div className="grid gap-2">
@@ -80,7 +80,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
               type="button"
               onClick={() => onSelect(w.week)}
               aria-pressed={isSelected}
-              aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} 달성률 ${Math.round(weekAchievement(w, availableHours) * 100)}% (필요 ${formatDuration(w.total_hours)})${isCurrent ? ", 이번 주" : ""}`}
+              aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} 달성률 ${toPercent(weekAchievement(w, availableHours))}% (필요 ${formatDuration(w.total_hours)})${isCurrent ? ", 이번 주" : ""}`}
               className={cn(
                 // 칸 너비를 다 써서 누르기 쉽게 (10/26 UI 점검: 휴대폰에서 폭 11px 이었음)
                 "mx-auto flex h-9 w-full max-w-16 min-w-0 items-center justify-center rounded-full px-0.5 text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2",

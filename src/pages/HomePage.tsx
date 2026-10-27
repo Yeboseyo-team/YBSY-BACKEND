@@ -11,7 +11,7 @@ import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
-import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE, toPercent } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { cn } from "@/lib/utils";
@@ -216,7 +216,7 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
   const over = focus ? Math.round((focus.total_hours - available) * 10) / 10 : 0;
   // 10/27 피드백: 시간 대신 달성률로 — 이번 주부터 남은 학기 계획을 몇 % 해낼 수 있는지
   const achievement = semesterAchievement(forecast, available, from);
-  const percent = Math.round(achievement.rate * 100);
+  const percent = toPercent(achievement.rate);
 
   return (
     <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">

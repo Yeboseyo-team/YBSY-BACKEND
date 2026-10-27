@@ -3,7 +3,7 @@ import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
 import type { PlanCategory } from "@/types/database";
 import { trimSuggestions, weekAchievement, type WeekForecast } from "../calc";
-import { formatDuration, WEATHER_STYLE } from "../weather";
+import { formatDuration, WEATHER_STYLE, toPercent } from "../weather";
 
 type Props = {
   week: WeekForecast;
@@ -19,7 +19,7 @@ type Props = {
 export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCurrent, categories = [] }: Props) {
   const style = WEATHER_STYLE[week.level];
   const scale = Math.max(week.total_hours, availableHours, 1);
-  const rate = Math.round(weekAchievement(week, availableHours) * 100);
+  const rate = toPercent(weekAchievement(week, availableHours));
   const examLabel = week.week === midtermWeek ? " 중간고사 주간" : week.week === finalWeek ? " 기말고사 주간" : "";
 
   return (

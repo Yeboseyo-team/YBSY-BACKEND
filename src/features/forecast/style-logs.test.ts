@@ -116,3 +116,23 @@ describe("주로 하는 요일 (10/27 개인화)", () => {
     expect(osOn(withDays([])).filter((h) => h > 0).length).toBeGreaterThan(2);
   });
 });
+
+describe("현실적인 숫자 (10/27)", () => {
+  it("벼락치기여도 몰리는 주는 평소의 1.8배까지만, 학기 합계는 그대로", () => {
+    const cram = withStyle("cram");
+    const weekBase = (input: ForecastInput, week: number) =>
+      calculateForecast(input).weeks[week - 1].items.find((i) => i.title === "운영체제")?.base_hours ?? 0;
+    for (const w of [7, 8, 14, 15]) expect(weekBase(cram, w)).toBeLessThanOrEqual(6 * 1.8 + 0.01);
+    expect(semesterBase(cram, "운영체제")).toBeCloseTo(semesterBase(base, "운영체제"), 1);
+  });
+
+  it("한 주에 여유가 있으면 하루가 쓸 수 있는 시간을 넘지 않게 다른 날로 옮긴다 (한 주 합계는 그대로)", () => {
+    const allMonday: ForecastInput = { ...base, plans: base.plans.map((p) => (p.type === "class" ? { ...p, study_days: [0, 1, 2, 3, 4] } : p)) };
+    const days = dailyForecast(allMonday, 3)!;
+    const week = calculateForecast(allMonday).weeks[2];
+    if (week.total_hours <= days.reduce((s, d) => s + d.available, 0)) {
+      for (const d of days) expect(d.hours).toBeLessThanOrEqual(d.available + 0.02);
+    }
+    expect(days.reduce((s, d) => s + d.hours, 0)).toBeCloseTo(week.total_hours, 0);
+  });
+});

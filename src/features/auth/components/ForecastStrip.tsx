@@ -45,7 +45,7 @@ export function ForecastStrip({ className }: { className?: string }) {
           className="absolute left-0 -translate-y-full pb-1 text-[11px] text-white/70"
           style={{ bottom: lineBottom }}
         >
-          가용 {AVAILABLE}시간
+          쓸 수 있는 시간({AVAILABLE}시간)
         </span>
       </div>
       <div className="mt-2 grid grid-cols-16 gap-[3px] text-center text-[11px] text-white/50 sm:gap-1" aria-hidden="true">
@@ -54,7 +54,7 @@ export function ForecastStrip({ className }: { className?: string }) {
         <span className="col-start-16">16주</span>
       </div>
       <figcaption className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/75">
-        <span className="sr-only">예시 학기 16주 중 8주차와 14·15주차가 가용 시간을 넘는 폭풍 주간입니다.</span>
+        <span className="sr-only">예시 학기 16주 중 8주차와 14·15주차가 쓸 수 있는 시간을 넘는 폭풍 주간이에요.</span>
         <Legend className="bg-clear" label="맑음 · 여유" />
         <Legend className="bg-caution" label="흐림 · 주의" />
         <Legend className="bg-storm" label="폭풍 · 과부하" />

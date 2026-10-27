@@ -28,6 +28,7 @@ export function AiEstimate({ title, type, credits, disabled, onApply, submitLabe
     <AiHoursHelper
       openLabel="AI로 시간 추천받기"
       label="계획을 설명하면 AI가 쓰는 시간을 추천해요"
+      resultPrefix="이 계획에"
       placeholder={PLACEHOLDER[type]}
       toInput={(description) => ({ kind: "plan", title: title.trim(), type, credits, description })}
       onApply={(estimate) => onApply(estimate.hours_per_week)}

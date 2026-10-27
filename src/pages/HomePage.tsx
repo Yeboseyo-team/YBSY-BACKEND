@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { certificateEvents } from "@/features/forecast/calendar-events";
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
@@ -56,6 +57,9 @@ export default function HomePage() {
   const empty = data.status === "empty";
   const selectedWeek = picked ?? currentWeek ?? 1;
   const selected = forecast.weeks[selectedWeek - 1];
+  // 달력에 넣을 내 자격증 일정 (접수 시작·마감·시험일, 10/27)
+  const myCertIds = new Set(data.input?.userCertificates.map((u) => u.certificate_id) ?? []);
+  const certEvents = certificateEvents(data.certificates.filter((c) => myCertIds.has(c.id)));
 
 
   return (
@@ -113,7 +117,7 @@ export default function HomePage() {
               {view === "calendar" && !empty ? null : (
               <li className="inline-flex items-center gap-1.5">
                 <span className="w-4 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
-                가용 {available}시간
+                쓸 수 있는 시간({available}시간)
               </li>
               )}
             </ul>
@@ -130,6 +134,7 @@ export default function HomePage() {
               currentWeek={currentWeek}
               selectedWeek={selectedWeek}
               onSelectWeek={setPicked}
+              events={certEvents}
             />
           ) : (
             <>
@@ -234,7 +239,7 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
             <>
               {" "}
               · {focus.week}주차에 {formatDuration(focus.total_hours)}이 예상돼요.{" "}
-              {over > 0 ? `가용 시간보다 ${formatDuration(over)} 많아요.` : "가용 시간에 거의 꽉 차요."}
+              {over > 0 ? `쓸 수 있는 시간보다 ${formatDuration(over)} 많아요.` : "쓸 수 있는 시간을 거의 다 써요."}
             </>
           ) : null}
         </p>
@@ -276,7 +281,7 @@ function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCat
         </Link>
       </div>
       {plans.length === 0 ? (
-        <p className="border-t border-border/60 pt-2 text-sm text-muted-foreground">자격증만 골라져 있어요.</p>
+        <p className="border-t border-border/60 pt-2 text-sm text-muted-foreground">계획은 없고 자격증만 있어요.</p>
       ) : (
         <ul className="text-sm">
           {shown.map((p) => {

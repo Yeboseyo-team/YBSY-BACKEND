@@ -23,6 +23,8 @@ type Props = {
   defaultOpen?: boolean;
   /** [추천받기] 버튼 글자 */
   askLabel?: string;
+  /** 추천 결과 앞말 (기본 "한 주", 계획 폼은 "이 계획에" — 10/27 문구) */
+  resultPrefix?: string;
 };
 
 /** F-08 말로 설명하면 AI 가 시간을 추천 (FR-08-1). 계획 폼과 학기 설정(온보딩·설정)이 같이 써요. */
@@ -37,6 +39,7 @@ export function AiHoursHelper({
   disabled = false,
   defaultOpen = false,
   askLabel = "추천받기",
+  resultPrefix = "한 주",
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
   const [description, setDescription] = useState("");
@@ -88,7 +91,7 @@ export function AiHoursHelper({
         {estimate.isError ? <p className="text-[13px] text-destructive">{toEstimateMessage(estimate.error)}</p> : null}
         {estimate.isSuccess ? (
           <p className="text-[13px] leading-relaxed">
-            <span className="font-semibold">AI 추천: 한 주 {formatDuration(estimate.data.hours_per_week)}</span>
+            <span className="font-semibold">AI 추천: {resultPrefix} {formatDuration(estimate.data.hours_per_week)}</span>
             {estimate.data.reason ? ` — ${estimate.data.reason}` : ""}
             <span className="block text-xs text-muted-foreground">
               {appliedNote} (오늘 {estimate.data.remaining}번 남음)

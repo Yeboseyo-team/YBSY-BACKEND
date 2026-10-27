@@ -13,7 +13,7 @@ const SECTIONS = [
     body: (
       <ul className="grid list-disc gap-1.5 pl-5">
         <li>Google 로그인 시: Google 계정 이메일, 이름</li>
-        <li>서비스 이용 중 입력: 학기 설정(개강일·가용 시간·시험 주차), 계획, 고른 자격증 회차와 준비 시간</li>
+        <li>서비스 이용 중 입력: 학기 설정(개강일·쓸 수 있는 시간·시험 주차), 계획, 고른 자격증 회차와 준비 시간</li>
         <li>개인정보 수집·이용 동의 시각</li>
       </ul>
     ),

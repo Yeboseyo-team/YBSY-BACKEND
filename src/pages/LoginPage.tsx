@@ -47,7 +47,7 @@ export default function LoginPage() {
           onClick={() => google.mutate(from)}
         >
           <GoogleIcon />
-          {google.isPending ? "구글로 이동하는 중…" : "Google 계정으로 계속하기"}
+          {google.isPending ? "Google로 이동하는 중…" : "Google 계정으로 계속하기"}
         </Button>
 
         {DEMO_LOGIN_ENABLED ? (

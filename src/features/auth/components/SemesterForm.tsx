@@ -114,7 +114,7 @@ export function SemesterForm({
         name="studyStyle"
         render={({ field }) => (
           <fieldset className="grid gap-2">
-            <legend className="mb-1 text-sm font-medium">이번 학기, 벼락치기 할 건가요?</legend>
+            <legend className="mb-1 text-sm font-medium">이번 학기 공부는 어떻게 할 건가요?</legend>
             <p className="text-[13px] leading-relaxed text-muted-foreground">
               고른 스타일대로 예보를 나눠 그려요. 한 학기 공부 시간 합계는 같아요.
             </p>

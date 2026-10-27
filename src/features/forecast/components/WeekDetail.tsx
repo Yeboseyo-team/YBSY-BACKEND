@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
 import type { PlanCategory } from "@/types/database";
-import { trimSuggestions, type WeekForecast } from "../calc";
+import { trimSuggestions, weekAchievement, type WeekForecast } from "../calc";
 import { formatDuration, WEATHER_STYLE } from "../weather";
 
 type Props = {
@@ -19,6 +19,7 @@ type Props = {
 export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCurrent, categories = [] }: Props) {
   const style = WEATHER_STYLE[week.level];
   const scale = Math.max(week.total_hours, availableHours, 1);
+  const rate = Math.round(weekAchievement(week, availableHours) * 100);
   const examLabel = week.week === midtermWeek ? " 중간고사 주간" : week.week === finalWeek ? " 기말고사 주간" : "";
 
   return (
@@ -28,8 +29,9 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
           {week.week}주차{examLabel}
           {isCurrent ? <span className="ml-2 text-xs font-medium whitespace-nowrap text-muted-foreground">이번 주</span> : null}
         </h2>
+        {/* 10/27: 시간 대신 달성률이 크게, 시간은 아래 한 줄로 */}
         <span className={cn("shrink-0 text-[22px] font-bold tracking-tight whitespace-nowrap tabular-nums sm:text-[26px]", style.text)}>
-          {formatDuration(week.total_hours)}
+          {week.total_hours > 0 ? `${rate}%` : "-"}
         </span>
       </div>
 
@@ -37,10 +39,22 @@ export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCur
         <div className={cn("absolute inset-y-0 left-0 rounded", style.dot)} style={{ width: `${(week.total_hours / scale) * 100}%` }} />
         <div className="absolute -inset-y-[3px] w-0.5 bg-ink" style={{ left: `${(availableHours / scale) * 100}%` }} />
       </div>
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
         <span className={cn("mr-2 rounded-full px-2 py-0.5 text-xs font-semibold", style.badge)}>{style.label}</span>
-        가용 {availableHours}시간 대비 {Math.round(week.ratio * 100)}%
+        필요 {formatDuration(week.total_hours)} · 쓸 수 있는 시간 {formatDuration(availableHours)}
       </p>
+      {week.total_hours > 0 ? (
+        <p className="text-sm leading-relaxed">
+          {rate >= 100 ? (
+            <>이 주는 계획을 <strong className="font-semibold">다 할 수 있어요</strong>.</>
+          ) : (
+            <>
+              이 주 목표 달성률은 <strong className={cn("font-semibold", style.text)}>{rate}%</strong>예요. 쓸 수 있는 시간으로 계획의 {rate}%까지 할 수 있으니
+              우선순위 높은 것부터 하세요.
+            </>
+          )}
+        </p>
+      ) : null}
 
       {week.items.length === 0 ? (
         <p className="border-t border-border/60 pt-3 text-sm text-muted-foreground">이 주에는 잡힌 계획이 없어요.</p>

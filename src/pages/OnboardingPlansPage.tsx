@@ -13,10 +13,10 @@ import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveO
 import { CatalogQuickPick } from "@/features/certificates/components/CatalogQuickPick";
 import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
-import { addDays, calculateForecast, semesterAchievement, TOTAL_WEEKS, weekAchievement, weekDates, type ForecastInput } from "@/features/forecast/calc";
+import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
-import { formatDuration, WEATHER_STYLE, toPercent } from "@/features/forecast/weather";
+import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import type { DraftCertificate, DraftPlan } from "@/features/plans/ai";
 import { toPlanMessage, useCreatePlans, type PlanInput } from "@/features/plans/api";
 import { WeekdayPicker } from "@/features/plans/components/WeekdayPicker";
@@ -247,14 +247,8 @@ export default function OnboardingPlansPage() {
                   selectedWeek={selectedWeek}
                   onSelect={setPicked}
                 />
-                {/* 10/27: 막대는 달성률. 학기 전체로 계획의 몇 % 를 해낼 수 있는지 */}
-                <p className="text-sm">
-                  이대로면 학기 계획의{" "}
-                  <strong className="font-bold">{toPercent(semesterAchievement(forecast, data.profile?.available_hours ?? 0).rate)}%</strong>를 해낼 수 있어요.
-                </p>
                 <p className="text-[13px] text-muted-foreground">
-                  {selectedWeek}주차 달성률 {toPercent(weekAchievement(forecast.weeks[selectedWeek - 1], data.profile?.available_hours ?? 0))}% · 필요{" "}
-                  {formatDuration(forecast.weeks[selectedWeek - 1].total_hours)} / 쓸 수 있는 시간 {data.profile?.available_hours ?? 0}시간
+                  {selectedWeek}주차 {formatDuration(forecast.weeks[selectedWeek - 1].total_hours)} · 쓸 수 있는 시간 {data.profile?.available_hours ?? 0}시간
                 </p>
               </>
             ) : (

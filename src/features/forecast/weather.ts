@@ -33,9 +33,3 @@ export function summaryText(summary: Record<Weather, number>): string {
   if (summary.cloudy > 0) parts.push(`흐림 ${summary.cloudy}주`);
   return parts.length > 0 ? parts.join(" · ") : `맑음 ${summary.clear}주`;
 }
-
-/** 달성률 0~1 → 정수 % (10/27). 다 못 하면 반올림해도 100% 로 보이지 않게 최대 99 */
-export function toPercent(rate: number): number {
-  if (rate >= 1 - 1e-9) return 100;
-  return Math.min(99, Math.round(rate * 100));
-}

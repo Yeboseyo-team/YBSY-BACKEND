@@ -5,13 +5,13 @@ import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
-import { dailyForecast, semesterAchievement, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
-import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE, toPercent } from "@/features/forecast/weather";
+import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { cn } from "@/lib/utils";
@@ -74,7 +74,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <h2 id="chart-title" className="text-lg font-semibold">
-              {view === "calendar" && !empty ? "날짜별 예보" : "주차별 달성률"}
+              {view === "calendar" && !empty ? "날짜별 예보" : "주차별 예상 시간"}
             </h2>
             {/* 그래프로 보기 / 달력으로 보기 (10/24 QA) */}
             {!empty ? (
@@ -112,8 +112,8 @@ export default function HomePage() {
                 ))}
               {view === "calendar" && !empty ? null : (
               <li className="inline-flex items-center gap-1.5">
-                <span className="w-4 border-t border-dashed border-ink/40" aria-hidden="true" />
-                100% = 그 주 계획을 다 할 수 있어요
+                <span className="w-4 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
+                가용 {available}시간
               </li>
               )}
             </ul>
@@ -214,9 +214,6 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
       ? `${focus.week}주차에 폭풍이 예보돼요`
       : `${focus.week}주차가 흐릴 예정이에요`;
   const over = focus ? Math.round((focus.total_hours - available) * 10) / 10 : 0;
-  // 10/27 피드백: 시간 대신 달성률로 — 이번 주부터 남은 학기 계획을 몇 % 해낼 수 있는지
-  const achievement = semesterAchievement(forecast, available, from);
-  const percent = toPercent(achievement.rate);
 
   return (
     <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
@@ -241,15 +238,6 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
             </>
           ) : null}
         </p>
-        {achievement.need_hours > 0 ? (
-          <p className="text-[15px] leading-relaxed sm:text-base">
-            이대로면 남은 학기 계획의{" "}
-            <strong className={cn("font-bold", percent >= 100 ? "text-clear" : percent >= 80 ? WEATHER_STYLE.cloudy.text : WEATHER_STYLE.storm.text)}>
-              {percent}%
-            </strong>
-            를 해낼 수 있어요.
-          </p>
-        ) : null}
       </div>
       {currentWeek ? <WeekProgress currentWeek={currentWeek} /> : null}
     </section>

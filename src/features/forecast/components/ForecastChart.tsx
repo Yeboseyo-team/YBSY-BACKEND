@@ -1,12 +1,12 @@
 import { useSyncExternalStore } from "react";
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
-import { weekAchievement, type WeekForecast } from "../calc";
-import { formatDuration, WEATHER_STYLE, toPercent } from "../weather";
+import type { WeekForecast } from "../calc";
+import { formatDuration, WEATHER_STYLE } from "../weather";
 
 type Props = {
   weeks: WeekForecast[];
-  /** 쓸 수 있는 시간 — 달성률 계산에 써요 */
+  /** 가용 시간 → 점선 (FR-05-1) */
   availableHours: number;
   /** 이번 주 (FR-05-5) */
   currentWeek: number | null;
@@ -21,24 +21,20 @@ const subscribe = (onChange: () => void) => {
   return () => media.removeEventListener("change", onChange);
 };
 
-/**
- * 주차 막대그래프 (S-08, F-05). 10/27 피드백: 막대 높이는 시간 대신 "그 주 계획을 몇 % 해낼 수 있는지"(달성률, 최대 100%).
- * 색은 지금처럼 맑음·흐림·폭풍이라, 100% 인 주끼리도 여유(맑음)·꽉 참(흐림)이 구분돼요. 시간은 아래 주 상세에서 보여요.
- */
+/** 주차 막대그래프 (S-08, F-05). 받은 주만 그려요 (10/26: 4주씩 보기는 WindowedForecastChart). 막대나 아래 주차 버튼을 누르면 그 주가 선택돼요 (FR-05-4). */
 export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
   // 휴대폰 폭에서 16주를 다 그릴 때는 막대 위 숫자를 빼서 겹치지 않게. 4주씩 볼 때는 자리가 넉넉해서 보여 줘요 (10/26 UI 점검)
   const wide = useSyncExternalStore(subscribe, () => window.matchMedia(WIDE_QUERY).matches);
-  // 할 일이 없는 주는 막대 없이 (100% 로 꽉 채우면 계획이 있는 것처럼 보여요)
-  const data = weeks.map((w) => ({ ...w, rate: w.total_hours > 0 ? toPercent(weekAchievement(w, availableHours)) : null }));
+  const maxHours = Math.max(availableHours, ...weeks.map((w) => w.total_hours));
 
   return (
     <div className="grid gap-2">
       <div className="h-[240px] sm:h-[300px]" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 0, bottom: 0, left: 0 }} barCategoryGap="18%" accessibilityLayer={false}>
-            <YAxis hide domain={[0, 100]} />
+          <BarChart data={weeks} margin={{ top: 20, right: 0, bottom: 0, left: 0 }} barCategoryGap="18%" accessibilityLayer={false}>
+            <YAxis hide domain={[0, Math.ceil(maxHours * 1.08)]} />
             <Bar
-              dataKey="rate"
+              dataKey="total_hours"
               radius={[6, 6, 2, 2]}
               isAnimationActive={false}
               cursor="pointer"
@@ -56,15 +52,14 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
               ))}
               {wide || weeks.length <= 8 ? (
                 <LabelList
-                  dataKey="rate"
+                  dataKey="total_hours"
                   position="top"
-                  formatter={(value: unknown) => (typeof value === "number" ? `${value}%` : "")}
+                  formatter={(value: unknown) => (typeof value === "number" && value > 0 ? String(Math.round(value)) : "")}
                   className="fill-muted-foreground text-xs tabular-nums"
                 />
               ) : null}
             </Bar>
-            {/* 100% = 그 주 계획을 다 할 수 있음 */}
-            <ReferenceLine y={100} className="[&_line]:stroke-ink/40" strokeDasharray="5 4" strokeWidth={1} />
+            <ReferenceLine y={availableHours} className="[&_line]:stroke-ink" strokeDasharray="5 4" strokeWidth={1.5} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -80,7 +75,7 @@ export function ForecastChart({ weeks, availableHours, currentWeek, selectedWeek
               type="button"
               onClick={() => onSelect(w.week)}
               aria-pressed={isSelected}
-              aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} 달성률 ${toPercent(weekAchievement(w, availableHours))}% (필요 ${formatDuration(w.total_hours)})${isCurrent ? ", 이번 주" : ""}`}
+              aria-label={`${w.week}주차 ${WEATHER_STYLE[w.level].label} ${formatDuration(w.total_hours)}${isCurrent ? ", 이번 주" : ""}`}
               className={cn(
                 // 칸 너비를 다 써서 누르기 쉽게 (10/26 UI 점검: 휴대폰에서 폭 11px 이었음)
                 "mx-auto flex h-9 w-full max-w-16 min-w-0 items-center justify-center rounded-full px-0.5 text-xs tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2",

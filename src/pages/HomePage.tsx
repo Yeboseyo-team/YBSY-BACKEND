@@ -3,7 +3,10 @@ import { Link, Navigate } from "react-router";
 import { CalendarDays, ChartColumn, CloudLightning, CloudSun, Plus, RotateCw, Sun } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { useUpdateProfile } from "@/features/auth/profile-api";
+import type { Advice } from "@/features/forecast/advice";
 import { useForecastData } from "@/features/forecast/api";
+import { AdvicePanel } from "@/features/forecast/components/AdvicePanel";
 import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
@@ -11,10 +14,11 @@ import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
 import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
+import { useDeletePlan, useUpdatePlan, type PlanInput } from "@/features/plans/api";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { cn } from "@/lib/utils";
-import type { Plan, PlanCategory } from "@/types/database";
+import type { Plan, PlanCategory, PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
 
 /**
  * S-08 부담 예보 (홈, 경로 /) — 담당: 프론트 B (feature/frontend-jw)
@@ -45,6 +49,9 @@ export default function HomePage() {
     }
   };
   const categories = usePlanCategories().data ?? [];
+  const updatePlan = useUpdatePlan();
+  const deletePlan = useDeletePlan();
+  const updateProfile = useUpdateProfile();
 
   if (data.status === "loading") return <HomeSkeleton />;
   if (data.status === "error") return <HomeError onRetry={data.refetch} />;
@@ -56,9 +63,25 @@ export default function HomePage() {
   const selectedWeek = picked ?? currentWeek ?? 1;
   const selected = forecast.weeks[selectedWeek - 1];
 
+  /** 해결 제안 [적용] (10/27) — 계획 빼기는 지우기라 한 번 더 물어봐요 */
+  const applyAdvice = async (advice: Advice) => {
+    const act = advice.action;
+    if (act.type === "style") return void (await updateProfile.mutateAsync({ study_style: act.style }));
+    if (act.type === "available") return void (await updateProfile.mutateAsync({ daily_hours: act.daily_hours }));
+    const plan = plans.find((p) => p.id === act.planKey);
+    if (!plan) return;
+    if (act.type === "remove_plan") {
+      if (window.confirm(`"${plan.title}" 계획을 지울까요? 지운 계획은 되돌릴 수 없어요.`)) await deletePlan.mutateAsync(plan.id);
+      return;
+    }
+    await updatePlan.mutateAsync({ id: plan.id, input: { ...toPlanInput(plan), hours_per_week: act.hours } });
+  };
+
   return (
     <PageContainer>
       {empty ? <EmptyHeadline /> : <Headline forecast={forecast} currentWeek={currentWeek} available={available} />}
+
+      {!empty && data.input ? <AdvicePanel input={data.input} fromWeek={currentWeek ?? 1} onApply={applyAdvice} /> : null}
 
       <DeadlineBanner deadlines={deadlines} semesterStart={profile.semester_start ?? ""} />
 
@@ -194,6 +217,25 @@ export default function HomePage() {
 }
 
 /** 맨 위 요약: 다가오는 폭풍(없으면 흐림) 주와 "폭풍 n주 · 흐림 n주" (FR-05-3) */
+/** 저장된 계획 → 고쳐 저장할 때 넣는 값 */
+function toPlanInput(plan: Plan): PlanInput {
+  return {
+    title: plan.title,
+    type: plan.type as PlanType,
+    credits: plan.credits,
+    load_level: plan.load_level as PlanLoadLevel,
+    start_week: plan.start_week,
+    end_week: plan.end_week,
+    hours_per_week: plan.hours_per_week,
+    start_date: plan.start_date,
+    end_date: plan.end_date,
+    priority: plan.priority as PlanPriority,
+    category_id: plan.category_id,
+    no_exam: plan.no_exam,
+    study_days: plan.study_days,
+  };
+}
+
 function Headline({ forecast, currentWeek, available }: { forecast: Forecast; currentWeek: number | null; available: number }) {
   const from = currentWeek ?? 1;
   const upcoming = forecast.weeks.filter((w) => w.week >= from);

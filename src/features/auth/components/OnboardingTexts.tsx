@@ -65,7 +65,7 @@ export function OnboardingTexts({ value, onChange, disabled = false }: Props) {
     <fieldset className="grid gap-5" disabled={disabled}>
       <legend className="mb-2 text-sm font-medium">이번 학기에 할 일</legend>
       <p className="text-[13px] leading-relaxed text-muted-foreground">
-        편하게 설명해 주세요. AI가 계획마다 기간과 한 주 시간을 정해서 다음 단계에서 예보로 보여 드려요. 비워 둔 칸은 건너뛰어요.
+        편하게 설명해 주세요. AI가 계획마다 기간과 쓰는 시간을 정해서 다음 단계에서 예보로 보여 드려요. 비워 둔 칸은 건너뛰어요.
       </p>
       {FIELDS.map(({ key, icon: Icon, label, hint, placeholder }) => (
         <div key={key} className="grid gap-1.5">

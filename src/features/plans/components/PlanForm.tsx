@@ -133,6 +133,9 @@ function PlanFormInner({
   const isClass = type === "class";
   const isCustom = type === "custom";
   const weeks = startDate && endDate && startDate <= endDate ? weeksFromDates(startDate, endDate, semesterStart) : null;
+  /** 한 주 안에 끝나는 계획(결혼식 같은 일정)이면 "그 주에", 여러 주면 "매주" (10/27 문구) */
+  const oneWeek = weeks ? weeks.start_week === weeks.end_week : false;
+  const per = oneWeek ? "그 주에" : "매주";
 
   useEffect(() => {
     if (!onValuesChange) return;
@@ -368,7 +371,9 @@ function PlanFormInner({
       </div>
 
       <fieldset className="grid gap-2" disabled={disabled}>
-        <legend className="mb-2 text-sm font-semibold">한 주에 쓰는 시간</legend>
+        <legend className="mb-2 text-sm font-semibold">
+          이 계획에 쓰는 시간 <span className="font-normal text-muted-foreground">({per})</span>
+        </legend>
         {isCustom ? null : (
           <div className="grid grid-cols-3 gap-2">
             {LEVELS.map((l) => {
@@ -398,11 +403,13 @@ function PlanFormInner({
         {level === "custom" || isCustom ? (
           <FormField
             id="hours_per_week"
-            label={isCustom ? "그 주에 쓰는 시간 (시간)" : "직접 입력 (시간)"}
+            label={isCustom ? `${per} 쓰는 시간 (시간)` : `직접 입력 (${per}, 시간)`}
             error={errors.hours_per_week?.message}
             hint={
               isCustom
-                ? "하루짜리 일정이면 그날 쓰는 시간을 넣으세요. 예보에서 그 날짜에 들어가요."
+                ? oneWeek
+                  ? "하루짜리 일정이면 그날 쓰는 시간을 넣으세요. 예보에서 그 날짜에 들어가요."
+                  : "기간 안의 주마다 이만큼 들어가요."
                 : "0.5시간 단위로 60시간까지 넣을 수 있어요."
             }
             className="mt-2 grid gap-2"

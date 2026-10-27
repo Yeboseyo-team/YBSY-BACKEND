@@ -152,7 +152,9 @@ function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelet
         </span>
       </div>
 
-      <p className="hidden text-sm font-semibold tabular-nums sm:block">한 주 {formatDuration(plan.hours_per_week)}</p>
+      <p className="hidden text-sm font-semibold tabular-nums sm:block">
+        {plan.start_week === plan.end_week ? "그 주" : "매주"} {formatDuration(plan.hours_per_week)}
+      </p>
 
       <div className="flex items-center gap-1">
         <span className="mr-1 text-sm font-semibold tabular-nums sm:hidden">{formatDuration(plan.hours_per_week)}</span>

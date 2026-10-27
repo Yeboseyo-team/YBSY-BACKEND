@@ -26,9 +26,9 @@ export function makePlanSchema(semesterStart: string | null) {
       start_date: isoDate,
       end_date: isoDate,
       hours_per_week: z
-        .number({ invalid_type_error: "한 주에 쓰는 시간을 숫자로 입력하세요." })
+        .number({ invalid_type_error: "이 계획에 쓰는 시간을 숫자로 입력하세요." })
         .min(0.5, "0.5시간 이상 입력하세요.")
-        .max(60, "한 주에 60시간까지 넣을 수 있어요.")
+        .max(60, "60시간까지 넣을 수 있어요.")
         .refine((h) => Number.isInteger(h * 2), "0.5시간 단위로 입력하세요."),
       priority: z.enum(["high", "normal", "low"]),
       no_exam: z.boolean(),

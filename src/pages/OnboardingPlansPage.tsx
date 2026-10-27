@@ -44,7 +44,7 @@ const blankCert = (): CertRow => ({ key: nextKey(), name: "", certificate_id: nu
 /** 저장할 수 있는 값인지. 문제가 있으면 안내 문장 */
 function planProblem(p: PlanRow): string | null {
   if (!p.title.trim()) return "이름을 써 주세요.";
-  if (!(p.hours_per_week >= 0.5 && p.hours_per_week <= 60 && Number.isInteger(p.hours_per_week * 2))) return "한 주 시간은 0.5~60시간(30분 단위)이에요.";
+  if (!(p.hours_per_week >= 0.5 && p.hours_per_week <= 60 && Number.isInteger(p.hours_per_week * 2))) return "쓰는 시간은 0.5~60시간(30분 단위)이에요.";
   if (p.type === "class" && !(Number.isInteger(p.credits) && p.credits! >= CREDITS_RANGE.min && p.credits! <= CREDITS_RANGE.max))
     return `학점은 ${CREDITS_RANGE.min}~${CREDITS_RANGE.max}이에요.`;
   if (p.start_week > p.end_week) return "끝나는 주차가 시작보다 앞이에요.";
@@ -320,14 +320,14 @@ export default function OnboardingPlansPage() {
                         </label>
                       ) : null}
                       <label className="flex items-center gap-1">
-                        한 주
+                        {p.start_week === p.end_week ? "그 주에" : "매주"}
                         <Input
                           type="number"
                           inputMode="decimal"
                           min={0.5}
                           max={60}
                           step={0.5}
-                          aria-label="한 주 시간"
+                          aria-label="이 계획에 쓰는 시간"
                           value={Number.isFinite(p.hours_per_week) ? p.hours_per_week : ""}
                           onChange={(e) => updatePlan(p.key, { hours_per_week: Number(e.target.value) })}
                           className="h-9 w-20 text-center"

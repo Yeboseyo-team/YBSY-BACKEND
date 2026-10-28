@@ -55,7 +55,7 @@ export function DailyBreakdown({ week, days, today, logs, categories = [] }: Pro
     <div className="grid gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-base font-semibold">{week}주차 요일별 할 공부</h3>
-        <p className="text-xs text-muted-foreground">그날 해야 할 공부 시간이에요 · 누르면 그날 할 일</p>
+        <p className="text-xs text-muted-foreground">그날 해야 할 공부 시간이에요</p>
       </div>
       <ol aria-label={`${week}주차 요일별 할 공부 시간`}>
         {days.map((day) => {

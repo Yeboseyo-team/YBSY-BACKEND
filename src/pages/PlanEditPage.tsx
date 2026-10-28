@@ -109,6 +109,7 @@ export default function PlanEditPage() {
             category_id: current.category_id,
             // 10/28 버그 수정: 빠져 있어서 수정하면 "시험 없음"·"주로 하는 요일"이 지워졌어요
             no_exam: current.no_exam,
+            exam_only: current.exam_only as "midterm" | "final" | null,
             study_days: current.study_days,
           }}
           submitLabel="저장"

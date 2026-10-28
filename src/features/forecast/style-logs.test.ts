@@ -198,3 +198,41 @@ describe("계획 그만두기 (10/28)", () => {
     expect(days.filter((d) => d.date > "2026-10-29").every((d) => d.items.length === 0)).toBe(true);
   });
 });
+
+describe("중간만·기말만 보는 수업 (10/28)", () => {
+  const profile: ForecastInput["profile"] = { available_hours: 44, semester_start: "2026-09-01", midterm_week: 8, final_week: 15, daily_hours: [7, 7, 7, 7, 7, 5, 4], study_style: "steady" };
+  const weeksOf = (exam_only: string | null, style = "steady") =>
+    calculateForecast({
+      profile: { ...profile, study_style: style },
+      plans: [{ id: "p", title: "스마트건강", type: "class", hours_per_week: 4, start_week: 1, end_week: 16, exam_only }],
+      userCertificates: [],
+      certificates: [],
+    }).weeks.map((w) => w.items[0]?.hours ?? 0);
+
+  it("기말만: 중간 주간은 그대로, 기말 주간만 1.5배", () => {
+    const w = weeksOf("final");
+    expect(w[7]).toBe(4);
+    expect(w[14]).toBe(6);
+  });
+
+  it("중간만: 중간 주간만 1.5배", () => {
+    const w = weeksOf("midterm");
+    expect(w[7]).toBe(6);
+    expect(w[14]).toBe(4);
+  });
+
+  it("벼락치기 기말만: 중간 전에 몰리지 않고 기말 전에 몰리며, 학기 합계는 같다", () => {
+    const w = weeksOf("final", "cram");
+    expect(w[6]).toBeLessThan(4);
+    expect(w[13]).toBeGreaterThan(4);
+    // 학기 합계(시험 주간 1.5배 전)는 같다
+    const baseTotal = (style: string) =>
+      calculateForecast({
+        profile: { ...profile, study_style: style },
+        plans: [{ id: "p", title: "스마트건강", type: "class", hours_per_week: 4, start_week: 1, end_week: 16, exam_only: "final" }],
+        userCertificates: [],
+        certificates: [],
+      }).weeks.reduce((sum, x) => sum + (x.items[0]?.base_hours ?? 0), 0);
+    expect(baseTotal("cram")).toBeCloseTo(baseTotal("steady"), 0);
+  });
+});

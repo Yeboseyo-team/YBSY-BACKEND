@@ -26,6 +26,8 @@ export interface PlanInput {
   category_id: string | null;
   /** 시험 없는 수업 (발표·과제로 평가, 10/26). 시험 주간 1.5배를 빼고 벼락치기는 끝나는 날 전으로. 수업만 */
   no_exam?: boolean;
+  /** 이 시험만 봐요 (10/28): midterm / final. null 이면 둘 다 */
+  exam_only?: "midterm" | "final" | null;
   /** 주로 공부·과제를 하는 요일 (0=월 … 6=일, 10/27). 비우면 아무 요일 */
   study_days?: number[] | null;
 }
@@ -69,6 +71,7 @@ function clean(input: PlanInput): PlanInput {
     title: input.title.trim(),
     credits: input.type === "class" ? input.credits : null,
     no_exam: input.type === "class" ? Boolean(input.no_exam) : false,
+    exam_only: input.type === "class" && !input.no_exam ? (input.exam_only ?? null) : null,
     study_days: input.study_days?.length ? [...new Set(input.study_days)].sort((a, b) => a - b) : null,
     category_id: input.type === "custom" ? input.category_id : null,
     load_level: input.type === "custom" ? "custom" : input.load_level,

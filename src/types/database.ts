@@ -125,6 +125,7 @@ export type Database = {
           no_exam: boolean
           study_days: number[] | null
           stopped_at: string | null
+          exam_only: string | null
           priority: string
           start_date: string | null
           start_week: number
@@ -145,6 +146,7 @@ export type Database = {
           no_exam?: boolean
           study_days?: number[] | null
           stopped_at?: string | null
+          exam_only?: string | null
           priority?: string
           start_date?: string | null
           start_week: number
@@ -165,6 +167,7 @@ export type Database = {
           no_exam?: boolean
           study_days?: number[] | null
           stopped_at?: string | null
+          exam_only?: string | null
           priority?: string
           start_date?: string | null
           start_week?: number

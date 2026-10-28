@@ -36,6 +36,8 @@ export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_wee
   priority?: PlanPriority | string;
   /** 시험 없는 수업 (10/26). 시험 주간 가중치 없음, 벼락치기는 프로젝트처럼 끝나는 날 전으로 */
   no_exam?: boolean | null;
+  /** 이 시험만 봐요 (10/28): midterm(중간만) / final(기말만). 없으면 둘 다 */
+  exam_only?: string | null;
   /** 주로 공부·과제를 하는 요일 (10/27, 0=월 … 6=일). 비어 있으면 아무 요일이나 쓸 수 있는 시간 비율대로 */
   study_days?: number[] | null;
   /** 마지막으로 고친 때 (10/28). 이보다 앞선 기록은 그 주 실제 시간으로만 남기고 다른 주로 넘기지 않아요 */
@@ -309,7 +311,6 @@ function buildSchedule(
   const semester_start = profile.semester_start!;
   const { midterm_week, final_week } = profile;
   const shift = STUDY_STYLE_SHIFT[toStyle(profile.study_style)];
-  const isExam = (w: number) => w === midterm_week || w === final_week;
   const empty = () => new Array<number>(TOTAL_WEEKS + 1).fill(0);
   const items: ScheduleItem[] = [];
 
@@ -318,14 +319,17 @@ function buildSchedule(
     for (let w = Math.max(1, plan.start_week); w <= Math.min(TOTAL_WEEKS, plan.end_week); w++) base[w] = plan.hours_per_week;
     let segments: number[][] = [];
     const examClass = plan.type === "class" && !plan.no_exam;
+    const planExams = [...new Set(plan.exam_only === "midterm" ? [midterm_week] : plan.exam_only === "final" ? [final_week] : [midterm_week, final_week])];
     if (examClass) {
-      // 시험마다 그 시험까지를 한 구간으로 (중간고사 전, 중간~기말)
-      const exams = [...new Set([midterm_week, final_week])].filter((w) => w >= plan.start_week && w <= plan.end_week).sort((a, b) => a - b);
+      // 시험마다 그 시험까지를 한 구간으로 (중간고사 전, 중간~기말). 10/28: 중간만·기말만 보는 수업은 그 시험만
+      const exams = planExams.filter((w) => w >= plan.start_week && w <= plan.end_week).sort((a, b) => a - b);
       let from = plan.start_week;
       for (const exam of exams) {
         segments.push(range(from, exam));
         from = exam + 1;
       }
+      // 중간만 보는 수업: 중간 뒤는 과제처럼 끝나는 날 전에 몰아요
+      if (plan.exam_only === "midterm" && from <= plan.end_week) segments.push(range(from, plan.end_week));
     } else if (plan.type === "project" || plan.type === "class") {
       segments = [range(plan.start_week, plan.end_week)]; // 마감(시험 없는 수업은 끝나는 날) 직전 2주에
     } // 활동(정기 모임)·사용자 지정 일정(날짜가 정해짐)은 몰아 하지 않음
@@ -336,7 +340,7 @@ function buildSchedule(
       (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d)));
     let shaped = shapeSegments(base, segments, shift);
     if (plan.stopped_at) shaped = stopAfter(shaped, plan.stopped_at, semester_start, inPlan, profile.daily_hours);
-    const weighted = shaped.map((_, w) => examClass && isExam(w));
+    const weighted = shaped.map((_, w) => examClass && planExams.includes(w));
     items.push({
       item: {
         source: "plan",

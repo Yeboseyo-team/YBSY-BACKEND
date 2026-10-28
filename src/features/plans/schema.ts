@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { weeksFromDates } from "@/features/forecast/calc";
 import type { PlanInput } from "./api";
-import { CREDITS_RANGE } from "./defaults";
+import { CREDITS_RANGE, fromExamMode } from "./defaults";
 
 const isoDate = z
   .string({ invalid_type_error: "날짜를 고르세요." })
@@ -31,7 +31,8 @@ export function makePlanSchema(semesterStart: string | null) {
         .max(60, "60시간까지 넣을 수 있어요.")
         .refine((h) => Number.isInteger(h * 2), "0.5시간 단위로 입력하세요."),
       priority: z.enum(["high", "normal", "low"]),
-      no_exam: z.boolean(),
+      /** 시험 방식 (10/28): 중간·기말 / 기말만 / 중간만 / 시험 없음 */
+      exam_mode: z.enum(["both", "final", "midterm", "none"]),
       study_days: z.array(z.number().int().min(0).max(6)),
     })
     .refine((d) => d.start_date <= d.end_date, { path: ["end_date"], message: "끝나는 날은 시작하는 날과 같거나 뒤로 고르세요." })
@@ -60,7 +61,7 @@ export function toPlanInput(values: PlanFormValues, semesterStart: string): Plan
     end_date: values.end_date,
     priority: values.priority,
     category_id: values.type === "custom" ? values.category_id : null,
-    no_exam: values.type === "class" ? values.no_exam : false,
+    ...fromExamMode(values.type === "class" ? values.exam_mode : "both"),
     study_days: values.study_days.length ? values.study_days : null,
   };
 }

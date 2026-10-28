@@ -112,6 +112,8 @@ export interface DraftPlan {
   start_week: number;
   end_week: number;
   no_exam: boolean;
+  /** 이 시험만 봐요 (10/28): midterm / final. 없으면(null) 둘 다. 예전 AI 응답에는 없을 수 있어요 */
+  exam_only?: "midterm" | "final" | null;
   /** 주로 하는 요일 (0=월 … 6=일). 빈 배열이면 아무 요일 */
   study_days: number[];
 }

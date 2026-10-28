@@ -12,7 +12,7 @@ import { toPlanMessage, useDeletePlan, usePlans, useStopPlan } from "@/features/
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { toCategoryMessage, useDeleteCategory, usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
-import { canAddPlan, groupPlansByType, LOAD_LEVEL_LABEL, MAX_PLANS, PRIORITY_LABEL } from "@/features/plans/defaults";
+import { canAddPlan, EXAM_MODE_LABEL, groupPlansByType, LOAD_LEVEL_LABEL, MAX_PLANS, PRIORITY_LABEL, toExamMode } from "@/features/plans/defaults";
 import { withJosa } from "@/features/certificates/display";
 import { cn } from "@/lib/utils";
 import type { Plan, PlanLoadLevel, PlanPriority } from "@/types/database";
@@ -199,7 +199,7 @@ function PlanRow({
         <p className="flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted-foreground">
           <PriorityBadge priority={plan.priority as PlanPriority} />
           {plan.credits ? `${plan.credits}학점 · ` : ""}
-          {plan.no_exam ? "시험 없음 · " : ""}
+          {plan.type === "class" && toExamMode(plan) !== "both" ? `${EXAM_MODE_LABEL[toExamMode(plan)]} · ` : ""}
           {plan.study_days?.length ? `${plan.study_days.map((d) => WEEKDAY_LABELS[d]).join("·")} · ` : ""}
           {LOAD_LEVEL_LABEL[plan.load_level as PlanLoadLevel]}
           {plan.start_date && plan.end_date ? <span>· {dateRange(plan.start_date, plan.end_date)}</span> : null}

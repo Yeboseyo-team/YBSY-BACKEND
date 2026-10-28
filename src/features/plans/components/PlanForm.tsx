@@ -19,10 +19,13 @@ import {
   BUILTIN_TYPES,
   CREDITS_RANGE,
   defaultHoursPerWeek,
+  EXAM_MODE_LABEL,
+  EXAM_MODES,
   LOAD_LEVEL_LABEL,
   MAX_CATEGORIES,
   PLAN_TYPE_LABEL,
   PRIORITY_LABEL,
+  toExamMode,
 } from "../defaults";
 import { makePlanSchema, toPlanInput, type PlanFormValues } from "../schema";
 import { AiEstimate } from "./AiEstimate";
@@ -78,7 +81,7 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     end_date: p.end_date ?? weekDates(p.end_week, semesterStart)[6],
     hours_per_week: p.hours_per_week,
     priority: p.priority,
-    no_exam: p.no_exam ?? false,
+    exam_mode: toExamMode(p),
     study_days: p.study_days ?? [],
   };
 }
@@ -123,7 +126,7 @@ function PlanFormInner({
 
   const type = watch("type");
   const credits = watch("credits");
-  const noExam = watch("no_exam");
+  const examMode = watch("exam_mode");
   const studyDays = watch("study_days") ?? [];
   const level = watch("load_level");
   const categoryId = watch("category_id");
@@ -312,17 +315,35 @@ function PlanFormInner({
           </FormField>
         ) : null}
       </div>
-      {/* 10/26: 캡스톤처럼 시험 대신 발표·과제로 평가하는 수업 */}
+      {/* 10/26: 캡스톤처럼 시험 대신 발표·과제로 평가하는 수업, 10/28: 중간만·기말만 보는 수업 */}
       {isClass ? (
-        <label className="-mt-3 flex items-start gap-2 text-sm">
-          <input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-primary" disabled={disabled} {...register("no_exam")} />
-          <span>
-            시험 없는 수업이에요
-            <span className="block text-[13px] text-muted-foreground">
-              발표·과제로 평가하면 체크하세요. 시험 주간 1.5배를 빼고, 벼락치기는 끝나는 날 전 2주에 몰아요.
-            </span>
-          </span>
-        </label>
+        <fieldset className="-mt-3 grid gap-1.5" disabled={disabled}>
+          <legend className="mb-1 text-sm font-medium">시험</legend>
+          <div role="radiogroup" aria-label="시험" className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1">
+            {EXAM_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={examMode === mode}
+                onClick={() => setValue("exam_mode", mode, { shouldDirty: true })}
+                className={cn(
+                  "h-9 rounded-md text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  examMode === mode ? "bg-primary font-semibold text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-card/60",
+                )}
+              >
+                {EXAM_MODE_LABEL[mode]}
+              </button>
+            ))}
+          </div>
+          <p className="text-[13px] text-muted-foreground">
+            {examMode === "none"
+              ? "발표·과제로 평가하는 수업이에요. 시험 주간 1.5배 없이, 벼락치기는 끝나는 날 전 2주에 몰아요."
+              : examMode === "both"
+                ? "중간·기말 주간에 1.5배로 계산해요."
+                : `${examMode === "final" ? "기말" : "중간"}고사 주간에만 1.5배로 계산해요.`}
+          </p>
+        </fieldset>
       ) : null}
 
       <fieldset className="grid gap-2" disabled={disabled}>
@@ -430,7 +451,7 @@ function PlanFormInner({
         ) : (
           <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
             {isClass
-              ? `${credits ?? 3}학점 기준, 수업 시간은 빼고 과제·복습 시간이에요. ${noExam ? "시험이 없어 시험 주간도 그대로 계산해요." : "시험 주간에는 1.5배로 계산해요."} `
+              ? `${credits ?? 3}학점 기준, 수업 시간은 빼고 과제·복습 시간이에요. ${examMode === "none" ? "시험이 없어 시험 주간도 그대로 계산해요." : "시험 주간에는 1.5배로 계산해요."} `
               : "유형별 기본값으로 채웠어요. "}
             <button
               type="button"

@@ -20,7 +20,7 @@ import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import type { DraftCertificate, DraftPlan } from "@/features/plans/ai";
 import { toPlanMessage, useCreatePlans, type PlanInput } from "@/features/plans/api";
 import { WeekdayPicker } from "@/features/plans/components/WeekdayPicker";
-import { CREDITS_RANGE, MAX_PLANS, PLAN_TYPE_LABEL } from "@/features/plans/defaults";
+import { CREDITS_RANGE, EXAM_MODE_LABEL, EXAM_MODES, fromExamMode, MAX_PLANS, PLAN_TYPE_LABEL, toExamMode, type ExamMode } from "@/features/plans/defaults";
 import { cn } from "@/lib/utils";
 
 type PlanRow = DraftPlan & { key: string };
@@ -109,7 +109,7 @@ export default function OnboardingPlansPage() {
         end_date: weekDates(p.end_week, semesterStart)[6],
         priority: "normal",
         category_id: null,
-        no_exam: p.type === "class" && p.no_exam,
+        ...fromExamMode(p.type === "class" ? toExamMode(p) : "both"),
         study_days: p.study_days ?? [],
       }));
     const usable = certs.filter((c) => !certProblem(c, data.today) && (c.certificate_id ? catalogById.has(c.certificate_id) : true));
@@ -174,7 +174,7 @@ export default function OnboardingPlansPage() {
           end_date: weekDates(p.end_week, semesterStart)[6],
           priority: "normal",
           category_id: null,
-          no_exam: p.type === "class" && p.no_exam,
+          ...fromExamMode(p.type === "class" ? toExamMode(p) : "both"),
           study_days: p.study_days?.length ? p.study_days : null,
         }));
         await createPlans.mutateAsync(inputs);
@@ -303,7 +303,7 @@ export default function OnboardingPlansPage() {
                         value={p.type}
                         onChange={(e) => {
                           const type = e.target.value as PlanRow["type"];
-                          updatePlan(p.key, { type, credits: type === "class" ? (p.credits ?? 3) : null, no_exam: type === "class" && p.no_exam });
+                          updatePlan(p.key, { type, credits: type === "class" ? (p.credits ?? 3) : null, no_exam: type === "class" && p.no_exam, exam_only: type === "class" ? p.exam_only : null });
                         }}
                         className="h-9 w-24"
                       >
@@ -361,9 +361,20 @@ export default function OnboardingPlansPage() {
                         </NativeSelect>
                       </span>
                       {p.type === "class" ? (
-                        <label className="flex items-center gap-1.5">
-                          <input type="checkbox" className="size-4 accent-primary" checked={p.no_exam} onChange={(e) => updatePlan(p.key, { no_exam: e.target.checked })} />
-                          시험 없음
+                        <label className="flex items-center gap-1">
+                          시험
+                          <NativeSelect
+                            aria-label="시험"
+                            value={toExamMode(p)}
+                            onChange={(e) => updatePlan(p.key, fromExamMode(e.target.value as ExamMode))}
+                            className="h-9 w-28"
+                          >
+                            {EXAM_MODES.map((m) => (
+                              <option key={m} value={m}>
+                                {EXAM_MODE_LABEL[m]}
+                              </option>
+                            ))}
+                          </NativeSelect>
                         </label>
                       ) : null}
                     </div>

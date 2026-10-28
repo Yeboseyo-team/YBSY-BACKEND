@@ -40,6 +40,17 @@ export class PlanLimitError extends Error {
   }
 }
 
+/**
+ * 같은 이름의 계획이 이미 있는지 (10/28). 앞뒤 공백·대소문자는 무시하고, 수정할 때는 자기 자신은 빼요.
+ * 이름이 같으면 예보 목록·"왜 바쁜지" 설명에서 어느 계획인지 헷갈려서 막아요.
+ */
+export function hasSameTitle(plans: Pick<Plan, "id" | "title">[], title: string, exceptId?: string): boolean {
+  const key = title.trim().toLowerCase();
+  return plans.some((p) => p.id !== exceptId && p.title.trim().toLowerCase() === key);
+}
+
+export const SAME_TITLE_MESSAGE = "같은 이름의 계획이 이미 있어요. 구분되게 이름을 바꿔 주세요. (예: 운영체제 과제, 운영체제 시험공부)";
+
 /** 계획 저장·삭제 오류를 화면에 보여 줄 한국어 문장으로 (NFR-USE-2) */
 export function toPlanMessage(error: unknown): string {
   if (error instanceof PlanLimitError) return error.message;

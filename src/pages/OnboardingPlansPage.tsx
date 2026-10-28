@@ -140,8 +140,15 @@ export default function OnboardingPlansPage() {
 
   const updatePlan = (key: string, patch: Partial<PlanRow>) => setPlans((all) => all.map((p) => (p.key === key ? { ...p, ...patch } : p)));
   const updateCert = (key: string, patch: Partial<CertRow>) => setCerts((all) => all.map((c) => (c.key === key ? { ...c, ...patch } : c)));
+  // 10/28: 같은 이름 막기 (이미 넣은 계획·다른 줄과 겹치면)
+  const titleKey = (t: string) => t.trim().toLowerCase();
+  const rowProblem = (p: PlanRow): string | null =>
+    planProblem(p) ??
+    (data.plans.some((x) => titleKey(x.title) === titleKey(p.title)) || plans.some((x) => x.key !== p.key && titleKey(x.title) === titleKey(p.title))
+      ? "같은 이름의 계획이 있어요. 구분되게 이름을 바꿔 주세요."
+      : null);
   const problems = [
-    ...plans.map((p) => planProblem(p) && `${p.title.trim() || "이름 없는 계획"}: ${planProblem(p)}`),
+    ...plans.map((p) => rowProblem(p) && `${p.title.trim() || "이름 없는 계획"}: ${rowProblem(p)}`),
     ...certs.map((c) => certProblem(c, data.today) && `${c.name.trim() || "이름 없는 자격증"}: ${certProblem(c, data.today)}`),
   ].filter(Boolean) as string[];
   const tooMany = data.plans.length + plans.length > MAX_PLANS;
@@ -276,7 +283,7 @@ export default function OnboardingPlansPage() {
               {plans.length === 0 ? <p className="text-sm text-muted-foreground">아직 없어요. 아래 [계획 추가]로 넣어 보세요.</p> : null}
               <ul className="grid gap-2">
                 {plans.map((p) => (
-                  <li key={p.key} className={cn("grid gap-2 rounded-xl border p-3", planProblem(p) ? "border-destructive/50" : "border-border")}>
+                  <li key={p.key} className={cn("grid gap-2 rounded-xl border p-3", rowProblem(p) ? "border-destructive/50" : "border-border")}>
                     <div className="flex items-center gap-2">
                       <Input
                         value={p.title}
@@ -365,7 +372,7 @@ export default function OnboardingPlansPage() {
                       <span className="text-muted-foreground">주로 하는 요일</span>
                       <WeekdayPicker compact value={p.study_days ?? []} onChange={(study_days) => updatePlan(p.key, { study_days })} />
                     </div>
-                    {planProblem(p) ? <p className="text-[13px] text-destructive">{planProblem(p)}</p> : null}
+                    {rowProblem(p) ? <p className="text-[13px] text-destructive">{rowProblem(p)}</p> : null}
                   </li>
                 ))}
               </ul>

@@ -5,7 +5,7 @@ import { LoadError } from "@/components/LoadError";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toPlanMessage, useDeletePlan, usePlan, useUpdatePlan, type PlanInput } from "@/features/plans/api";
+import { hasSameTitle, SAME_TITLE_MESSAGE, toPlanMessage, useDeletePlan, usePlan, usePlans, useUpdatePlan, type PlanInput } from "@/features/plans/api";
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { PlanForm } from "@/features/plans/components/PlanForm";
 import { PreviewSheet } from "@/features/preview/PreviewSheet";
@@ -26,6 +26,8 @@ export default function PlanEditPage() {
   // 사전 검토 중인 입력값. null 이면 시트 닫힘. 취소하면 아무것도 저장하지 않아요.
   const [previewing, setPreviewing] = useState<PlanInput | null>(null);
   const [deleting, setDeleting] = useState<Plan | null>(null);
+  const [sameTitle, setSameTitle] = useState(false);
+  const plans = usePlans();
   const draft = useMemo<PreviewDraft | null>(
     () => (previewing && id ? { kind: "plan", plan: previewing, replacePlanId: id } : null),
     [previewing, id],
@@ -71,7 +73,11 @@ export default function PlanEditPage() {
   }
 
   const current = plan.data;
-  const save = (values: PlanInput) =>
+  const save = (values: PlanInput) => {
+    // 10/28: 같은 이름 막기 (자기 자신은 빼고)
+    const dup = hasSameTitle(plans.data ?? [], values.title, id);
+    setSameTitle(dup);
+    if (dup) return setPreviewing(null);
     updatePlan.mutate(
       { id, input: values },
       {
@@ -79,6 +85,7 @@ export default function PlanEditPage() {
         onError: () => setPreviewing(null),
       },
     );
+  };
 
   return (
     <PageContainer>
@@ -100,12 +107,21 @@ export default function PlanEditPage() {
             end_date: current.end_date,
             priority: current.priority as PlanPriority,
             category_id: current.category_id,
+            // 10/28 버그 수정: 빠져 있어서 수정하면 "시험 없음"·"주로 하는 요일"이 지워졌어요
+            no_exam: current.no_exam,
+            study_days: current.study_days,
           }}
           submitLabel="저장"
           pendingLabel="저장하는 중…"
           isPending={updatePlan.isPending}
           errorMessage={
-            updatePlan.error ? toPlanMessage(updatePlan.error) : deletePlan.error ? toPlanMessage(deletePlan.error) : null
+            sameTitle
+              ? SAME_TITLE_MESSAGE
+              : updatePlan.error
+                ? toPlanMessage(updatePlan.error)
+                : deletePlan.error
+                  ? toPlanMessage(deletePlan.error)
+                  : null
           }
           onSubmit={save}
           onPreview={setPreviewing}

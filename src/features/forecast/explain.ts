@@ -44,6 +44,13 @@ function doneText(input: ForecastInput, match: (log: NonNullable<ForecastInput["
   return done > 0 ? ` 지금까지 ${formatDuration(done)} 기록했어요.` : "";
 }
 
+/** 예보 항목이 가리키는 계획 (이름이 같으면 유형이 같고 그 주에 하는 것으로, 10/28) */
+function planOf(item: WeekItem, input: ForecastInput, week: number): ForecastPlan | undefined {
+  const same = input.plans.filter((p) => p.title === item.title);
+  if (same.length <= 1) return same[0];
+  return same.find((p) => (!item.plan_type || p.type === item.plan_type) && p.start_week <= week && week <= p.end_week) ?? same[0];
+}
+
 function reasonOf(item: WeekItem, input: ForecastInput, week: number, isExamWeek: boolean): BusyReason {
   const hours = item.hours;
   if (item.source === "certificate") {
@@ -60,7 +67,7 @@ function reasonOf(item: WeekItem, input: ForecastInput, week: number, isExamWeek
     return { title: item.title, kind: "certificate", hours, text, now };
   }
 
-  const plan: ForecastPlan | undefined = input.plans.find((p) => p.title === item.title);
+  const plan = planOf(item, input, week);
   const kind = (item.plan_type ?? plan?.type ?? "custom") as BusyKind;
   const usual = plan?.hours_per_week ?? item.base_hours;
   const crunch = grew(item.base_hours, usual);
@@ -110,7 +117,7 @@ export function explainBusy(input: ForecastInput, fromWeek = 1, limit = 5): Busy
   if (peak.is_exam_week) why.push(`${peak.week}주차는 시험 주간이라 수업 공부가 평소의 1.5배로 늘어요.`);
   const crunched = peak.items.filter((i) => {
     if (i.source !== "plan") return false;
-    const plan = input.plans.find((p) => p.title === i.title);
+    const plan = planOf(i, input, peak.week);
     return plan ? grew(i.base_hours, plan.hours_per_week) : false;
   });
   if (input.profile.study_style === "cram" && crunched.length > 0) why.push(`벼락치기 스타일이라 시험·마감 직전 주에 ${crunched.length}개 계획의 공부가 몰려요.`);

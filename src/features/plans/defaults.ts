@@ -27,6 +27,20 @@ export const LOAD_LEVEL_LABEL: Record<PlanLoadLevel, string> = { low: "적음", 
 export const PRIORITY_LABEL: Record<PlanPriority, string> = { high: "중요", normal: "보통", low: "낮음" };
 
 /**
+ * 수업의 시험 방식 (10/28). DB 에는 no_exam(시험 없음) + exam_only(midterm·final 중 하나만) 로 저장해요.
+ * both: 중간·기말 / final: 기말만 / midterm: 중간만 / none: 시험 없음(발표·과제로 평가)
+ */
+export type ExamMode = "both" | "final" | "midterm" | "none";
+export const EXAM_MODES: ExamMode[] = ["both", "final", "midterm", "none"];
+export const EXAM_MODE_LABEL: Record<ExamMode, string> = { both: "중간·기말", final: "기말만", midterm: "중간만", none: "시험 없음" };
+export const toExamMode = (p: { no_exam?: boolean | null; exam_only?: string | null }): ExamMode =>
+  p.no_exam ? "none" : p.exam_only === "midterm" ? "midterm" : p.exam_only === "final" ? "final" : "both";
+export const fromExamMode = (mode: ExamMode): { no_exam: boolean; exam_only: "midterm" | "final" | null } => ({
+  no_exam: mode === "none",
+  exam_only: mode === "midterm" || mode === "final" ? mode : null,
+});
+
+/**
  * 적음·보통·많음을 고르면 자동으로 채울 주당 시간 (FR-03-1, FR-03-2).
  * 수업은 학점에 비례합니다 (3학점 보통 = 4.5시간). 직접 입력(custom)·사용자 지정 유형이거나 수업인데 학점이 없으면 null.
  */

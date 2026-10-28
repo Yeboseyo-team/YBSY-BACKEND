@@ -87,6 +87,7 @@ plans (최대 25개):
 - hours_per_week: 수업 밖에서 쓰는 한 주 시간(0.5 단위). 수업은 학점×1.5, 활동 4, 프로젝트 6을 기본으로 설명(과제·팀플·난이도·모임 횟수)을 보고 조정.
 - start_week, end_week: 1~16. 기간 말이 없으면 1~16. "중간고사 뒤부터", "11월까지" 같은 말은 주차로 바꾸기.
 - no_exam: 수업인데 시험 없이 발표·과제로 평가한다고 하면 true, 그 밖에는 false.
+- exam_only: 중간고사만 보면 "midterm", 기말고사만 보면 "final"(예: "중간은 발표로 대체하고 기말만 봐요"), 둘 다 보거나 시험이 없으면 null.
 - study_days: 주로 공부·과제·모임을 하는 요일. 0=월 1=화 2=수 3=목 4=금 5=토 6=일. "매주 목요일 스터디", "주말에 몰아서"처럼 말이 있을 때만 넣고, 말이 없으면 빈 배열.
 
 certificates (최대 10개):
@@ -115,9 +116,10 @@ const ONBOARDING_SCHEMA = {
           start_week: { type: "integer" },
           end_week: { type: "integer" },
           no_exam: { type: "boolean" },
+          exam_only: nullable({ type: "string", enum: ["midterm", "final"] }),
           study_days: { type: "array", items: { type: "integer" } },
         },
-        required: ["title", "type", "credits", "hours_per_week", "start_week", "end_week", "no_exam", "study_days"],
+        required: ["title", "type", "credits", "hours_per_week", "start_week", "end_week", "no_exam", "exam_only", "study_days"],
         additionalProperties: false,
       },
     },
@@ -216,6 +218,7 @@ function cleanOnboarding(raw: Record<string, unknown>, catalogIds: Set<string>) 
         start_week: start,
         end_week: end,
         no_exam: p.type === "class" && p.no_exam === true,
+        exam_only: p.type === "class" && p.no_exam !== true && (p.exam_only === "midterm" || p.exam_only === "final") ? p.exam_only : null,
         study_days: Array.isArray(p.study_days)
           ? [...new Set(p.study_days.filter((d): d is number => isInt(d, 0, 6)))].sort((a, b) => a - b)
           : [],

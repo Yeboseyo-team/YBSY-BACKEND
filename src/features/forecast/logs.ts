@@ -76,3 +76,20 @@ export function useDeleteLog() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 }
+
+/**
+ * 자격증 회차를 바꿀 때 그동안의 기록을 새 회차로 옮겨요 (10/28).
+ * 기록이 회차에 붙어 있어서, 옮기지 않으면 바꾼 뒤 예보에 지난 공부 시간이 안 보였어요.
+ */
+export function useMoveCertificateLogs() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const key = logKeys.all(user?.id ?? "anonymous");
+  return useMutation({
+    mutationFn: async ({ from, to }: { from: string; to: string }) => {
+      const { error } = await supabase.from("study_logs").update({ certificate_id: to }).eq("certificate_id", from);
+      if (error) throw error;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}

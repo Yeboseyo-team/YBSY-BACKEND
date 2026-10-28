@@ -36,8 +36,14 @@ export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_wee
   priority?: PlanPriority | string;
   /** 시험 없는 수업 (10/26). 시험 주간 가중치 없음, 벼락치기는 프로젝트처럼 끝나는 날 전으로 */
   no_exam?: boolean | null;
+  /** 이 시험만 봐요 (10/28): midterm(중간만) / final(기말만). 없으면 둘 다 */
+  exam_only?: string | null;
   /** 주로 공부·과제를 하는 요일 (10/27, 0=월 … 6=일). 비어 있으면 아무 요일이나 쓸 수 있는 시간 비율대로 */
   study_days?: number[] | null;
+  /** 마지막으로 고친 때 (10/28). 이보다 앞선 기록은 그 주 실제 시간으로만 남기고 다른 주로 넘기지 않아요 */
+  updated_at?: string | null;
+  /** 그만둔 날 (10/28). 이날까지만 예보에 넣고, 지난 주는 그대로 둬요. 없으면 계속하는 중 */
+  stopped_at?: string | null;
 };
 export type ForecastUserCertificate = Pick<UserCertificate, "certificate_id" | "study_hours" | "prep_weeks">;
 export type ForecastCertificate = Pick<Certificate, "id" | "name" | "exam_date">;
@@ -254,7 +260,15 @@ interface ScheduleItem {
   activeOn: (date: string) => boolean;
   /** 실제로 기록한 날 → 시간 */
   logged: Map<string, number>;
+  /**
+   * 이 날짜부터의 기록만 더/덜 한 만큼을 다른 주로 넘겨요 (10/28 버그 수정).
+   * 계획 시간을 학기 중간에 바꾸면 지난 기록을 새 시간과 비교해서, 줄였을 때 남은 학기가 0시간이 되던 문제가 있었어요.
+   */
+  carryFrom?: string;
 }
+
+/** 저장 시각(ISO) → 한국 날짜 "YYYY-MM-DD" */
+const koreaDate = (iso: string) => new Date(Date.parse(iso) + 9 * 3_600_000).toISOString().slice(0, 10);
 
 /** 요일별 가용 시간 비율 (없으면 똑같이) */
 function dayShares(dates: string[], active: boolean[], daily: number[] | null | undefined): number[] {
@@ -263,6 +277,27 @@ function dayShares(dates: string[], active: boolean[], daily: number[] | null | 
   if (sum > 0) return weights.map((w) => w / sum);
   const count = active.filter(Boolean).length;
   return active.map((on) => (on && count > 0 ? 1 / count : 0));
+}
+
+/**
+ * 그만둔 계획 (10/28): 그만둔 주 뒤로는 0, 그만둔 주는 그날까지 할 몫만 남겨요.
+ * 그 전 주들은 손대지 않아서 지난 예보가 바뀌지 않아요.
+ */
+function stopAfter(
+  shaped: number[],
+  stoppedAt: string,
+  semesterStart: string,
+  inPlan: (date: string) => boolean,
+  daily: number[] | null | undefined,
+): number[] {
+  const stopWeek = weekOf(stoppedAt, semesterStart);
+  return shaped.map((h, w) => {
+    if (w < stopWeek) return h;
+    if (w > stopWeek) return 0;
+    const dates = weekDates(w, semesterStart);
+    const shares = dayShares(dates, dates.map(inPlan), daily);
+    return h * dates.reduce((sum, d, i) => sum + (d <= stoppedAt ? shares[i] : 0), 0);
+  });
 }
 
 /**
@@ -276,7 +311,6 @@ function buildSchedule(
   const semester_start = profile.semester_start!;
   const { midterm_week, final_week } = profile;
   const shift = STUDY_STYLE_SHIFT[toStyle(profile.study_style)];
-  const isExam = (w: number) => w === midterm_week || w === final_week;
   const empty = () => new Array<number>(TOTAL_WEEKS + 1).fill(0);
   const items: ScheduleItem[] = [];
 
@@ -285,19 +319,28 @@ function buildSchedule(
     for (let w = Math.max(1, plan.start_week); w <= Math.min(TOTAL_WEEKS, plan.end_week); w++) base[w] = plan.hours_per_week;
     let segments: number[][] = [];
     const examClass = plan.type === "class" && !plan.no_exam;
+    const planExams = [...new Set(plan.exam_only === "midterm" ? [midterm_week] : plan.exam_only === "final" ? [final_week] : [midterm_week, final_week])];
     if (examClass) {
-      // 시험마다 그 시험까지를 한 구간으로 (중간고사 전, 중간~기말)
-      const exams = [...new Set([midterm_week, final_week])].filter((w) => w >= plan.start_week && w <= plan.end_week).sort((a, b) => a - b);
+      // 시험마다 그 시험까지를 한 구간으로 (중간고사 전, 중간~기말). 10/28: 중간만·기말만 보는 수업은 그 시험만
+      const exams = planExams.filter((w) => w >= plan.start_week && w <= plan.end_week).sort((a, b) => a - b);
       let from = plan.start_week;
       for (const exam of exams) {
         segments.push(range(from, exam));
         from = exam + 1;
       }
+      // 중간만 보는 수업: 중간 뒤는 과제처럼 끝나는 날 전에 몰아요
+      if (plan.exam_only === "midterm" && from <= plan.end_week) segments.push(range(from, plan.end_week));
     } else if (plan.type === "project" || plan.type === "class") {
       segments = [range(plan.start_week, plan.end_week)]; // 마감(시험 없는 수업은 끝나는 날) 직전 2주에
     } // 활동(정기 모임)·사용자 지정 일정(날짜가 정해짐)은 몰아 하지 않음
-    const shaped = shapeSegments(base, segments, shift);
-    const weighted = shaped.map((_, w) => examClass && isExam(w));
+    // 기간 안이고, 주로 하는 요일을 정했으면 그 요일만 (10/27). 그 주에 맞는 날이 없으면 dailyForecast 가 그 주 모든 날로 나눠요
+    const inPlan = (d: string) =>
+      (!plan.start_date || d >= plan.start_date) &&
+      (!plan.end_date || d <= plan.end_date) &&
+      (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d)));
+    let shaped = shapeSegments(base, segments, shift);
+    if (plan.stopped_at) shaped = stopAfter(shaped, plan.stopped_at, semester_start, inPlan, profile.daily_hours);
+    const weighted = shaped.map((_, w) => examClass && planExams.includes(w));
     items.push({
       item: {
         source: "plan",
@@ -310,12 +353,9 @@ function buildSchedule(
       base: shaped,
       hours: shaped.map((h, w) => h * (weighted[w] ? EXAM_WEIGHT : 1)),
       weighted,
-      // 기간 안이고, 주로 하는 요일을 정했으면 그 요일만 (10/27). 그 주에 맞는 날이 없으면 dailyForecast 가 그 주 모든 날로 나눠요
-      activeOn: (d) =>
-        (!plan.start_date || d >= plan.start_date) &&
-        (!plan.end_date || d <= plan.end_date) &&
-        (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d))),
+      activeOn: (d) => inPlan(d) && (!plan.stopped_at || d <= plan.stopped_at),
       logged: new Map(),
+      carryFrom: plan.updated_at && !Number.isNaN(Date.parse(plan.updated_at)) ? koreaDate(plan.updated_at) : undefined,
     });
   }
 
@@ -373,12 +413,15 @@ function applyLogs(items: ScheduleItem[], logs: StudyLog[], profile: ForecastPro
     const afterHours = remainingInWeek * afterShare;
     const delta = log.hours - planned;
     target.logged.set(log.date, log.hours);
+    // 계획을 고치기 전 기록은 그 주 안에서만 반영 (다음 주로 넘기지 않음)
+    const carry = !target.carryFrom || log.date >= target.carryFrom;
 
     if (delta > 0) {
       // 더 했으면: 이번 주 남은 날에서 먼저 빼고, 모자라면 다음 주들에서
       const inWeek = Math.min(delta, afterHours);
       let leftover = delta - inWeek;
       target.hours[w] += leftover;
+      if (!carry) continue;
       for (let next = w + 1; next <= TOTAL_WEEKS && leftover > 1e-9; next++) {
         const take = Math.min(leftover, target.hours[next]);
         target.hours[next] -= take;
@@ -389,7 +432,7 @@ function applyLogs(items: ScheduleItem[], logs: StudyLog[], profile: ForecastPro
       const deficit = -delta;
       const next = range(w + 1, TOTAL_WEEKS).find((x) => target.base[x] > 0);
       target.hours[w] -= deficit;
-      if (next) target.hours[next] += deficit;
+      if (next && carry) target.hours[next] += deficit;
     }
   }
 }

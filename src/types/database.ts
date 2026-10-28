@@ -124,6 +124,8 @@ export type Database = {
           load_level: string
           no_exam: boolean
           study_days: number[] | null
+          stopped_at: string | null
+          exam_only: string | null
           priority: string
           start_date: string | null
           start_week: number
@@ -143,6 +145,8 @@ export type Database = {
           load_level?: string
           no_exam?: boolean
           study_days?: number[] | null
+          stopped_at?: string | null
+          exam_only?: string | null
           priority?: string
           start_date?: string | null
           start_week: number
@@ -162,6 +166,8 @@ export type Database = {
           load_level?: string
           no_exam?: boolean
           study_days?: number[] | null
+          stopped_at?: string | null
+          exam_only?: string | null
           priority?: string
           start_date?: string | null
           start_week?: number
@@ -309,6 +315,7 @@ export type Database = {
       consume_ai_quota: { Args: never; Returns: number }
       hook_google_only_signup: { Args: { event: Json }; Returns: Json }
       reset_my_data: { Args: never; Returns: undefined }
+      delete_my_account: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

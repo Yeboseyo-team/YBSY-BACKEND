@@ -23,8 +23,8 @@ const firstWeekAround = (week: number) => Math.floor((Math.min(Math.max(1, week)
  * 막대 계산·그리기는 ForecastChart 그대로예요.
  */
 export function WindowedForecastChart({ weeks, availableHours, currentWeek, selectedWeek, onSelect }: Props) {
-  // 10/27: PC·휴대폰 모두 이번 주가 든 4주가 기본. [학기 전체]로 16주를 한 번에
-  const [whole, setWhole] = useState(false);
+  // 10/28: PC·휴대폰 모두 학기 전체(16주)가 기본. [4주씩 보기]로 이번 주가 든 4주만
+  const [whole, setWhole] = useState(true);
   const [first, setFirst] = useState(() => firstWeekAround(currentWeek ?? selectedWeek));
   const last = Math.min(TOTAL_WEEKS, first + WINDOW_WEEKS - 1);
   const shown = whole ? weeks : weeks.slice(first - 1, last);

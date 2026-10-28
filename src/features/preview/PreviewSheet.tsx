@@ -246,7 +246,7 @@ function OverlayChart({
     <figure className="grid gap-2">
       <div
         role="img"
-        aria-label={summary ? `바뀌는 주: ${summary}. 가용 시간 ${formatDuration(availableHours)}` : "바뀌는 주가 없어요"}
+        aria-label={summary ? `바뀌는 주: ${summary}. 쓸 수 있는 시간 ${formatDuration(availableHours)}` : "바뀌는 주가 없어요"}
         className="relative h-44 sm:h-52"
       >
         <div className="absolute inset-0 grid grid-cols-16 items-end gap-[3px] sm:gap-1.5">
@@ -309,7 +309,7 @@ function OverlayChart({
         ) : null}
         <span className="inline-flex items-center gap-1.5">
           <span className="w-3 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
-          가용 {formatDuration(availableHours)}
+          쓸 수 있는 시간({formatDuration(availableHours)})
         </span>
         <span>색은 추가한 뒤의 날씨예요</span>
       </figcaption>

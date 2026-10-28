@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/features/forecast/weather";
@@ -16,12 +16,32 @@ type Props = {
   onApply: (estimate: Estimate) => void;
   /** 채운 뒤 안내 (예: "직접 입력에 채웠어요.") */
   appliedNote: string;
+  /** 추천을 채운 뒤 바로 누를 버튼 (예: 계획 폼의 [추가하기]) — 10/26: 추천받고 저장 버튼을 못 찾는다는 피드백 */
+  action?: ReactNode;
   disabled?: boolean;
+  /** 처음부터 펼쳐 두기 (온보딩: 쓸 수 있는 시간은 AI 로 정하는 게 기본, 10/27) */
+  defaultOpen?: boolean;
+  /** [추천받기] 버튼 글자 */
+  askLabel?: string;
+  /** 추천 결과 앞말 (기본 "한 주", 계획 폼은 "이 계획에" — 10/27 문구) */
+  resultPrefix?: string;
 };
 
 /** F-08 말로 설명하면 AI 가 시간을 추천 (FR-08-1). 계획 폼과 학기 설정(온보딩·설정)이 같이 써요. */
-export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply, appliedNote, disabled = false }: Props) {
-  const [open, setOpen] = useState(false);
+export function AiHoursHelper({
+  openLabel,
+  label,
+  placeholder,
+  toInput,
+  onApply,
+  appliedNote,
+  action,
+  disabled = false,
+  defaultOpen = false,
+  askLabel = "추천받기",
+  resultPrefix = "한 주",
+}: Props) {
+  const [open, setOpen] = useState(defaultOpen);
   const [description, setDescription] = useState("");
   const estimate = useEstimateHours();
   const tooShort = description.trim().length < 5;
@@ -63,7 +83,7 @@ export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply,
           {description.length}/{AI_DESCRIPTION_MAX}
         </span>
         <Button type="button" size="sm" variant="outline" disabled={disabled || tooShort || estimate.isPending} onClick={ask}>
-          {estimate.isPending ? "추천받는 중…" : "추천받기"}
+          {estimate.isPending ? "추천받는 중…" : askLabel}
         </Button>
       </div>
 
@@ -71,13 +91,14 @@ export function AiHoursHelper({ openLabel, label, placeholder, toInput, onApply,
         {estimate.isError ? <p className="text-[13px] text-destructive">{toEstimateMessage(estimate.error)}</p> : null}
         {estimate.isSuccess ? (
           <p className="text-[13px] leading-relaxed">
-            <span className="font-semibold">AI 추천: 한 주 {formatDuration(estimate.data.hours_per_week)}</span>
+            <span className="font-semibold">AI 추천: {resultPrefix} {formatDuration(estimate.data.hours_per_week)}</span>
             {estimate.data.reason ? ` — ${estimate.data.reason}` : ""}
             <span className="block text-xs text-muted-foreground">
               {appliedNote} (오늘 {estimate.data.remaining}번 남음)
             </span>
           </p>
         ) : null}
+        {estimate.isSuccess && action ? <div className="mt-2">{action}</div> : null}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Plus } from "lucide-react";
@@ -161,7 +162,12 @@ export default function CertificatesPage() {
   const cards = myList
     .map((m) => ({ mine: m, certificate: byId.get(m.certificate_id) }))
     .filter((x): x is { mine: (typeof myList)[number]; certificate: Certificate } => Boolean(x.certificate))
-    .sort((a, b) => a.certificate.exam_date.localeCompare(b.certificate.exam_date));
+    // 시험이 끝난 회차는 맨 뒤로 (10/26 UI 점검: 끝난 게 맨 앞에 크게 보였음)
+    .sort(
+      (a, b) =>
+        Number(a.certificate.exam_date < today) - Number(b.certificate.exam_date < today) ||
+        a.certificate.exam_date.localeCompare(b.certificate.exam_date),
+    );
 
   return (
     <PageContainer>
@@ -184,14 +190,15 @@ export default function CertificatesPage() {
       ) : (
         <section aria-label="내 자격증" className="grid gap-4 lg:grid-cols-2">
           {cards.map(({ mine: m, certificate }) => (
-            <MyCertificateCard
-              key={m.certificate_id}
-              mine={m}
-              certificate={certificate}
-              semesterStart={semesterStart}
-              today={today}
-              currentWeek={currentWeek}
-            />
+            <div key={m.certificate_id} className={cn("grid", certificate.exam_date < today && "opacity-60 transition-opacity hover:opacity-100")}>
+              <MyCertificateCard
+                mine={m}
+                certificate={certificate}
+                semesterStart={semesterStart}
+                today={today}
+                currentWeek={currentWeek}
+              />
+            </div>
           ))}
         </section>
       )}

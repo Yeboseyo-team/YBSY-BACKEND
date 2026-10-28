@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { certificatePrepRange } from "@/features/forecast/calc";
+import { useMoveCertificateLogs } from "@/features/forecast/logs";
 import { PreviewSheet } from "@/features/preview/PreviewSheet";
 import { cn } from "@/lib/utils";
 import type { Certificate, UserCertificate } from "@/types/database";
@@ -124,7 +125,7 @@ export function CertificatePicker({ certificates, mine, semesterStart, today, cu
             onAdded={onAdded}
           />
         ) : (
-          <p className="py-10 text-center text-sm text-muted-foreground">왼쪽 목록에서 자격증을 고르면 회차와 준비 기간이 여기에 나와요.</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">목록에서 자격증을 고르면 회차와 준비 기간이 여기에 나와요.</p>
         )}
       </section>
     </div>
@@ -147,6 +148,7 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
 
   const add = useAddCertificate();
   const remove = useRemoveMyCertificate();
+  const moveLogs = useMoveCertificateLogs();
   const invalid = Boolean(validatePrep(prepWeeks, studyHours));
   const pending = add.isPending || remove.isPending;
   const error = add.error ?? remove.error;
@@ -166,12 +168,14 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
       {
         onSuccess: () => {
           if (current) {
-            // 회차 바꾸기: 새 회차를 저장한 뒤 예전 회차를 해제
-            remove.mutate(current.certificate.id, {
+            // 회차 바꾸기: 새 회차를 저장하고, 그동안의 기록을 새 회차로 옮긴 뒤(10/28) 예전 회차를 해제
+            const releaseOld = () => remove.mutate(current.certificate.id, {
               onSuccess: () => onAdded(`${withJosa(label, "으로", "로")} 바꿨어요. 예보에 바로 반영돼요.`),
               onError: () =>
                 onAdded(`${withJosa(label, "을", "를")} 추가했어요. 예전 회차(${current.certificate.round})는 내 자격증에서 직접 해제해 주세요.`),
             });
+            // 기록 옮기기에 실패해도 회차는 바꿔요 (기록은 예전 회차에 그대로 남아 있어요)
+            moveLogs.mutate({ from: current.certificate.id, to: round.certificate.id }, { onSettled: releaseOld });
           } else {
             onAdded(`${withJosa(label, "을", "를")} 추가했어요. 예보에 바로 반영돼요.`);
           }

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, dailyForecast, isInSemester, WEEKDAY_LABELS, weekOf } from "@/features/forecast/calc";
 import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
+import { LogControl } from "@/features/forecast/components/LogControl";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { PRIORITY_LABEL } from "@/features/plans/defaults";
@@ -97,8 +98,9 @@ export default function DayPage() {
     );
   }
 
-  const style = WEATHER_STYLE[day.level];
-  const over = day.hours - day.available;
+  // 바쁜지(맑음·흐림·폭풍)는 주 단위로만 봐요 (10/27). 하루 화면은 그날 할 공부 시간만
+  const weekLevel = data.forecast?.weeks[week - 1]?.level ?? "clear";
+  const style = WEATHER_STYLE[weekLevel];
   const scale = Math.max(...day.items.map((i) => i.hours), 1);
 
   return (
@@ -110,20 +112,12 @@ export default function DayPage() {
         <section className="grid gap-3 rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-24">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              이날 예상 <span className={cn("text-2xl font-bold tabular-nums", style.text)}>{formatDuration(day.hours)}</span> · 쓸 수 있는 시간{" "}
-              {day.available}시간
+              이날 할 공부 <span className="text-2xl font-bold text-foreground tabular-nums">{day.hours > 0 ? formatDuration(day.hours) : "없음"}</span>
             </p>
             <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", style.badge)}>
-              {style.label}
-              {day.ratio !== null ? ` ${Math.round(day.ratio * 100)}%` : ""}
+              {week}주차 {style.label}
             </span>
           </div>
-          {over > 0 ? (
-            <p className="rounded-lg bg-storm/5 px-3 py-2 text-[13px]">
-              쓸 수 있는 시간보다 <span className="font-semibold">{formatDuration(over)}</span> 많아요. 같은 주에 여유 있는 날로 옮기거나,
-              우선순위가 낮은 일부터 줄여 보세요.
-            </p>
-          ) : null}
           {nav}
         </section>
 
@@ -156,14 +150,24 @@ export default function DayPage() {
                     <span className="h-2 rounded-full bg-muted" aria-hidden="true">
                       <span className="block h-full rounded-full" style={{ width: `${(item.hours / scale) * 100}%`, backgroundColor: tag.color }} />
                     </span>
+                    {/* 10/26: 실제로 한 시간 기록 → 같은 계획의 남은 일정이 다시 계산돼요 */}
+                    <LogControl
+                      key={`${item.plan_id ?? item.certificate_id}-${date}`}
+                      item={item}
+                      date={date}
+                      future={date > data.today}
+                      log={data.logs.find(
+                        (l) => l.date === date && ((item.plan_id && l.plan_id === item.plan_id) || (item.certificate_id && l.certificate_id === item.certificate_id)),
+                      )}
+                    />
                   </li>
                 );
               })}
             </ul>
           )}
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            계획에는 요일이 정해져 있지 않아서, 한 주 시간을 요일별로 쓸 수 있는 시간에 맞춰 나눴어요. 날짜를 정한 일정(예: 결혼식)은 그날에만
-            들어가요.
+            주로 하는 요일을 정한 계획은 그 요일에만, 안 정한 계획은 한 주 시간을 요일마다 쓸 수 있는 시간 비율로 나눴어요. 날짜를 정한 일정(예: 결혼식)은 그날에만
+            들어가요. 실제로 한 시간을 기록하면 더 하거나 덜 한 만큼 같은 계획의 남은 일정이 다시 계산돼요.
           </p>
         </section>
       </div>

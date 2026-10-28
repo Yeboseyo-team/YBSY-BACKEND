@@ -20,6 +20,8 @@ export type Weather = "clear" | "cloudy" | "storm";
 export type ForecastProfile = Pick<Profile, "available_hours" | "semester_start" | "midterm_week" | "final_week"> & {
   /** 요일별 가용 시간 [월~일] (10/24 QA). 없으면 요일별 예보를 낼 수 없어요. */
   daily_hours?: number[] | null;
+  /** 공부 스타일 (10/26). 없으면 꾸준형 */
+  study_style?: string | null;
 };
 /** 저장된 계획과 저장 전 계획(사전 검토) 모두 받을 수 있도록 필요한 필드만 씁니다. */
 export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_week" | "hours_per_week"> & {
@@ -32,6 +34,16 @@ export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_wee
   end_date?: string | null;
   /** 우선순위 (10/24 QA). 없으면 normal */
   priority?: PlanPriority | string;
+  /** 시험 없는 수업 (10/26). 시험 주간 가중치 없음, 벼락치기는 프로젝트처럼 끝나는 날 전으로 */
+  no_exam?: boolean | null;
+  /** 이 시험만 봐요 (10/28): midterm(중간만) / final(기말만). 없으면 둘 다 */
+  exam_only?: string | null;
+  /** 주로 공부·과제를 하는 요일 (10/27, 0=월 … 6=일). 비어 있으면 아무 요일이나 쓸 수 있는 시간 비율대로 */
+  study_days?: number[] | null;
+  /** 마지막으로 고친 때 (10/28). 이보다 앞선 기록은 그 주 실제 시간으로만 남기고 다른 주로 넘기지 않아요 */
+  updated_at?: string | null;
+  /** 그만둔 날 (10/28). 이날까지만 예보에 넣고, 지난 주는 그대로 둬요. 없으면 계속하는 중 */
+  stopped_at?: string | null;
 };
 export type ForecastUserCertificate = Pick<UserCertificate, "certificate_id" | "study_hours" | "prep_weeks">;
 export type ForecastCertificate = Pick<Certificate, "id" | "name" | "exam_date">;
@@ -42,6 +54,8 @@ export interface ForecastInput {
   userCertificates: ForecastUserCertificate[];
   /** userCertificates 가 가리키는 회차 정보 */
   certificates: ForecastCertificate[];
+  /** 실제로 한 시간 기록 (10/26). 없으면 계획대로 */
+  logs?: StudyLog[];
 }
 
 /** FR-05-4 주차별 상세 내역 한 줄 */
@@ -172,49 +186,288 @@ export function isSemesterReady(
   return profile.available_hours !== null && profile.available_hours > 0 && profile.semester_start !== null;
 }
 
+// ── 공부 스타일·실제 기록 (10/26 피드백) ─────────────────
+/**
+ * 공부 스타일. 주당 시간 "합계"는 같고 주별로 나누는 모양만 달라져요.
+ * steady 꾸준형: 매주 고르게 (지금까지와 같음)
+ * normal 보통: 평소 주에서 25%를 덜어 시험·마감 직전 2주에
+ * cram 벼락치기형: 평소 주에서 50%를 덜어 시험·마감 직전 2주에
+ */
+export type StudyStyle = "steady" | "normal" | "cram";
+export const STUDY_STYLES: StudyStyle[] = ["steady", "normal", "cram"];
+export const STUDY_STYLE_SHIFT: Record<StudyStyle, number> = { steady: 0, normal: 0.25, cram: 0.5 };
+/** 몰아서 하는 주 수 (시험 주·마감 주 포함) */
+export const CRUNCH_WEEKS = 2;
+/** 몰아서 하는 주도 평소 한 주 시간의 이 배수까지만 (10/27 현실적인 숫자). 넘친 건 그 앞 주들로 */
+export const CRUNCH_MAX = 1.8;
+
+/** 실제로 한 시간 기록 — 계획이나 자격증 준비 하나의 하루치 */
+export interface StudyLog {
+  plan_id?: string | null;
+  certificate_id?: string | null;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** 실제로 한 시간 */
+  hours: number;
+}
+
+const toStyle = (s: string | null | undefined): StudyStyle => (s === "normal" || s === "cram" ? s : "steady");
+
+/**
+ * 구간마다 마지막 2주에 몰아 넣기. base 는 주차별 시간(1~16, 0 이면 그 주 없음).
+ * 평소 주에서 shift 만큼 덜어 그 구간의 마지막 2주에 똑같이 나눠 더해요. 구간 합계는 그대로.
+ */
+function shapeSegments(base: number[], segments: number[][], shift: number): number[] {
+  if (shift === 0) return base;
+  const out = [...base];
+  for (const segment of segments) {
+    const weeks = segment.filter((w) => base[w] > 0);
+    if (weeks.length <= CRUNCH_WEEKS) continue;
+    const crunch = weeks.slice(-CRUNCH_WEEKS);
+    const normal = weeks.slice(0, -CRUNCH_WEEKS);
+    const moved = normal.reduce((sum, w) => sum + base[w] * shift, 0);
+    for (const w of normal) out[w] = base[w] * (1 - shift);
+    // 몰리는 주도 평소의 CRUNCH_MAX 배까지만 (10/27: 벼락치기로 한 주 126시간 같은 숫자가 나와서). 넘친 건 바로 앞 주들로
+    let leftover = 0;
+    for (const w of crunch) {
+      const target = base[w] + moved / crunch.length;
+      out[w] = Math.min(target, base[w] * CRUNCH_MAX);
+      leftover += target - out[w];
+    }
+    for (const w of [...normal].reverse()) {
+      if (leftover <= 1e-9) break;
+      const add = Math.min(leftover, base[w] * CRUNCH_MAX - out[w]);
+      out[w] += add;
+      leftover -= add;
+    }
+  }
+  return out;
+}
+
+const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
+
+/** 예보 한 항목(계획 또는 자격증 준비)의 학기 일정 */
+interface ScheduleItem {
+  item: Omit<WeekItem, "base_hours" | "weighted" | "hours">;
+  plan_id?: string;
+  certificate_id?: string;
+  /** 주차별 시간 (가중치 전, 공부 스타일 반영) — 인덱스 = 주차 */
+  base: number[];
+  /** 주차별 시간 (가중치·실제 기록 반영) */
+  hours: number[];
+  weighted: boolean[];
+  /** 그 날짜에 할 수 있는 일인지 (날짜로 정한 일정은 그 날짜만) */
+  activeOn: (date: string) => boolean;
+  /** 실제로 기록한 날 → 시간 */
+  logged: Map<string, number>;
+  /**
+   * 이 날짜부터의 기록만 더/덜 한 만큼을 다른 주로 넘겨요 (10/28 버그 수정).
+   * 계획 시간을 학기 중간에 바꾸면 지난 기록을 새 시간과 비교해서, 줄였을 때 남은 학기가 0시간이 되던 문제가 있었어요.
+   */
+  carryFrom?: string;
+}
+
+/** 저장 시각(ISO) → 한국 날짜 "YYYY-MM-DD" */
+const koreaDate = (iso: string) => new Date(Date.parse(iso) + 9 * 3_600_000).toISOString().slice(0, 10);
+
+/** 요일별 가용 시간 비율 (없으면 똑같이) */
+function dayShares(dates: string[], active: boolean[], daily: number[] | null | undefined): number[] {
+  const weights = dates.map((d, i) => (active[i] ? (daily && daily.length === 7 ? daily[weekdayIndex(d)] : 1) : 0));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (sum > 0) return weights.map((w) => w / sum);
+  const count = active.filter(Boolean).length;
+  return active.map((on) => (on && count > 0 ? 1 / count : 0));
+}
+
+/**
+ * 그만둔 계획 (10/28): 그만둔 주 뒤로는 0, 그만둔 주는 그날까지 할 몫만 남겨요.
+ * 그 전 주들은 손대지 않아서 지난 예보가 바뀌지 않아요.
+ */
+function stopAfter(
+  shaped: number[],
+  stoppedAt: string,
+  semesterStart: string,
+  inPlan: (date: string) => boolean,
+  daily: number[] | null | undefined,
+): number[] {
+  const stopWeek = weekOf(stoppedAt, semesterStart);
+  return shaped.map((h, w) => {
+    if (w < stopWeek) return h;
+    if (w > stopWeek) return 0;
+    const dates = weekDates(w, semesterStart);
+    const shares = dayShares(dates, dates.map(inPlan), daily);
+    return h * dates.reduce((sum, d, i) => sum + (d <= stoppedAt ? shares[i] : 0), 0);
+  });
+}
+
+/**
+ * 계획·자격증을 학기 일정으로 펼칩니다. 꾸준형이고 기록이 없으면 지금까지와 똑같은 값이에요.
+ * strict 면 회차 정보가 없을 때 에러 (주차 예보), 아니면 그 자격증은 빼요 (요일별 예보).
+ */
+function buildSchedule(
+  { profile, plans, userCertificates, certificates, logs = [] }: ForecastInput,
+  strict: boolean,
+): ScheduleItem[] {
+  const semester_start = profile.semester_start!;
+  const { midterm_week, final_week } = profile;
+  const shift = STUDY_STYLE_SHIFT[toStyle(profile.study_style)];
+  const empty = () => new Array<number>(TOTAL_WEEKS + 1).fill(0);
+  const items: ScheduleItem[] = [];
+
+  for (const plan of plans) {
+    const base = empty();
+    for (let w = Math.max(1, plan.start_week); w <= Math.min(TOTAL_WEEKS, plan.end_week); w++) base[w] = plan.hours_per_week;
+    let segments: number[][] = [];
+    const examClass = plan.type === "class" && !plan.no_exam;
+    const planExams = [...new Set(plan.exam_only === "midterm" ? [midterm_week] : plan.exam_only === "final" ? [final_week] : [midterm_week, final_week])];
+    if (examClass) {
+      // 시험마다 그 시험까지를 한 구간으로 (중간고사 전, 중간~기말). 10/28: 중간만·기말만 보는 수업은 그 시험만
+      const exams = planExams.filter((w) => w >= plan.start_week && w <= plan.end_week).sort((a, b) => a - b);
+      let from = plan.start_week;
+      for (const exam of exams) {
+        segments.push(range(from, exam));
+        from = exam + 1;
+      }
+      // 중간만 보는 수업: 중간 뒤는 과제처럼 끝나는 날 전에 몰아요
+      if (plan.exam_only === "midterm" && from <= plan.end_week) segments.push(range(from, plan.end_week));
+    } else if (plan.type === "project" || plan.type === "class") {
+      segments = [range(plan.start_week, plan.end_week)]; // 마감(시험 없는 수업은 끝나는 날) 직전 2주에
+    } // 활동(정기 모임)·사용자 지정 일정(날짜가 정해짐)은 몰아 하지 않음
+    // 기간 안이고, 주로 하는 요일을 정했으면 그 요일만 (10/27). 그 주에 맞는 날이 없으면 dailyForecast 가 그 주 모든 날로 나눠요
+    const inPlan = (d: string) =>
+      (!plan.start_date || d >= plan.start_date) &&
+      (!plan.end_date || d <= plan.end_date) &&
+      (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d)));
+    let shaped = shapeSegments(base, segments, shift);
+    if (plan.stopped_at) shaped = stopAfter(shaped, plan.stopped_at, semester_start, inPlan, profile.daily_hours);
+    const weighted = shaped.map((_, w) => examClass && planExams.includes(w));
+    items.push({
+      item: {
+        source: "plan",
+        title: plan.title,
+        priority: toPriority(plan.priority),
+        plan_type: plan.type as PlanType,
+        category_id: plan.category_id ?? null,
+      },
+      plan_id: plan.id,
+      base: shaped,
+      hours: shaped.map((h, w) => h * (weighted[w] ? EXAM_WEIGHT : 1)),
+      weighted,
+      activeOn: (d) => inPlan(d) && (!plan.stopped_at || d <= plan.stopped_at),
+      logged: new Map(),
+      carryFrom: plan.updated_at && !Number.isNaN(Date.parse(plan.updated_at)) ? koreaDate(plan.updated_at) : undefined,
+    });
+  }
+
+  const certById = new Map(certificates.map((c) => [c.id, c]));
+  for (const uc of userCertificates) {
+    const cert = certById.get(uc.certificate_id);
+    if (!cert) {
+      if (strict) throw new Error(`자격증 회차 정보를 찾을 수 없습니다: ${uc.certificate_id}`);
+      continue;
+    }
+    const prep = certificatePrepRange(cert.exam_date, uc.prep_weeks, semester_start);
+    const base = empty();
+    for (const w of prep.weeks) base[w] = uc.study_hours;
+    // 시험 주가 학기 안에 있을 때만 시험 직전 2주에 몰아 넣기
+    const shaped = prep.exam_week <= TOTAL_WEEKS ? shapeSegments(base, [prep.weeks], shift) : base;
+    items.push({
+      item: { source: "certificate", title: `${cert.name} 준비` },
+      certificate_id: cert.id,
+      base: shaped,
+      hours: [...shaped],
+      weighted: shaped.map(() => false),
+      activeOn: () => true,
+      logged: new Map(),
+    });
+  }
+
+  applyLogs(items, logs, profile);
+  return items;
+}
+
+/**
+ * 실제 기록 반영 (10/26 피드백): 그날 계획보다 더 했으면 같은 계획의 남은 날(이번 주 먼저, 모자라면 다음 주들)에서 빼고,
+ * 덜 했으면 이번 주 남은 날에 더해요(이번 주에 남은 날이 없으면 다음 주로). 학기 전체 합계는 그대로예요.
+ */
+function applyLogs(items: ScheduleItem[], logs: StudyLog[], profile: ForecastProfile) {
+  if (logs.length === 0) return;
+  const semester_start = profile.semester_start!;
+  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+  for (const log of sorted) {
+    const target = items.find(
+      (it) => (log.plan_id && it.plan_id === log.plan_id) || (log.certificate_id && it.certificate_id === log.certificate_id),
+    );
+    if (!target) continue;
+    const w = weekOf(log.date, semester_start);
+    if (!isInSemester(w) || target.base[w] <= 0) continue;
+
+    const dates = weekDates(w, semester_start);
+    const active = dates.map((d) => target.activeOn(d) && !target.logged.has(d));
+    if (!active[dates.indexOf(log.date)]) continue;
+    const shares = dayShares(dates, active, profile.daily_hours);
+    const remainingInWeek = target.hours[w] - [...target.logged].filter(([d]) => weekOf(d, semester_start) === w).reduce((s, [, h]) => s + h, 0);
+    const index = dates.indexOf(log.date);
+    const planned = remainingInWeek * shares[index];
+    const afterShare = shares.slice(index + 1).reduce((a, b) => a + b, 0);
+    const afterHours = remainingInWeek * afterShare;
+    const delta = log.hours - planned;
+    target.logged.set(log.date, log.hours);
+    // 계획을 고치기 전 기록은 그 주 안에서만 반영 (다음 주로 넘기지 않음)
+    const carry = !target.carryFrom || log.date >= target.carryFrom;
+
+    if (delta > 0) {
+      // 더 했으면: 이번 주 남은 날에서 먼저 빼고, 모자라면 다음 주들에서
+      const inWeek = Math.min(delta, afterHours);
+      let leftover = delta - inWeek;
+      target.hours[w] += leftover;
+      if (!carry) continue;
+      for (let next = w + 1; next <= TOTAL_WEEKS && leftover > 1e-9; next++) {
+        const take = Math.min(leftover, target.hours[next]);
+        target.hours[next] -= take;
+        leftover -= take;
+      }
+    } else if (delta < 0 && afterHours <= 1e-9) {
+      // 덜 했는데 이번 주에 남은 날이 없으면: 다음에 하는 주로 넘기기
+      const deficit = -delta;
+      const next = range(w + 1, TOTAL_WEEKS).find((x) => target.base[x] > 0);
+      target.hours[w] -= deficit;
+      if (next && carry) target.hours[next] += deficit;
+    }
+  }
+}
+
 // ── 주차별 예보 (4.3) ─────────────────────────────────
 /**
  * 주차 부담 = Σ(계획 주당 시간 × 가중치) + Σ(준비 중인 자격증 주당 학습 시간)
  * 가중치: 수업(class)이고 그 주가 중간·기말 주차면 1.5, 아니면 1
  * 부담률 = 부담 ÷ 가용 시간
+ * 10/26: 공부 스타일(꾸준·보통·벼락치기)로 주별 모양이 바뀌고, 실제 기록이 있으면 남은 주가 다시 계산돼요.
  */
-export function calculateForecast({ profile, plans, userCertificates, certificates }: ForecastInput): Forecast {
+export function calculateForecast(input: ForecastInput): Forecast {
+  const { profile } = input;
   if (!isSemesterReady(profile)) {
     throw new Error("학기 설정(가용 시간, 학기 시작일)을 마친 뒤에 예보를 계산할 수 있습니다.");
   }
-  const { available_hours, semester_start, midterm_week, final_week } = profile;
-
-  const certById = new Map(certificates.map((c) => [c.id, c]));
-  const certRanges = userCertificates.map((uc) => {
-    const cert = certById.get(uc.certificate_id);
-    if (!cert) throw new Error(`자격증 회차 정보를 찾을 수 없습니다: ${uc.certificate_id}`);
-    const range = certificatePrepRange(cert.exam_date, uc.prep_weeks, semester_start);
-    return { title: `${cert.name} 준비`, hours: uc.study_hours, weeks: new Set(range.weeks) };
-  });
+  const { available_hours, midterm_week, final_week } = profile;
+  const schedule = buildSchedule(input, true);
 
   const weeks: WeekForecast[] = [];
   for (let week = 1; week <= TOTAL_WEEKS; week++) {
     const is_exam_week = week === midterm_week || week === final_week;
-    const items: WeekItem[] = [];
-
-    for (const plan of plans) {
-      if (week < plan.start_week || week > plan.end_week) continue;
-      const weighted = plan.type === "class" && is_exam_week;
-      items.push({
-        source: "plan",
-        title: plan.title,
-        base_hours: plan.hours_per_week,
-        weighted,
-        hours: plan.hours_per_week * (weighted ? EXAM_WEIGHT : 1),
-        priority: toPriority(plan.priority),
-        plan_type: plan.type as PlanType,
-        category_id: plan.category_id ?? null,
-      });
-    }
-    for (const cert of certRanges) {
-      if (!cert.weeks.has(week)) continue;
-      items.push({ source: "certificate", title: cert.title, base_hours: cert.hours, weighted: false, hours: cert.hours });
-    }
+    // 실제 기록으로 다 끝낸 계획(남은 시간 0)은 그 주 목록에서 빠져요 (10/27)
+    const items: WeekItem[] = schedule
+      .filter((s) => s.base[week] > 0 && s.hours[week] > 1e-6)
+      .map((s) => ({
+        source: s.item.source,
+        title: s.item.title,
+        base_hours: round1(s.base[week]),
+        weighted: s.weighted[week],
+        hours: Math.max(0, s.hours[week]),
+        ...(s.item.source === "plan"
+          ? { priority: s.item.priority, plan_type: s.item.plan_type, category_id: s.item.category_id }
+          : {}),
+      }));
 
     const total = items.reduce((sum, item) => sum + item.hours, 0);
     const ratio = total / available_hours;
@@ -245,67 +498,113 @@ export interface DayForecast {
   ratio: number | null;
   level: Weather;
   /** 그날 할 일별 시간 (많은 순, 1분 단위). 요일별 상세 화면에서 써요 */
-  items: WeekItem[];
+  items: DayItem[];
+}
+
+/** 하루 할 일 한 줄 — 실제 기록용 id 와 기록 여부가 붙어요 */
+export interface DayItem extends WeekItem {
+  plan_id?: string;
+  certificate_id?: string;
+  /** 이날 실제로 기록한 시간이면 true (hours = 기록한 시간) */
+  logged?: boolean;
+}
+
+/**
+ * 하루가 그날 쓸 수 있는 시간을 넘으면, 넘친 만큼을 같은 주에 여유 있는 날로 옮겨요 (10/27 현실적인 숫자).
+ * 그 계획을 할 수 있는 날(기간 안, 주로 하는 요일)로만 옮기고, 날짜가 정해진 일정·실제로 기록한 시간은 그대로예요.
+ * 옮길 곳이 없으면(폭풍 주) 넘친 채로 둬요. 주 합계는 그대로.
+ */
+function spillOverflow(
+  dates: string[],
+  available: number[],
+  hours: number[],
+  items: DayItem[][],
+  canDo: (item: DayItem, date: string) => boolean,
+) {
+  const spare = hours.map((h, i) => Math.max(0, available[i] - h));
+  const keyOf = (item: DayItem) => item.plan_id ?? item.certificate_id ?? item.title;
+
+  dates.forEach((_, i) => {
+    let over = hours[i] - available[i];
+    if (over <= 1e-6) return;
+    const movable = items[i].filter((item) => !item.logged);
+    const movableSum = movable.reduce((s, item) => s + item.hours, 0);
+    if (movableSum <= 0) return;
+    for (const item of movable) {
+      if (over <= 1e-6) break;
+      const want = Math.min(item.hours, (item.hours / movableSum) * (hours[i] - available[i]));
+      const targets = dates.map((d, j) => (j !== i && spare[j] > 1e-6 && canDo(item, d) ? j : -1)).filter((j) => j >= 0);
+      const room = targets.reduce((s, j) => s + spare[j], 0);
+      const move = Math.min(want, room, over);
+      if (move <= 1e-6) continue;
+      for (const j of targets) {
+        const add = move * (spare[j] / room);
+        const existing = items[j].find((x) => !x.logged && keyOf(x) === keyOf(item));
+        if (existing) {
+          existing.hours += add;
+          existing.base_hours = existing.hours;
+        } else {
+          items[j].push({ ...item, logged: undefined, hours: add, base_hours: add });
+        }
+        hours[j] += add;
+        spare[j] -= add;
+      }
+      item.hours -= move;
+      item.base_hours = item.hours;
+      hours[i] -= move;
+      over -= move;
+    }
+    items[i] = items[i].filter((item) => item.logged || item.hours > 1e-6);
+  });
 }
 
 /**
  * 한 주의 부담을 요일별로 나눠 봅니다. 계획은 정해진 요일이 없으므로
  * 그 계획이 걸친 날들(날짜로 정했으면 그 날짜만)에 요일별 가용 시간 비율대로 나눠 넣습니다.
- * 자격증 준비는 그 주 7일에 나눠 넣습니다. 요일별 가용 시간이 없으면 null.
+ * 실제로 기록한 날은 기록한 시간, 나머지 날은 그 주에 남은 시간을 나눠요. 요일별 가용 시간이 없으면 null.
  * 주 합계는 calculateForecast 의 그 주 total_hours 와 같습니다.
  */
-export function dailyForecast({ profile, plans, userCertificates, certificates }: ForecastInput, week: number): DayForecast[] | null {
+export function dailyForecast(input: ForecastInput, week: number): DayForecast[] | null {
+  const { profile } = input;
   if (!isSemesterReady(profile)) return null;
   const daily = profile.daily_hours;
   if (!daily || daily.length !== 7) return null;
-  const { semester_start, midterm_week, final_week } = profile;
-  const is_exam_week = week === midterm_week || week === final_week;
+  const { semester_start } = profile;
 
   const dates = weekDates(week, semester_start);
   const available = dates.map((d) => daily[weekdayIndex(d)]);
   const hours = new Array<number>(7).fill(0);
-  const items: WeekItem[][] = dates.map(() => []);
+  const items: DayItem[][] = dates.map(() => []);
 
-  /** item 의 시간을 active 인 날들에 가용 시간 비율대로 (가용 시간이 모두 0 이면 똑같이) */
-  const spread = (item: WeekItem, active: boolean[]) => {
-    const days = active.some(Boolean) ? active : active.map(() => true);
-    const weight = days.reduce((sum, on, i) => sum + (on ? available[i] : 0), 0);
-    const count = days.filter(Boolean).length;
-    days.forEach((on, i) => {
-      if (!on) return;
-      const share = weight > 0 ? (item.hours * available[i]) / weight : item.hours / count;
-      hours[i] += share;
-      if (share > 0) items[i].push({ ...item, base_hours: share, hours: share });
+  // 넘친 시간을 옮길 때 그 계획을 할 수 있는 날인지 (기간·주로 하는 요일)
+  const activeByKey = new Map<string, (date: string) => boolean>();
+  for (const s of buildSchedule(input, false)) {
+    if (s.base[week] <= 0) continue;
+    activeByKey.set(s.plan_id ?? s.certificate_id ?? s.item.title, s.activeOn);
+    const base: DayItem = {
+      ...s.item,
+      base_hours: 0,
+      weighted: s.weighted[week],
+      hours: 0,
+      ...(s.plan_id ? { plan_id: s.plan_id } : {}),
+      ...(s.certificate_id ? { certificate_id: s.certificate_id } : {}),
+    };
+    const fixed = dates.map((d) => s.logged.get(d));
+    const fixedSum = fixed.reduce<number>((sum, h) => sum + (h ?? 0), 0);
+    const active = dates.map((d, i) => s.activeOn(d) && fixed[i] === undefined);
+    // 날짜로 정한 일정이 이 주 안에 걸친 날이 없으면 그 주 모든 날에
+    const shares = dayShares(dates, active.some(Boolean) ? active : dates.map((_, i) => fixed[i] === undefined), daily);
+    const remaining = Math.max(0, s.hours[week] - fixedSum);
+    dates.forEach((_, i) => {
+      const value = fixed[i] ?? remaining * shares[i];
+      hours[i] += value;
+      if (value > 0 || fixed[i] !== undefined) items[i].push({ ...base, base_hours: value, hours: value, ...(fixed[i] !== undefined ? { logged: true } : {}) });
     });
-  };
+  }
 
-  for (const plan of plans) {
-    if (week < plan.start_week || week > plan.end_week) continue;
-    const weighted = plan.type === "class" && is_exam_week;
-    const active = dates.map((d) => (!plan.start_date || d >= plan.start_date) && (!plan.end_date || d <= plan.end_date));
-    spread(
-      {
-        source: "plan",
-        title: plan.title,
-        base_hours: plan.hours_per_week,
-        weighted,
-        hours: plan.hours_per_week * (weighted ? EXAM_WEIGHT : 1),
-        priority: toPriority(plan.priority),
-        plan_type: plan.type as PlanType,
-        category_id: plan.category_id ?? null,
-      },
-      active,
-    );
-  }
-  const certById = new Map(certificates.map((c) => [c.id, c]));
-  for (const uc of userCertificates) {
-    const cert = certById.get(uc.certificate_id);
-    if (!cert) continue;
-    if (certificatePrepRange(cert.exam_date, uc.prep_weeks, semester_start).weeks.includes(week)) {
-      const title = `${cert.name} 준비`;
-      spread({ source: "certificate", title, base_hours: uc.study_hours, weighted: false, hours: uc.study_hours }, dates.map(() => true));
-    }
-  }
+  spillOverflow(dates, available, hours, items, (item, date) =>
+    activeByKey.get(item.plan_id ?? item.certificate_id ?? item.title)?.(date) ?? false,
+  );
 
   return dates.map((date, i) => {
     const ratio = available[i] > 0 ? hours[i] / available[i] : null;

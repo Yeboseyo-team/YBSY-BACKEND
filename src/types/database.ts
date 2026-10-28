@@ -1,4 +1,4 @@
-// ⚠ 자동 생성 파일: 스키마를 바꾸면 다시 생성하세요. (2026-10-24 서울 프로젝트 기준)
+// ⚠ 자동 생성 파일: 스키마를 바꾸면 다시 생성하세요. (2026-10-26 서울 프로젝트 기준)
 //   supabase gen types typescript --project-id hxnaobwybllgdcvnwimo > src/types/database.ts
 // 아래쪽 "편의 타입"은 손으로 추가한 부분이라 재생성 후 다시 붙여 주세요.
 
@@ -122,6 +122,10 @@ export type Database = {
           hours_per_week: number
           id: string
           load_level: string
+          no_exam: boolean
+          study_days: number[] | null
+          stopped_at: string | null
+          exam_only: string | null
           priority: string
           start_date: string | null
           start_week: number
@@ -139,6 +143,10 @@ export type Database = {
           hours_per_week: number
           id?: string
           load_level?: string
+          no_exam?: boolean
+          study_days?: number[] | null
+          stopped_at?: string | null
+          exam_only?: string | null
           priority?: string
           start_date?: string | null
           start_week: number
@@ -156,6 +164,10 @@ export type Database = {
           hours_per_week?: number
           id?: string
           load_level?: string
+          no_exam?: boolean
+          study_days?: number[] | null
+          stopped_at?: string | null
+          exam_only?: string | null
           priority?: string
           start_date?: string | null
           start_week?: number
@@ -191,6 +203,7 @@ export type Database = {
           midterm_week: number
           privacy_agreed_at: string | null
           semester_start: string | null
+          study_style: string
           updated_at: string
           user_id: string
         }
@@ -203,6 +216,7 @@ export type Database = {
           midterm_week?: number
           privacy_agreed_at?: string | null
           semester_start?: string | null
+          study_style?: string
           updated_at?: string
           user_id: string
         }
@@ -215,6 +229,40 @@ export type Database = {
           midterm_week?: number
           privacy_agreed_at?: string | null
           semester_start?: string | null
+          study_style?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_logs: {
+        Row: {
+          certificate_id: string | null
+          created_at: string
+          date: string
+          hours: number
+          id: string
+          plan_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          certificate_id?: string | null
+          created_at?: string
+          date: string
+          hours: number
+          id?: string
+          plan_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          certificate_id?: string | null
+          created_at?: string
+          date?: string
+          hours?: number
+          id?: string
+          plan_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -266,6 +314,8 @@ export type Database = {
     Functions: {
       consume_ai_quota: { Args: never; Returns: number }
       hook_google_only_signup: { Args: { event: Json }; Returns: Json }
+      reset_my_data: { Args: never; Returns: undefined }
+      delete_my_account: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
@@ -405,6 +455,7 @@ export type Plan = Tables<"plans">
 export type Certificate = Tables<"certificates">
 export type UserCertificate = Tables<"user_certificates">
 export type PlanCategory = Tables<"plan_categories">
+export type StudyLogRow = Tables<"study_logs">
 /** plans.type, plans.load_level 은 DB에서 text + check 라서 생성 타입이 string 입니다. 화면에서는 아래 타입으로 좁혀 쓰세요. */
 /** custom = 사용자가 만든 유형(plan_categories). 10/24 QA */
 export type PlanType = "class" | "activity" | "project" | "custom"

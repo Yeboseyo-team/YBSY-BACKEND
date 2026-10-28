@@ -1,9 +1,9 @@
 // 계획 입력 검사 (F-02) — DB 제약(5.2)과 같은 규칙을 화면에서 먼저 확인합니다.
-// 10/24 QA: 기간은 날짜로 고르고(주차는 자동 계산), 학점 1~6 직접 입력, 우선순위, 사용자 지정 유형
+// 10/24 QA: 기간은 날짜로 고르고(주차는 자동 계산), 학점 1~12 직접 입력(10/26 상한 6 → 12), 시험 없는 수업, 우선순위, 사용자 지정 유형
 import { z } from "zod";
 import { weeksFromDates } from "@/features/forecast/calc";
 import type { PlanInput } from "./api";
-import { CREDITS_RANGE } from "./defaults";
+import { CREDITS_RANGE, fromExamMode } from "./defaults";
 
 const isoDate = z
   .string({ invalid_type_error: "날짜를 고르세요." })
@@ -26,11 +26,14 @@ export function makePlanSchema(semesterStart: string | null) {
       start_date: isoDate,
       end_date: isoDate,
       hours_per_week: z
-        .number({ invalid_type_error: "한 주에 쓰는 시간을 숫자로 입력하세요." })
+        .number({ invalid_type_error: "이 계획에 쓰는 시간을 숫자로 입력하세요." })
         .min(0.5, "0.5시간 이상 입력하세요.")
-        .max(60, "한 주에 60시간까지 넣을 수 있어요.")
+        .max(60, "60시간까지 넣을 수 있어요.")
         .refine((h) => Number.isInteger(h * 2), "0.5시간 단위로 입력하세요."),
       priority: z.enum(["high", "normal", "low"]),
+      /** 시험 방식 (10/28): 중간·기말 / 기말만 / 중간만 / 시험 없음 */
+      exam_mode: z.enum(["both", "final", "midterm", "none"]),
+      study_days: z.array(z.number().int().min(0).max(6)),
     })
     .refine((d) => d.start_date <= d.end_date, { path: ["end_date"], message: "끝나는 날은 시작하는 날과 같거나 뒤로 고르세요." })
     .refine((d) => !semesterStart || weeksFromDates(d.start_date, d.end_date, semesterStart) !== null, {
@@ -58,5 +61,7 @@ export function toPlanInput(values: PlanFormValues, semesterStart: string): Plan
     end_date: values.end_date,
     priority: values.priority,
     category_id: values.type === "custom" ? values.category_id : null,
+    ...fromExamMode(values.type === "class" ? values.exam_mode : "both"),
+    study_days: values.study_days.length ? values.study_days : null,
   };
 }

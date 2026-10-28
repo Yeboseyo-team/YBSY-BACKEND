@@ -1,7 +1,7 @@
 # 학기예보 — Claude Code 작업 규칙
 
 ## 프로젝트
-- 대학생 학기 부담 예측 서비스. 바이브코딩챌린지, 10/18 필수 기능 완료, 10/20 배포, 10/27 발표
+- 대학생 학기 부담 예측 서비스. 바이브코딩챌린지, 10/18 필수 기능 완료, 10/20 배포, 10/27 발표, 11/5 최종 발표
 - 설명은 항상 쉬운 한국어로. 사용자가 맡은 역할은 아래 "담당 구역"과 사용자가 준 프롬프트를 따름
 - 기준 문서: docs/REQUIREMENTS.md (요구사항 명세서 + 팀 결정 변경 이력). 4장 산출 규칙, 5장 데이터, 6장 화면
 
@@ -36,6 +36,7 @@
   - `src/features/forecast/api.ts`(예보 화면 데이터 한 번에: useForecastData)
   - `src/features/plans/ai.ts`(F-08 AI 시간 추천: useEstimateHours → Edge Function estimate-hours, 10/24)
   - `src/features/plans/categories.ts`(내 계획 유형 만들기·지우기, 10/24), `src/features/review/semester-file.ts`(학기 회고 파일 내보내기·불러오기, 10/24)
+  - `src/features/forecast/logs.ts`(실제로 한 시간 기록, 10/26), `src/features/auth/onboarding-draft.ts`(온보딩 1→2단계 초안 넘기기, 10/27)
 
 ## 브랜치·병합
 - main이 팀 기준점. main에 직접 push·머지 금지
@@ -54,10 +55,13 @@
 - 부담 계산은 src/features/forecast/calc.ts 한 곳에서만. 단계 이름은 clear(맑음)/cloudy(흐림)/storm(폭풍)
 - 접수 마감 회차 선택 불가는 화면에서 막기(DB 에서 막으면 마감 지난 뒤 시드가 실패, 직접 추가한 자격증은 예외). 계획 30개 상한은 화면에서 먼저 막고 DB 트리거(plans_limit)도 막음 (10/22)
 - 10/24 QA: 1주차 = 개강일부터 7일(월요일 아니어도 됨). 가용 시간은 수업 시간 제외, 요일별(daily_hours) 합계. 수업 기본값 학점당 1/1.5/2시간
+- 10/26~27 피드백: 공부 스타일(steady·normal·cram), 실제 기록은 같은 계획의 남은 일정에만 반영, 학점 1~12·시험 없는 수업(no_exam), 맑음·흐림·폭풍은 주 단위로만(요일별은 할 시간만). 온보딩은 1단계(고르기 + 글 3칸 → AI 초안) → 2단계(/start/plans 예상 예보 보고 고친 뒤 저장)
+- 10/27~28: 주로 하는 요일(study_days)·왜 바쁜지 설명(explain.ts)·달력 자격증 일정·데이터 초기화(reset_my_data)·계획 그만두기(stopped_at)·회원 탈퇴(delete_my_account, 데모 계정 제외)·시험 방식 4가지(no_exam + exam_only). 기록은 계획을 마지막으로 고친 날(updated_at) 뒤 것만 다른 주로 넘김. 자세한 건 docs/REQUIREMENTS.md 변경 이력
+- AI 함수 estimate-hours 의 kind: plan · available · timetable · onboarding (Haiku 5.5, 하루 20회 같이 씀)
 
 ## 로그인
 - 팀 결정(10/13): 로그인은 Google만. 이메일 가입·비밀번호 찾기 화면은 만들지 않음 (docs/AUTH.md)
 - 개인정보 동의는 온보딩에서 받고 profiles.privacy_agreed_at 에 기록. 가용 시간·학기 시작일·동의 중 하나라도 비면 온보딩으로
 
-## 데모 계정 (비밀번호 hakgi1234, VITE_DEMO_LOGIN=true 인 로컬·프리뷰에서만 데모 로그인 버튼으로)
+## 데모 계정 (비밀번호 hakgi1234, VITE_DEMO_LOGIN=true 인 로컬·프리뷰에서만 데모 로그인 버튼으로. 운영 배포 ybsy.vercel.app 에는 항상 안 보임 — 10/27)
 yebo@hakgi.test(시연 주인공), jiwon@, woonyoung@, empty@(계획 없음), newbie@(온보딩 전)

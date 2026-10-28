@@ -74,6 +74,7 @@ await supabase.from("profiles").update({
 ## 데모 로그인 (개발 환경 전용)
 
 - `.env.local`(로컬)과 Vercel **Preview** 환경변수에만 `VITE_DEMO_LOGIN=true`. **Production에는 넣지 않습니다.**
+- 10/27: 실수로 Production 에 넣어도 Vercel 운영 배포(`VERCEL_ENV=production`)에서는 항상 꺼져요 (`vite.config.ts` 의 `__DEMO_LOGIN__`). 꺼진 빌드에는 데모 계정 이메일·비밀번호가 번들에 들어가지 않아요.
 - `src/features/auth/demo.ts`: `DEMO_LOGIN_ENABLED`, `demoAccounts`(이메일·이름·용도), `useDemoSignIn()`
 - 데모 계정 비밀번호 로그인을 위해 Supabase의 **Email provider는 켜 둡니다.** 대신 **가입은 Google과 데모 계정(@hakgi.test)만** 되도록 Auth Hook 으로 막아요 (아래 "6. 이메일 가입 막기", 10/22).
 

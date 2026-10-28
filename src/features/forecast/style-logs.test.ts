@@ -1,0 +1,238 @@
+// 10/26 피드백: 공부 스타일(벼락치기)과 실제 기록 반영
+import { describe, expect, it } from "vitest";
+import { certificates, demoUsers, plans, profiles, userCertificates } from "@/mocks/dummy-data";
+import { calculateForecast, dailyForecast, weekDates, type ForecastInput, type StudyLog } from "./calc";
+
+const yeboId = demoUsers.find((u) => u.email === "yebo@hakgi.test")!.id;
+const base: ForecastInput = {
+  profile: profiles.find((p) => p.user_id === yeboId)!,
+  plans: plans.filter((p) => p.user_id === yeboId),
+  userCertificates: userCertificates.filter((uc) => uc.user_id === yeboId),
+  certificates,
+};
+const withStyle = (style: string): ForecastInput => ({ ...base, profile: { ...base.profile, study_style: style } });
+const withLogs = (logs: StudyLog[]): ForecastInput => ({ ...base, logs });
+const os = plans.find((p) => p.user_id === yeboId && p.title === "운영체제")!;
+const itemHours = (input: ForecastInput, week: number, title: string) =>
+  calculateForecast(input).weeks[week - 1].items.find((i) => i.title === title)?.hours ?? 0;
+const semesterBase = (input: ForecastInput, title: string) =>
+  calculateForecast(input).weeks.reduce((sum, w) => sum + (w.items.find((i) => i.title === title)?.base_hours ?? 0), 0);
+
+describe("공부 스타일 (꾸준·보통·벼락치기)", () => {
+  it("꾸준형은 지금까지와 똑같다", () => {
+    expect(calculateForecast(withStyle("steady"))).toEqual(calculateForecast(base));
+  });
+
+  it("벼락치기형: 수업은 평소 주가 절반, 시험 직전 2주(7·8주, 14·15주)에 몰리고 학기 합계는 같다", () => {
+    const cram = withStyle("cram");
+    expect(itemHours(cram, 1, "운영체제")).toBe(3);
+    expect(itemHours(cram, 8, "운영체제")).toBeGreaterThan(itemHours(base, 8, "운영체제"));
+    expect(itemHours(cram, 14, "운영체제")).toBeGreaterThan(6);
+    expect(semesterBase(cram, "운영체제")).toBeCloseTo(semesterBase(base, "운영체제"), 1);
+  });
+
+  it("보통은 그 중간, 활동(정기 모임)은 스타일과 상관없이 그대로", () => {
+    expect(itemHours(withStyle("normal"), 1, "운영체제")).toBe(4.5);
+    expect(itemHours(withStyle("cram"), 1, "프로그래밍 학회")).toBe(4);
+  });
+
+  it("벼락치기형이면 시험 주가 더 무거워져 폭풍 주가 늘거나 같다", () => {
+    expect(calculateForecast(withStyle("cram")).summary.storm).toBeGreaterThanOrEqual(calculateForecast(base).summary.storm);
+  });
+});
+
+describe("실제 기록 반영 (같은 계획의 남은 일정에서 빼기)", () => {
+  it("월요일에 계획보다 더 해도 이번 주 남은 날로 흡수되면 주 합계는 그대로, 월요일은 기록한 시간", () => {
+    const input = withLogs([{ plan_id: os.id, date: "2026-10-26", hours: 5 }]);
+    expect(itemHours(input, 9, "운영체제")).toBe(6);
+    const monday = dailyForecast(input, 9)![0].items.find((i) => i.title === "운영체제")!;
+    expect(monday).toMatchObject({ hours: 5, logged: true, plan_id: os.id });
+    const rest = dailyForecast(input, 9)!.slice(1).reduce((s, d) => s + (d.items.find((i) => i.title === "운영체제")?.hours ?? 0), 0);
+    expect(rest).toBeCloseTo(1, 1);
+  });
+
+  it("이번 주 남은 시간보다 많이 하면 다음 주에서 뺀다 (학기 합계는 그대로)", () => {
+    const input = withLogs([{ plan_id: os.id, date: "2026-10-26", hours: 10 }]);
+    expect(itemHours(input, 9, "운영체제")).toBe(10);
+    expect(itemHours(input, 10, "운영체제")).toBe(2);
+    const total = (i: ForecastInput) => calculateForecast(i).weeks.reduce((s, w) => s + (w.items.find((x) => x.title === "운영체제")?.hours ?? 0), 0);
+    expect(total(input)).toBeCloseTo(total(base), 1);
+  });
+
+  it("주 마지막 날 덜 했으면 모자란 만큼 다음 주로", () => {
+    const input = withLogs([{ plan_id: os.id, date: "2026-11-01", hours: 0 }]);
+    expect(itemHours(input, 9, "운영체제")).toBeCloseTo(5.5, 1);
+    expect(itemHours(input, 10, "운영체제")).toBeCloseTo(6.5, 1);
+  });
+});
+
+describe("시험 없는 수업 (발표·과제로 평가, 10/26)", () => {
+  const noExam = (input: ForecastInput): ForecastInput => ({
+    ...input,
+    plans: input.plans.map((p) => (p.id === os.id ? { ...p, no_exam: true } : p)),
+  });
+
+  it("시험 주간에도 1.5배를 하지 않는다", () => {
+    expect(itemHours(base, 8, "운영체제")).toBe(9);
+    expect(itemHours(noExam(base), 8, "운영체제")).toBe(6);
+  });
+
+  it("벼락치기형이면 시험 전이 아니라 수업이 끝나는 마지막 2주에 몰린다", () => {
+    const cram = noExam(withStyle("cram"));
+    expect(itemHours(cram, 8, "운영체제")).toBe(3);
+    expect(itemHours(cram, 16, "운영체제")).toBeGreaterThan(6);
+  });
+});
+
+describe("다 끝낸 계획은 예보에서 빠진다 (10/27)", () => {
+  it("남은 시간을 미리 다 하면 다음 주 목록에서 사라진다", () => {
+    const short = { ...os, id: "short-plan", title: "짧은 과제", start_week: 9, end_week: 10, hours_per_week: 2, start_date: null, end_date: null };
+    const input: ForecastInput = { ...base, plans: [...base.plans, short], logs: [{ plan_id: "short-plan", date: "2026-10-26", hours: 4 }] };
+    expect(itemHours(input, 9, "짧은 과제")).toBe(4);
+    expect(calculateForecast(input).weeks[9].items.find((i) => i.title === "짧은 과제")).toBeUndefined();
+    expect(calculateForecast(base).weeks[9].items.find((i) => i.title === "짧은 과제")).toBeUndefined();
+    expect(calculateForecast({ ...base, plans: [...base.plans, short] }).weeks[9].items.find((i) => i.title === "짧은 과제")?.hours).toBe(2);
+  });
+});
+
+describe("주로 하는 요일 (10/27 개인화)", () => {
+  const withDays = (days: number[]): ForecastInput => ({
+    ...base,
+    plans: base.plans.map((p) => (p.id === os.id ? { ...p, study_days: days } : p)),
+  });
+  const osOn = (input: ForecastInput) =>
+    dailyForecast(input, 9)!.map((d) => d.items.find((i) => i.title === "운영체제")?.hours ?? 0);
+
+  it("월·수만 고르면 그 두 날에만 나누고, 한 주 합계는 그대로", () => {
+    const days = osOn(withDays([0, 2]));
+    expect(days.filter((h) => h > 0)).toHaveLength(2);
+    expect(days[0]).toBeGreaterThan(0);
+    expect(days[2]).toBeGreaterThan(0);
+    expect(days.reduce((a, b) => a + b, 0)).toBeCloseTo(6, 1);
+    expect(itemHours(withDays([0, 2]), 9, "운영체제")).toBe(itemHours(base, 9, "운영체제"));
+  });
+
+  it("안 고르면 지금처럼 여러 요일에 나눈다", () => {
+    expect(osOn(withDays([])).filter((h) => h > 0).length).toBeGreaterThan(2);
+  });
+});
+
+describe("현실적인 숫자 (10/27)", () => {
+  it("벼락치기여도 몰리는 주는 평소의 1.8배까지만, 학기 합계는 그대로", () => {
+    const cram = withStyle("cram");
+    const weekBase = (input: ForecastInput, week: number) =>
+      calculateForecast(input).weeks[week - 1].items.find((i) => i.title === "운영체제")?.base_hours ?? 0;
+    for (const w of [7, 8, 14, 15]) expect(weekBase(cram, w)).toBeLessThanOrEqual(6 * 1.8 + 0.01);
+    expect(semesterBase(cram, "운영체제")).toBeCloseTo(semesterBase(base, "운영체제"), 1);
+  });
+
+  it("한 주에 여유가 있으면 하루가 쓸 수 있는 시간을 넘지 않게 다른 날로 옮긴다 (한 주 합계는 그대로)", () => {
+    const allMonday: ForecastInput = { ...base, plans: base.plans.map((p) => (p.type === "class" ? { ...p, study_days: [0, 1, 2, 3, 4] } : p)) };
+    const days = dailyForecast(allMonday, 3)!;
+    const week = calculateForecast(allMonday).weeks[2];
+    if (week.total_hours <= days.reduce((s, d) => s + d.available, 0)) {
+      for (const d of days) expect(d.hours).toBeLessThanOrEqual(d.available + 0.02);
+    }
+    expect(days.reduce((s, d) => s + d.hours, 0)).toBeCloseTo(week.total_hours, 0);
+  });
+});
+
+describe("학기 중간에 계획 시간을 바꿔도 남은 일정이 사라지지 않는다 (10/28 버그)", () => {
+  const profile: ForecastInput["profile"] = { available_hours: 44, semester_start: "2026-09-01", midterm_week: 8, final_week: 15, daily_hours: [7, 7, 7, 7, 7, 5, 4], study_style: "steady" };
+  const logs = Array.from({ length: 8 }, (_, i) => ({ plan_id: "p", date: weekDates(i + 1, "2026-09-01")[0], hours: 6 }));
+  const weeksOf = (hours: number, updated_at?: string) =>
+    calculateForecast({
+      profile,
+      plans: [{ id: "p", title: "운영체제", type: "class", hours_per_week: hours, start_week: 1, end_week: 16, no_exam: true, updated_at }],
+      userCertificates: [],
+      certificates: [],
+      logs,
+    }).weeks.map((w) => w.items[0]?.hours ?? 0);
+
+  it("1~8주에 6시간씩 하고 9주차에 3시간으로 줄이면, 9~16주는 3시간씩", () => {
+    const after = weeksOf(3, "2026-10-28T10:00:00+09:00");
+    expect(after.slice(8)).toEqual([3, 3, 3, 3, 3, 3, 3, 3]);
+    // 지난 주는 실제로 한 시간 그대로
+    expect(after.slice(0, 8)).toEqual([6, 6, 6, 6, 6, 6, 6, 6]);
+  });
+
+  it("고친 뒤의 기록은 지금처럼 남은 일정에서 뺀다", () => {
+    const later = calculateForecast({
+      profile,
+      plans: [{ id: "p", title: "운영체제", type: "class", hours_per_week: 3, start_week: 1, end_week: 16, no_exam: true, updated_at: "2026-10-01T10:00:00+09:00" }],
+      userCertificates: [],
+      certificates: [],
+      logs: [{ plan_id: "p", date: "2026-10-27", hours: 9 }],
+    }).weeks.map((w) => w.items[0]?.hours ?? 0);
+    expect(later[8]).toBe(9);
+    expect(later[9]).toBe(0);
+  });
+});
+
+describe("계획 그만두기 (10/28)", () => {
+  const profile: ForecastInput["profile"] = { available_hours: 44, semester_start: "2026-09-01", midterm_week: 8, final_week: 15, daily_hours: [7, 7, 7, 7, 7, 5, 4], study_style: "cram" };
+  const plan = { id: "p", title: "운영체제", type: "class", hours_per_week: 6, start_week: 1, end_week: 16 } as const;
+  const weeks = (extra: object, logs: StudyLog[] = []) =>
+    calculateForecast({ profile, plans: [{ ...plan, ...extra }], userCertificates: [], certificates: [], logs }).weeks.map((w) => w.items[0]?.hours ?? 0);
+
+  it("그만둔 주 전까지는 그대로, 그 뒤로는 0", () => {
+    const before = weeks({});
+    // 9주차(10/27 화 ~ 11/2 월) 목요일에 그만둠
+    const after = weeks({ stopped_at: "2026-10-29" });
+    expect(after.slice(0, 8)).toEqual(before.slice(0, 8));
+    expect(after.slice(9).every((h) => h === 0)).toBe(true);
+    // 그만둔 주는 그날까지 몫만 (화·수·목 = 7+7+7, 한 주 44)
+    expect(after[8]).toBeCloseTo(Math.round(((before[8] * 21) / 44) * 10) / 10, 5);
+  });
+
+  it("그만둔 뒤 날짜는 요일별 할 일에서도 빠지고, 지난 기록은 남는다", () => {
+    const input: ForecastInput = {
+      profile,
+      plans: [{ ...plan, stopped_at: "2026-10-29" }],
+      userCertificates: [],
+      certificates: [],
+      logs: [{ plan_id: "p", date: "2026-10-27", hours: 2 }],
+    };
+    const days = dailyForecast(input, 9)!;
+    expect(days.find((d) => d.date === "2026-10-27")!.items[0]).toMatchObject({ hours: 2, logged: true });
+    expect(days.filter((d) => d.date > "2026-10-29").every((d) => d.items.length === 0)).toBe(true);
+  });
+});
+
+describe("중간만·기말만 보는 수업 (10/28)", () => {
+  const profile: ForecastInput["profile"] = { available_hours: 44, semester_start: "2026-09-01", midterm_week: 8, final_week: 15, daily_hours: [7, 7, 7, 7, 7, 5, 4], study_style: "steady" };
+  const weeksOf = (exam_only: string | null, style = "steady") =>
+    calculateForecast({
+      profile: { ...profile, study_style: style },
+      plans: [{ id: "p", title: "스마트건강", type: "class", hours_per_week: 4, start_week: 1, end_week: 16, exam_only }],
+      userCertificates: [],
+      certificates: [],
+    }).weeks.map((w) => w.items[0]?.hours ?? 0);
+
+  it("기말만: 중간 주간은 그대로, 기말 주간만 1.5배", () => {
+    const w = weeksOf("final");
+    expect(w[7]).toBe(4);
+    expect(w[14]).toBe(6);
+  });
+
+  it("중간만: 중간 주간만 1.5배", () => {
+    const w = weeksOf("midterm");
+    expect(w[7]).toBe(6);
+    expect(w[14]).toBe(4);
+  });
+
+  it("벼락치기 기말만: 중간 전에 몰리지 않고 기말 전에 몰리며, 학기 합계는 같다", () => {
+    const w = weeksOf("final", "cram");
+    expect(w[6]).toBeLessThan(4);
+    expect(w[13]).toBeGreaterThan(4);
+    // 학기 합계(시험 주간 1.5배 전)는 같다
+    const baseTotal = (style: string) =>
+      calculateForecast({
+        profile: { ...profile, study_style: style },
+        plans: [{ id: "p", title: "스마트건강", type: "class", hours_per_week: 4, start_week: 1, end_week: 16, exam_only: "final" }],
+        userCertificates: [],
+        certificates: [],
+      }).weeks.reduce((sum, x) => sum + (x.items[0]?.base_hours ?? 0), 0);
+    expect(baseTotal("cram")).toBeCloseTo(baseTotal("steady"), 0);
+  });
+});

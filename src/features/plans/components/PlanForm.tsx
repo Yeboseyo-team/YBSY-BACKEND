@@ -19,13 +19,17 @@ import {
   BUILTIN_TYPES,
   CREDITS_RANGE,
   defaultHoursPerWeek,
+  EXAM_MODE_LABEL,
+  EXAM_MODES,
   LOAD_LEVEL_LABEL,
   MAX_CATEGORIES,
   PLAN_TYPE_LABEL,
   PRIORITY_LABEL,
+  toExamMode,
 } from "../defaults";
 import { makePlanSchema, toPlanInput, type PlanFormValues } from "../schema";
 import { AiEstimate } from "./AiEstimate";
+import { WeekdayPicker } from "./WeekdayPicker";
 
 type Props = {
   /** 수정 화면에서는 저장된 값, 등록 화면에서는 비워 두면 3학점 수업 보통·학기 전체로 시작 */
@@ -35,11 +39,12 @@ type Props = {
   isPending: boolean;
   errorMessage?: string | null;
   onSubmit: (values: PlanInput) => void;
-  /** 사전 검토 (F-06). 없으면 버튼이 꺼진 채로 보여요. */
+  /** 사전 검토 (F-06). 없으면 버튼을 숨겨요 (10/26 UI 점검: 꺼진 버튼만 보여서 헷갈렸음) */
   onPreview?: (values: PlanInput) => void;
   /** 입력이 바뀔 때마다 (사전 검토 실시간 미리보기용). 아직 올바르지 않은 값이면 null */
   onValuesChange?: (values: PlanInput | null) => void;
-  cancelTo?: string;
+  /** 취소 버튼이 갈 곳. null 이면 취소 버튼을 숨겨요 (온보딩 2단계) */
+  cancelTo?: string | null;
   /** 수정 화면의 삭제 버튼 같은 추가 버튼 */
   extraActions?: ReactNode;
   disabled?: boolean;
@@ -63,6 +68,8 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     end_date: null,
     priority: "normal" as PlanPriority,
     category_id: null,
+    no_exam: false,
+    study_days: null,
   };
   return {
     title: p.title,
@@ -74,6 +81,8 @@ function toFormValues(plan: PlanInput | undefined, semesterStart: string): PlanF
     end_date: p.end_date ?? weekDates(p.end_week, semesterStart)[6],
     hours_per_week: p.hours_per_week,
     priority: p.priority,
+    exam_mode: toExamMode(p),
+    study_days: p.study_days ?? [],
   };
 }
 
@@ -117,6 +126,8 @@ function PlanFormInner({
 
   const type = watch("type");
   const credits = watch("credits");
+  const examMode = watch("exam_mode");
+  const studyDays = watch("study_days") ?? [];
   const level = watch("load_level");
   const categoryId = watch("category_id");
   const priority = watch("priority");
@@ -125,6 +136,9 @@ function PlanFormInner({
   const isClass = type === "class";
   const isCustom = type === "custom";
   const weeks = startDate && endDate && startDate <= endDate ? weeksFromDates(startDate, endDate, semesterStart) : null;
+  /** 한 주 안에 끝나는 계획(결혼식 같은 일정)이면 "그 주에", 여러 주면 "매주" (10/27 문구) */
+  const oneWeek = weeks ? weeks.start_week === weeks.end_week : false;
+  const per = oneWeek ? "그 주에" : "매주";
 
   useEffect(() => {
     if (!onValuesChange) return;
@@ -301,6 +315,36 @@ function PlanFormInner({
           </FormField>
         ) : null}
       </div>
+      {/* 10/26: 캡스톤처럼 시험 대신 발표·과제로 평가하는 수업, 10/28: 중간만·기말만 보는 수업 */}
+      {isClass ? (
+        <fieldset className="-mt-3 grid gap-1.5" disabled={disabled}>
+          <legend className="mb-1 text-sm font-medium">시험</legend>
+          <div role="radiogroup" aria-label="시험" className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1">
+            {EXAM_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={examMode === mode}
+                onClick={() => setValue("exam_mode", mode, { shouldDirty: true })}
+                className={cn(
+                  "h-9 rounded-md text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  examMode === mode ? "bg-primary font-semibold text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-card/60",
+                )}
+              >
+                {EXAM_MODE_LABEL[mode]}
+              </button>
+            ))}
+          </div>
+          <p className="text-[13px] text-muted-foreground">
+            {examMode === "none"
+              ? "발표·과제로 평가하는 수업이에요. 시험 주간 1.5배 없이, 벼락치기는 끝나는 날 전 2주에 몰아요."
+              : examMode === "both"
+                ? "중간·기말 주간에 1.5배로 계산해요."
+                : `${examMode === "final" ? "기말" : "중간"}고사 주간에만 1.5배로 계산해요.`}
+          </p>
+        </fieldset>
+      ) : null}
 
       <fieldset className="grid gap-2" disabled={disabled}>
         <legend className="mb-2 text-sm font-semibold">기간</legend>
@@ -337,8 +381,20 @@ function PlanFormInner({
         </p>
       </fieldset>
 
+      {/* 10/27 개인화: 주로 공부·과제를 하는 요일. 고르면 그 요일에만 한 주 시간을 나눠요 */}
+      <div className="grid gap-2">
+        <p className="text-sm font-semibold">주로 하는 요일</p>
+        <WeekdayPicker
+          value={studyDays}
+          disabled={disabled}
+          onChange={(next) => setValue("study_days", next, { shouldDirty: true, shouldValidate: true })}
+        />
+      </div>
+
       <fieldset className="grid gap-2" disabled={disabled}>
-        <legend className="mb-2 text-sm font-semibold">한 주에 쓰는 시간</legend>
+        <legend className="mb-2 text-sm font-semibold">
+          이 계획에 쓰는 시간 <span className="font-normal text-muted-foreground">({per})</span>
+        </legend>
         {isCustom ? null : (
           <div className="grid grid-cols-3 gap-2">
             {LEVELS.map((l) => {
@@ -368,11 +424,13 @@ function PlanFormInner({
         {level === "custom" || isCustom ? (
           <FormField
             id="hours_per_week"
-            label={isCustom ? "그 주에 쓰는 시간 (시간)" : "직접 입력 (시간)"}
+            label={isCustom ? `${per} 쓰는 시간 (시간)` : `직접 입력 (${per}, 시간)`}
             error={errors.hours_per_week?.message}
             hint={
               isCustom
-                ? "하루짜리 일정이면 그날 쓰는 시간을 넣으세요. 예보에서 그 날짜에 들어가요."
+                ? oneWeek
+                  ? "하루짜리 일정이면 그날 쓰는 시간을 넣으세요. 예보에서 그 날짜에 들어가요."
+                  : "기간 안의 주마다 이만큼 들어가요."
                 : "0.5시간 단위로 60시간까지 넣을 수 있어요."
             }
             className="mt-2 grid gap-2"
@@ -393,7 +451,7 @@ function PlanFormInner({
         ) : (
           <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
             {isClass
-              ? `${credits ?? 3}학점 기준, 수업 시간은 빼고 과제·복습 시간이에요. 시험 주간에는 1.5배로 계산해요. `
+              ? `${credits ?? 3}학점 기준, 수업 시간은 빼고 과제·복습 시간이에요. ${examMode === "none" ? "시험이 없어 시험 주간도 그대로 계산해요." : "시험 주간에는 1.5배로 계산해요."} `
               : "유형별 기본값으로 채웠어요. "}
             <button
               type="button"
@@ -413,6 +471,9 @@ function PlanFormInner({
           type={type}
           credits={credits}
           disabled={disabled}
+          submitLabel={submitLabel}
+          pendingLabel={pendingLabel}
+          isPending={isPending}
           onApply={(hours) => {
             setValue("load_level", "custom");
             setValue("hours_per_week", hours, { shouldValidate: true });
@@ -443,19 +504,17 @@ function PlanFormInner({
       </fieldset>
 
       <div className="grid gap-2 pt-1">
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          disabled={disabled || !onPreview}
-          onClick={() => void preview()}
-        >
-          사전 검토
-        </Button>
-        <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" size="lg">
-            <Link to={cancelTo}>취소</Link>
+        {onPreview ? (
+          <Button type="button" variant="outline" size="lg" disabled={disabled} onClick={() => void preview()}>
+            사전 검토
           </Button>
+        ) : null}
+        <div className={cn("grid gap-2", cancelTo !== null && "grid-cols-2")}>
+          {cancelTo !== null ? (
+            <Button asChild variant="outline" size="lg">
+              <Link to={cancelTo}>취소</Link>
+            </Button>
+          ) : null}
           <Button type="submit" size="lg" className="bg-ink hover:bg-ink/90" disabled={disabled || isPending}>
             {isPending ? pendingLabel : submitLabel}
           </Button>

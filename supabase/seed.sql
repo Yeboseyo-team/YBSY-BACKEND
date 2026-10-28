@@ -39,11 +39,11 @@ values ('a0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-0000000
 on conflict do nothing;
 
 -- 2) 학기 설정·개인정보 동의 (정새내는 비워 둠 → 온보딩)
-update public.profiles set display_name = '김예보', available_hours = 50, daily_hours = '{8,8,8,8,8,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000001';
-update public.profiles set display_name = '이지원', available_hours = 45, daily_hours = '{7,7,7,7,7,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000002';
-update public.profiles set display_name = '박운영', available_hours = 55, daily_hours = '{9,9,9,9,9,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 16, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000003';
-update public.profiles set display_name = '최수강', available_hours = 40, daily_hours = '{6,6,6,6,6,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000004';
-update public.profiles set display_name = '정새내', available_hours = null, daily_hours = null, semester_start = null, midterm_week = 8, final_week = 15, privacy_agreed_at = null where user_id = 'a0000000-0000-4000-8000-000000000005';
+update public.profiles set display_name = '김예보', available_hours = 50, daily_hours = '{8,8,8,8,8,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000001';
+update public.profiles set display_name = '이지원', available_hours = 45, daily_hours = '{7,7,7,7,7,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000002';
+update public.profiles set display_name = '박운영', available_hours = 55, daily_hours = '{9,9,9,9,9,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 16, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000003';
+update public.profiles set display_name = '최수강', available_hours = 40, daily_hours = '{6,6,6,6,6,6,4}', semester_start = '2026-08-31', midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = '2026-09-01T09:00:00+09:00' where user_id = 'a0000000-0000-4000-8000-000000000004';
+update public.profiles set display_name = '정새내', available_hours = null, daily_hours = null, semester_start = null, midterm_week = 8, final_week = 15, study_style = 'steady', privacy_agreed_at = null where user_id = 'a0000000-0000-4000-8000-000000000005';
 
 -- 3) 자격증 회차 (공용)
 insert into public.certificates (id, name, round, apply_start, apply_end, exam_date, prep_weeks, default_study_hours, source_url) values
@@ -77,7 +77,8 @@ insert into public.plans (id, user_id, title, type, credits, load_level, start_w
   ('b0000000-0000-4000-0001-000000000004', 'a0000000-0000-4000-8000-000000000001', '소프트웨어공학', 'class', 3, 'custom', 1, 16, 6, null, null, 'low', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
   ('b0000000-0000-4000-0001-000000000005', 'a0000000-0000-4000-8000-000000000001', '알고리즘', 'class', 3, 'custom', 1, 16, 6, null, null, 'high', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
   ('b0000000-0000-4000-0001-000000000006', 'a0000000-0000-4000-8000-000000000001', '프로그래밍 학회', 'activity', null, 'normal', 1, 16, 4, null, null, 'low', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
-  ('b0000000-0000-4000-0001-000000000007', 'a0000000-0000-4000-8000-000000000001', '사촌형 결혼식', 'custom', null, 'custom', 9, 9, 6, '2026-10-31', '2026-10-31', 'normal', 'd0000000-0000-4000-0001-000000000001', '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
+  ('b0000000-0000-4000-0001-000000000007', 'a0000000-0000-4000-8000-000000000001', '캡스톤 디자인 중간 발표', 'project', null, 'custom', 9, 10, 6, '2026-10-26', '2026-11-08', 'high', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
+  ('b0000000-0000-4000-0001-000000000008', 'a0000000-0000-4000-8000-000000000001', '사촌형 결혼식', 'custom', null, 'custom', 9, 9, 6, '2026-10-31', '2026-10-31', 'high', 'd0000000-0000-4000-0001-000000000001', '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
   ('b0000000-0000-4000-0002-000000000001', 'a0000000-0000-4000-8000-000000000002', '경영학원론', 'class', 3, 'custom', 1, 16, 6, null, null, 'normal', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
   ('b0000000-0000-4000-0002-000000000002', 'a0000000-0000-4000-8000-000000000002', '마케팅원론', 'class', 3, 'custom', 1, 16, 4.5, null, null, 'low', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
   ('b0000000-0000-4000-0002-000000000003', 'a0000000-0000-4000-8000-000000000002', '회계원리', 'class', 3, 'custom', 1, 16, 6, null, null, 'high', null, '2026-09-01T09:00:00+09:00', '2026-09-01T09:00:00+09:00'),
@@ -97,6 +98,7 @@ on conflict (id) do nothing;
 insert into public.user_certificates (user_id, certificate_id, study_hours, prep_weeks, notified_at) values
   ('a0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000002', 8, 6, null),
   ('a0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000007', 8, 3, null),
+  ('a0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000011', 6, 2, null),
   ('a0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000014', 5, 5, null),
   ('a0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000003', 8, 8, null),
   ('a0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000007', 6, 4, null),

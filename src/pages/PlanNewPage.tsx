@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { CalendarRange } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { toPlanMessage, useCreatePlan, usePlans, type PlanInput } from "@/features/plans/api";
+import { hasSameTitle, SAME_TITLE_MESSAGE, toPlanMessage, useCreatePlan, usePlans, type PlanInput } from "@/features/plans/api";
 import { PlanForm } from "@/features/plans/components/PlanForm";
 import { canAddPlan, MAX_PLANS } from "@/features/plans/defaults";
 import { PreviewSheet } from "@/features/preview/PreviewSheet";
@@ -22,11 +23,17 @@ export default function PlanNewPage() {
   const [previewing, setPreviewing] = useState<PlanInput | null>(null);
   const draft = useMemo<PreviewDraft | null>(() => (previewing ? { kind: "plan", plan: previewing } : null), [previewing]);
 
-  const save = (values: PlanInput) =>
+  const [sameTitle, setSameTitle] = useState(false);
+  const save = (values: PlanInput) => {
+    // 10/28: 같은 이름 막기
+    const dup = hasSameTitle(plans.data ?? [], values.title);
+    setSameTitle(dup);
+    if (dup) return setPreviewing(null);
     createPlan.mutate(values, {
       onSuccess: () => navigate("/plans"),
       onError: () => setPreviewing(null),
     });
+  };
 
   return (
     <PageContainer>
@@ -34,6 +41,14 @@ export default function PlanNewPage() {
         title="계획 추가"
         description="수업·활동·프로젝트를 넣으면 예보 그래프에 바로 반영돼요."
         back={{ to: "/plans", label: "계획 목록으로" }}
+        action={
+          <Button asChild variant="outline">
+            <Link to="/plans/import">
+              <CalendarRange aria-hidden="true" />
+              시간표로 수업 한 번에
+            </Link>
+          </Button>
+        }
       />
 
       {full ? (
@@ -53,7 +68,7 @@ export default function PlanNewPage() {
           submitLabel="추가하기"
           pendingLabel="추가하는 중…"
           isPending={createPlan.isPending}
-          errorMessage={createPlan.error ? toPlanMessage(createPlan.error) : null}
+          errorMessage={sameTitle ? SAME_TITLE_MESSAGE : createPlan.error ? toPlanMessage(createPlan.error) : null}
           disabled={full}
           onSubmit={save}
           onPreview={setPreviewing}

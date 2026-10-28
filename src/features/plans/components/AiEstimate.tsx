@@ -1,4 +1,5 @@
 import { AiHoursHelper } from "@/components/AiHoursHelper";
+import { Button } from "@/components/ui/button";
 import type { PlanType } from "@/types/database";
 
 type Props = {
@@ -8,6 +9,10 @@ type Props = {
   disabled?: boolean;
   /** 추천 시간을 폼의 "직접 입력"에 채움 (저장은 사용자가) */
   onApply: (hours: number) => void;
+  /** 있으면 추천 아래에 폼 저장 버튼을 같이 보여 줘요 (폼 맨 아래까지 내려가지 않게) */
+  submitLabel?: string;
+  pendingLabel?: string;
+  isPending?: boolean;
 };
 
 const PLACEHOLDER: Record<PlanType, string> = {
@@ -17,16 +22,24 @@ const PLACEHOLDER: Record<PlanType, string> = {
   custom: "예: 토요일 사촌 결혼식, 지방이라 왕복 이동까지 하루 종일이에요.",
 };
 
-/** F-08 계획을 말로 설명하면 AI 가 주당 시간을 추천 (FR-08-1). 계획 폼의 "한 주에 쓰는 시간" 아래에 붙어요. */
-export function AiEstimate({ title, type, credits, disabled, onApply }: Props) {
+/** F-08 계획을 말로 설명하면 AI 가 주당 시간을 추천 (FR-08-1). 계획 폼의 "이 계획에 쓰는 시간" 아래에 붙어요. */
+export function AiEstimate({ title, type, credits, disabled, onApply, submitLabel, pendingLabel, isPending = false }: Props) {
   return (
     <AiHoursHelper
       openLabel="AI로 시간 추천받기"
-      label="계획을 설명하면 AI가 한 주 시간을 추천해요"
+      label="계획을 설명하면 AI가 쓰는 시간을 추천해요"
+      resultPrefix="이 계획에"
       placeholder={PLACEHOLDER[type]}
       toInput={(description) => ({ kind: "plan", title: title.trim(), type, credits, description })}
       onApply={(estimate) => onApply(estimate.hours_per_week)}
-      appliedNote={'"직접 입력"에 채웠어요. 저장해야 반영돼요.'}
+      appliedNote={submitLabel ? '"직접 입력"에 채웠어요. 아래 버튼을 눌러야 저장돼요.' : '"직접 입력"에 채웠어요. 저장해야 반영돼요.'}
+      action={
+        submitLabel ? (
+          <Button type="submit" size="sm" disabled={disabled || isPending}>
+            {isPending ? (pendingLabel ?? submitLabel) : `이 시간으로 ${submitLabel}`}
+          </Button>
+        ) : undefined
+      }
       disabled={disabled}
     />
   );

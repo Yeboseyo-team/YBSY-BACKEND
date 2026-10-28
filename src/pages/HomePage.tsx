@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
-import { CloudLightning, CloudSun, Plus, RotateCw, Sun } from "lucide-react";
+import { CalendarDays, ChartColumn, CloudLightning, CloudSun, Plus, RotateCw, Sun } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useForecastData } from "@/features/forecast/api";
-import { dailyForecast, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { BusyExplain } from "@/features/forecast/components/BusyExplain";
+import { dailyForecast, todayInKorea, type Forecast, type WeekForecast } from "@/features/forecast/calc";
+import { certificateEvents } from "@/features/forecast/calendar-events";
+import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
 import { DailyBreakdown } from "@/features/forecast/components/DailyBreakdown";
 import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
-import { ForecastChart } from "@/features/forecast/components/ForecastChart";
+import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
 import { formatDuration, summaryText, WEATHER_ORDER, WEATHER_STYLE } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
@@ -19,9 +22,30 @@ import type { Plan, PlanCategory } from "@/types/database";
  * S-08 부담 예보 (홈, 경로 /) — 담당: 프론트 B (feature/frontend-jw)
  * 데이터와 계산은 useForecastData() 하나로 끝나요. 여기서 다시 계산하지 마세요.
  */
+type ForecastView = "chart" | "calendar";
+const VIEW_KEY = "hakgi:forecast-view";
+
+/** 그래프/달력 중 마지막에 고른 보기 (이 브라우저에만 기억, 못 읽으면 그래프) */
+function readView(): ForecastView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "calendar" ? "calendar" : "chart";
+  } catch {
+    return "chart";
+  }
+}
+
 export default function HomePage() {
   const data = useForecastData();
   const [picked, setPicked] = useState<number | null>(null);
+  const [view, setViewState] = useState<ForecastView>(readView);
+  const setView = (next: ForecastView) => {
+    setViewState(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // 저장 못 해도 이번 화면에서는 바뀐 보기 그대로
+    }
+  };
   const categories = usePlanCategories().data ?? [];
 
   if (data.status === "loading") return <HomeSkeleton />;
@@ -33,10 +57,16 @@ export default function HomePage() {
   const empty = data.status === "empty";
   const selectedWeek = picked ?? currentWeek ?? 1;
   const selected = forecast.weeks[selectedWeek - 1];
+  // 달력에 넣을 내 자격증 일정 (접수 시작·마감·시험일, 10/27)
+  const myCertIds = new Set(data.input?.userCertificates.map((u) => u.certificate_id) ?? []);
+  const certEvents = certificateEvents(data.certificates.filter((c) => myCertIds.has(c.id)));
+
 
   return (
     <PageContainer>
       {empty ? <EmptyHeadline /> : <Headline forecast={forecast} currentWeek={currentWeek} available={available} />}
+
+      {!empty && data.input ? <BusyExplain input={data.input} fromWeek={currentWeek ?? 1} /> : null}
 
       <DeadlineBanner deadlines={deadlines} semesterStart={profile.semester_start ?? ""} />
 
@@ -46,9 +76,36 @@ export default function HomePage() {
           className="grid min-w-0 flex-[999_1_600px] gap-4 rounded-2xl border border-border bg-card p-4 sm:p-6"
         >
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <h2 id="chart-title" className="text-lg font-semibold">
-              주차별 예상 시간
+              {view === "calendar" && !empty ? "날짜별 예보" : "주차별 예상 시간"}
             </h2>
+            {/* 그래프로 보기 / 달력으로 보기 (10/24 QA) */}
+            {!empty ? (
+              <div role="group" aria-label="예보 보기 방식" className="inline-flex rounded-lg bg-muted p-0.5">
+                {(
+                  [
+                    ["chart", "그래프로 보기", ChartColumn],
+                    ["calendar", "달력으로 보기", CalendarDays],
+                  ] as const
+                ).map(([value, label, Icon]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={view === value}
+                    onClick={() => setView(value)}
+                    className={cn(
+                      "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      view === value ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="size-4" aria-hidden="true" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            </div>
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
               {!empty &&
                 WEATHER_ORDER.map((level) => (
@@ -57,34 +114,73 @@ export default function HomePage() {
                     {WEATHER_STYLE[level].label} {forecast.summary[level]}주
                   </li>
                 ))}
+              {view === "calendar" && !empty ? null : (
               <li className="inline-flex items-center gap-1.5">
                 <span className="w-4 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
-                가용 {available}시간
+                쓸 수 있는 시간({available}시간)
               </li>
+              )}
             </ul>
           </div>
 
-          <ForecastChart
-            weeks={forecast.weeks}
-            availableHours={available}
-            currentWeek={currentWeek}
-            selectedWeek={selectedWeek}
-            onSelect={setPicked}
-          />
+          {view === "calendar" && !empty && profile.semester_start ? (
+            <ForecastCalendar
+              forecast={forecast}
+              input={data.input}
+              semesterStart={profile.semester_start}
+              midtermWeek={profile.midterm_week}
+              finalWeek={profile.final_week}
+              today={todayInKorea()}
+              currentWeek={currentWeek}
+              selectedWeek={selectedWeek}
+              onSelectWeek={setPicked}
+              events={certEvents}
+            />
+          ) : (
+            <>
+              <WindowedForecastChart
+                weeks={forecast.weeks}
+                availableHours={available}
+                currentWeek={currentWeek}
+                selectedWeek={selectedWeek}
+                onSelect={setPicked}
+              />
 
-          <p className="border-t border-border/60 pt-3 text-[13px] text-muted-foreground">
-            {empty
-              ? "계획을 하나 넣을 때마다 이 자리에 막대가 쌓여요."
-              : "막대나 주차를 누르면 그 주의 내역이 나와요. 진한 원은 이번 주예요."}
-          </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+                <p className="text-[13px] text-muted-foreground">
+                  {empty
+                    ? "계획을 하나 넣을 때마다 이 자리에 막대가 쌓여요."
+                    : "막대나 주차를 누르면 그 주의 내역이 나와요. 진한 원은 이번 주예요."}
+                </p>
+                {/* 휴대폰에서는 주차 내역이 한참 아래라 바로 가는 버튼 (10/26 UI 점검) */}
+                {!empty ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="lg:hidden"
+                    onClick={() => document.getElementById("week-detail")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  >
+                    {selectedWeek}주차 내역 보기
+                  </Button>
+                ) : null}
+              </div>
 
-          {/* 요일별 가용 시간·부담 (10/24 QA) */}
-          <div className="border-t border-border/60 pt-4">
-            <DailyBreakdown week={selectedWeek} days={data.input ? dailyForecast(data.input, selectedWeek) : null} />
-          </div>
+              {/* 요일별 가용 시간·부담 (10/24 QA) */}
+              <div className="border-t border-border/60 pt-4">
+                <DailyBreakdown
+                  week={selectedWeek}
+                  days={data.input ? dailyForecast(data.input, selectedWeek) : null}
+                  today={data.today}
+                  logs={data.logs}
+                  categories={categories}
+                />
+              </div>
+            </>
+          )}
         </section>
 
-        <aside className="grid min-w-0 flex-[1_1_320px] gap-4">
+        <aside id="week-detail" className="grid min-w-0 scroll-mt-20 flex-[1_1_320px] gap-4">
           {empty ? (
             <EmptyActions />
           ) : (
@@ -107,6 +203,7 @@ export default function HomePage() {
 }
 
 /** 맨 위 요약: 다가오는 폭풍(없으면 흐림) 주와 "폭풍 n주 · 흐림 n주" (FR-05-3) */
+
 function Headline({ forecast, currentWeek, available }: { forecast: Forecast; currentWeek: number | null; available: number }) {
   const from = currentWeek ?? 1;
   const upcoming = forecast.weeks.filter((w) => w.week >= from);
@@ -142,7 +239,7 @@ function Headline({ forecast, currentWeek, available }: { forecast: Forecast; cu
             <>
               {" "}
               · {focus.week}주차에 {formatDuration(focus.total_hours)}이 예상돼요.{" "}
-              {over > 0 ? `가용 시간보다 ${formatDuration(over)} 많아요.` : "가용 시간에 거의 꽉 차요."}
+              {over > 0 ? `쓸 수 있는 시간보다 ${formatDuration(over)} 많아요.` : "쓸 수 있는 시간을 거의 다 써요."}
             </>
           ) : null}
         </p>
@@ -184,7 +281,7 @@ function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCat
         </Link>
       </div>
       {plans.length === 0 ? (
-        <p className="border-t border-border/60 pt-2 text-sm text-muted-foreground">자격증만 골라져 있어요.</p>
+        <p className="border-t border-border/60 pt-2 text-sm text-muted-foreground">계획은 없고 자격증만 있어요.</p>
       ) : (
         <ul className="text-sm">
           {shown.map((p) => {
@@ -197,7 +294,7 @@ function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCat
                 <span className="sr-only">({tag.label})</span>
               </span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
-                {p.start_week}~{p.end_week}주, {formatDuration(p.hours_per_week)}
+                {p.stopped_at ? "그만둠" : `${p.start_week}~${p.end_week}주, ${formatDuration(p.hours_per_week)}`}
               </span>
             </li>
             );

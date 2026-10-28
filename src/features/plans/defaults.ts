@@ -5,8 +5,8 @@ import type { Plan, PlanCategory, PlanLoadLevel, PlanPriority, PlanType } from "
 export const MAX_PLANS = 30;
 /** 사용자 지정 유형 상한 (10/24 QA, DB 트리거와 같은 값) */
 export const MAX_CATEGORIES = 10;
-/** 학점 범위 (10/24 QA: 1~6 정수 직접 입력) */
-export const CREDITS_RANGE = { min: 1, max: 6 } as const;
+/** 학점 범위 (10/24 QA: 정수 직접 입력. 10/26: 9학점 프로젝트형 수업 때문에 6 → 12) */
+export const CREDITS_RANGE = { min: 1, max: 12 } as const;
 
 /** 기본 시간이 있는 유형 (사용자 지정 유형은 시간을 직접 넣어요) */
 export type BuiltinPlanType = Exclude<PlanType, "custom">;
@@ -25,6 +25,20 @@ export const PLAN_TYPE_LABEL: Record<PlanType, string> = { class: "수업", acti
 export const BUILTIN_TYPES: BuiltinPlanType[] = ["class", "activity", "project"];
 export const LOAD_LEVEL_LABEL: Record<PlanLoadLevel, string> = { low: "적음", normal: "보통", high: "많음", custom: "직접 입력" };
 export const PRIORITY_LABEL: Record<PlanPriority, string> = { high: "중요", normal: "보통", low: "낮음" };
+
+/**
+ * 수업의 시험 방식 (10/28). DB 에는 no_exam(시험 없음) + exam_only(midterm·final 중 하나만) 로 저장해요.
+ * both: 중간·기말 / final: 기말만 / midterm: 중간만 / none: 시험 없음(발표·과제로 평가)
+ */
+export type ExamMode = "both" | "final" | "midterm" | "none";
+export const EXAM_MODES: ExamMode[] = ["both", "final", "midterm", "none"];
+export const EXAM_MODE_LABEL: Record<ExamMode, string> = { both: "중간·기말", final: "기말만", midterm: "중간만", none: "시험 없음" };
+export const toExamMode = (p: { no_exam?: boolean | null; exam_only?: string | null }): ExamMode =>
+  p.no_exam ? "none" : p.exam_only === "midterm" ? "midterm" : p.exam_only === "final" ? "final" : "both";
+export const fromExamMode = (mode: ExamMode): { no_exam: boolean; exam_only: "midterm" | "final" | null } => ({
+  no_exam: mode === "none",
+  exam_only: mode === "midterm" || mode === "final" ? mode : null,
+});
 
 /**
  * 적음·보통·많음을 고르면 자동으로 채울 주당 시간 (FR-03-1, FR-03-2).

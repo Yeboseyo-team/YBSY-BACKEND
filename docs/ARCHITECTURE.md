@@ -10,6 +10,8 @@ erDiagram
   PROFILES ||--o{ PLANS : "계획 여러 개"
   PROFILES ||--o{ USER_CERTIFICATES : "고른 회차"
   CERTIFICATES ||--o{ USER_CERTIFICATES : "여러 명이 선택"
+  PROFILES ||--o{ STUDY_LOGS : "실제로 한 시간 (10/26)"
+  PLANS ||--o{ STUDY_LOGS : "계획별 기록"
   AUTH_USERS {
     uuid id PK "Supabase Auth가 관리"
     text email
@@ -21,6 +23,8 @@ erDiagram
     date semester_start "1주차 첫날(개강일), null이면 온보딩 전"
     smallint midterm_week "중간고사 주차, 기본 8"
     smallint final_week "기말고사 주차, 기본 15"
+    smallint_array daily_hours "요일별 가용 시간 월~일 (10/24)"
+    text study_style "steady normal cram (10/26)"
     timestamptz privacy_agreed_at "개인정보 동의 시각, null이면 온보딩 전"
   }
   PLANS {
@@ -28,7 +32,8 @@ erDiagram
     uuid user_id FK "profiles 참조"
     text title "1~30자"
     text type "class activity project"
-    smallint credits "학점 1~4, 수업만"
+    smallint credits "학점 1~12, 수업만 (10/26)"
+    boolean no_exam "시험 없는 수업 (10/26)"
     text load_level "low normal high custom"
     smallint start_week "1~16"
     smallint end_week "1~16, 시작 이상"
@@ -52,6 +57,14 @@ erDiagram
     smallint prep_weeks "사용자 준비 기간 1~16"
     timestamptz notified_at "마감 알림 발송 시각 F-07"
   }
+  STUDY_LOGS {
+    uuid id PK
+    uuid user_id FK "profiles 참조"
+    uuid plan_id FK "plans 참조, 또는"
+    uuid certificate_id FK "certificates 참조 (둘 중 하나)"
+    date date "기록한 날"
+    numeric hours "실제로 한 시간 0~24"
+  }
 ```
 
 - `certificates`는 팀이 채워 넣는 **공용 목록**이고, 나머지는 사용자마다 따로인 **개인 데이터**입니다.
@@ -71,11 +84,13 @@ flowchart LR
 | 흐름 | 무엇이 오가나 | 관련 |
 |---|---|---|
 | 가입 | Auth가 `auth.users` 생성 → 트리거가 `profiles` 생성 | FR-01-10 |
-| 온보딩·설정 | `profiles` 의 가용 시간·학기 시작일·시험 주차 수정 | FR-01-11·12 |
+| 온보딩·설정 | `profiles` 의 가용 시간·학기 시작일·시험 주차·공부 스타일 수정. 온보딩 2단계에서 AI 초안 계획·자격증을 한 번에 저장 | FR-01-11·12 |
 | 계획 등록 | `plans` 추가·수정·삭제 | F-02, F-03 |
 | 자격증 선택 | `certificates` 조회 → `user_certificates` 추가·삭제 | F-04 |
 | 예보 | `profiles` + `plans` + `user_certificates`(+회차) 읽기 → `calc.ts`가 주차별 합산 | F-05 |
 | 사전 검토 | 저장 안 한 계획을 더해 `calc.ts`로 다시 계산. **DB 호출 없음** | F-06, NFR-PERF-2 |
+| 실제 기록 | `study_logs` 추가·수정·삭제 → `calc.ts` 가 같은 계획의 남은 일정을 다시 나눔 | 10/26 |
+| AI 추천 | Edge Function `estimate-hours`(Claude Haiku 5.5) — 저장 안 함, 하루 20회(`consume_ai_quota`). kind: plan·available·timetable·onboarding | F-08 |
 
 부담 계산은 서버가 아니라 화면 쪽 `src/features/forecast/calc.ts` 한 곳에서만 합니다(명세서 4장). 사전 검토가 저장 전 데이터로 즉시 계산해야 하기 때문입니다.
 기대값은 `src/mocks/dummy-data.ts`의 `expectedForecast`(김예보 8주차 = 57h, 1.14, 폭풍)를 단위 테스트에 쓰세요.

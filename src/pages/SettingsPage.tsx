@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ExternalLink, LogOut } from "lucide-react";
+import { ExternalLink, LogOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,9 +10,13 @@ import { LoadError } from "@/components/LoadError";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/features/auth/auth-context";
 import { useProfile, useSignOut } from "@/features/auth/api";
+import { useResetMyData } from "@/features/auth/reset-data";
+import { isDemoEmail, toDeleteAccountMessage, useDeleteMyAccount } from "@/features/auth/delete-account";
+import { usePlans, useSyncPlanWeeks } from "@/features/plans/api";
 import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
+import { STUDY_STYLE_LABEL, toStudyStyle } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, longDate } from "@/features/auth/semester";
 import { splitWeeklyHours, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { FormAlert } from "@/features/auth/components/FormAlert";
@@ -26,7 +30,8 @@ import type { Profile } from "@/types/database";
  */
 export default function SettingsPage() {
   const { user } = useAuth();
-  const profile = useProfile(user?.id);
+  const userId = user?.id;
+  const profile = useProfile(userId);
 
   return (
     <PageContainer>
@@ -48,7 +53,14 @@ export default function SettingsPage() {
           <div className="lg:col-start-1 lg:row-start-2">
             <NameSection profile={profile.data} />
           </div>
-          <div className="lg:col-start-1 lg:row-start-3">
+          <div className="grid gap-6 lg:col-start-1 lg:row-start-3">
+            <Section title="데이터">
+              <Row label="데이터 초기화">
+                <ResetDataButton userId={userId} />
+              </Row>
+              <p className="px-5 py-3 text-[13px] text-muted-foreground">계획·자격증·기록·학기 설정을 모두 지우고 초기 설정부터 다시 해요.</p>
+              <DeleteAccountRow userId={userId} email={user?.email} />
+            </Section>
             <Section title="안내">
               <Row label="자격증 일정 출처">
                 <span className="text-sm text-muted-foreground">각 회차의 시행 기관 공고 (자격증 화면에서 링크 확인)</span>
@@ -94,10 +106,78 @@ function AccountCard({ profile, email }: { profile: Profile; email?: string }) {
   );
 }
 
+/**
+ * 회원 탈퇴 (10/28) — 실수로 누르지 않게 펼친 뒤 "탈퇴"를 직접 써야 버튼이 켜져요.
+ * 데모 계정은 막고 데이터 초기화를 안내해요.
+ */
+function DeleteAccountRow({ userId, email }: { userId?: string; email?: string }) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const remove = useDeleteMyAccount(userId);
+  const demo = isDemoEmail(email);
+
+  return (
+    <div className="grid gap-3 px-5 py-3.5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm">회원 탈퇴</span>
+        {demo ? (
+          <span className="text-[13px] text-muted-foreground">데모 계정은 탈퇴할 수 없어요</span>
+        ) : (
+          <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+            {open ? "닫기" : "탈퇴하기"}
+          </Button>
+        )}
+      </div>
+      {open && !demo ? (
+        <div className="grid gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+          <p className="text-[13px] leading-relaxed">
+            탈퇴하면 계정과 함께 <strong className="font-semibold">계획·자격증·공부 기록·학기 설정이 모두 바로 지워지고 되돌릴 수 없어요.</strong> 같은 Google 계정으로 다시 로그인하면 처음부터
+            새로 시작해요. 다음 학기에 쓰려면 먼저 [회고]에서 파일로 내려받아 두세요.
+          </p>
+          <label className="grid gap-1 text-[13px]">
+            계속하려면 아래 칸에 <strong>탈퇴</strong>라고 써 주세요.
+            <Input value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="탈퇴 확인 입력" className="h-9 bg-card" autoComplete="off" />
+          </label>
+          <Button type="button" variant="destructive" disabled={typed.trim() !== "탈퇴" || remove.isPending} onClick={() => remove.mutate()}>
+            {remove.isPending ? "탈퇴하는 중…" : "모든 정보를 지우고 탈퇴"}
+          </Button>
+          {remove.error ? <p className="text-[13px] text-destructive">{toDeleteAccountMessage(remove.error)}</p> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** 데이터 초기화 (10/27) — 확인 창 뒤 계획·자격증·기록·학기 설정을 지우고 초기 설정으로 */
+function ResetDataButton({ userId }: { userId?: string }) {
+  const reset = useResetMyData(userId);
+  return (
+    <div className="grid justify-items-end gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-destructive hover:text-destructive"
+        disabled={reset.isPending}
+        onClick={() => {
+          if (window.confirm("계획·자격증·기록·학기 설정을 모두 지우고 초기 설정으로 돌아가요. 지운 데이터는 되돌릴 수 없어요. 초기화할까요?")) reset.mutate();
+        }}
+      >
+        <RotateCcw aria-hidden="true" />
+        {reset.isPending ? "초기화하는 중…" : "초기화"}
+      </Button>
+      {reset.error ? <p className="text-[13px] text-destructive">초기화하지 못했어요. 잠시 뒤 다시 시도하세요.</p> : null}
+    </div>
+  );
+}
+
 function SemesterSection({ profile }: { profile: Profile }) {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
+  /** 개강일을 바꿔 학기 밖으로 벗어난 계획 수 (10/28) */
+  const [outside, setOutside] = useState(0);
   const update = useUpdateProfile();
+  const plans = usePlans();
+  const syncWeeks = useSyncPlanWeeks();
 
   if (editing) {
     return (
@@ -109,6 +189,7 @@ function SemesterSection({ profile }: { profile: Profile }) {
               dailyHours: profile.daily_hours ?? splitWeeklyHours(profile.available_hours ?? DEFAULT_SEMESTER.availableHours),
               midtermWeek: profile.midterm_week,
               finalWeek: profile.final_week,
+              studyStyle: toStudyStyle(profile.study_style),
             }}
             submitLabel="저장"
             pendingLabel="저장하는 중…"
@@ -121,11 +202,17 @@ function SemesterSection({ profile }: { profile: Profile }) {
                   daily_hours: v.dailyHours,
                   midterm_week: v.midtermWeek,
                   final_week: v.finalWeek,
+                  study_style: v.studyStyle,
                 },
                 {
                   onSuccess: () => {
                     setEditing(false);
                     setSaved(true);
+                    setOutside(0);
+                    // 개강일이 바뀌면 날짜로 정한 계획의 주차를 새 개강일 기준으로 다시 맞춰요 (10/28 버그 수정)
+                    if (v.semesterStart !== profile.semester_start && plans.data?.length) {
+                      syncWeeks.mutate({ plans: plans.data, semesterStart: v.semesterStart }, { onSuccess: (r) => setOutside(r.outside) });
+                    }
                   },
                 },
               )
@@ -147,11 +234,21 @@ function SemesterSection({ profile }: { profile: Profile }) {
     setEditing(true);
   };
   return (
-    <Section title="학기 설정" notice={saved ? "저장했어요. 예보에 바로 반영돼요." : undefined}>
+    <Section title="학기 설정" notice={
+        syncWeeks.isError
+          ? "저장했지만 계획 주차를 새 개강일에 맞추지 못했어요. 새로고침한 뒤 다시 저장해 주세요."
+          : saved
+            ? `저장했어요. 예보에 바로 반영돼요.${outside > 0 ? ` 날짜가 새 학기 밖인 계획 ${outside}개는 [계획]에서 기간을 고쳐 주세요.` : ""}`
+            : undefined
+      }>
+      {/* 10/26 UI 점검: 고른 공부 스타일이 요약에 안 보였음 */}
+      <Row label="공부 스타일" onEdit={edit}>
+        {STUDY_STYLE_LABEL[toStudyStyle(profile.study_style)]}
+      </Row>
       <Row label="개강일" onEdit={edit}>
         {profile.semester_start ? longDate(profile.semester_start) : "-"}
       </Row>
-      <Row label="한 주 가용 시간" onEdit={edit}>
+      <Row label="한 주에 쓸 수 있는 시간" onEdit={edit}>
         {profile.available_hours ?? "-"}시간
         {profile.daily_hours ? <span className="block text-xs text-muted-foreground">{profile.daily_hours.map((h, i) => `${WEEKDAY_LABELS[i]} ${h}`).join(" · ")}</span> : null}
       </Row>

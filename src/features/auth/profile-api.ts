@@ -10,6 +10,8 @@ export interface ProfileInput {
   display_name?: string;
   /** 요일별 가용 시간 [월~일] 0~24. 넣으면 합계가 available_hours 로 함께 저장돼요 (10/24 QA) */
   daily_hours?: number[];
+  /** 공부 스타일 steady 꾸준형 / normal 보통 / cram 벼락치기형 (10/26) */
+  study_style?: "steady" | "normal" | "cram";
   /** 학기 시작일 "YYYY-MM-DD" = 1주차 첫날 (10/24 QA: 월요일로 바꾸지 않음) */
   semester_start?: string;
   /** 1~20, 기본 8 */

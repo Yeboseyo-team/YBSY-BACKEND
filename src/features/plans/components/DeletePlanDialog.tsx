@@ -61,7 +61,11 @@ export function DeletePlanDialog({ plan, isPending = false, onConfirm, onCancel 
           {withJosa(plan.title, "을", "를")} 삭제할까요?
         </h2>
         <p id={descId} className="text-sm leading-relaxed text-muted-foreground">
-          {plan.start_week}~{plan.end_week}주차에서 한 주 {formatDuration(plan.hours_per_week)}이 빠져요. 삭제한 계획은 되돌릴 수 없어요.
+          {plan.start_week === plan.end_week
+            ? `${plan.start_week}주차에서 ${formatDuration(plan.hours_per_week)}이 빠져요.`
+            : `${plan.start_week}~${plan.end_week}주차에서 매주 ${formatDuration(plan.hours_per_week)}이 빠져요.`}{" "}
+          지금까지 기록한 공부 시간도 같이 지워지고, 지난 주 예보도 이 계획이 없던 것처럼 바뀌어요.{" "}
+          {plan.stopped_at ? null : <strong className="font-semibold text-foreground">이제 안 하는 거라면 [그만두기]를 쓰면 기록이 남아요.</strong>} 삭제한 계획은 되돌릴 수 없어요.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button ref={cancelButton} type="button" variant="outline" size="lg" onClick={onCancel}>

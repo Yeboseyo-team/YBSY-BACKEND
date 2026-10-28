@@ -38,6 +38,8 @@ export type ForecastPlan = Pick<Plan, "title" | "type" | "start_week" | "end_wee
   no_exam?: boolean | null;
   /** 주로 공부·과제를 하는 요일 (10/27, 0=월 … 6=일). 비어 있으면 아무 요일이나 쓸 수 있는 시간 비율대로 */
   study_days?: number[] | null;
+  /** 마지막으로 고친 때 (10/28). 이보다 앞선 기록은 그 주 실제 시간으로만 남기고 다른 주로 넘기지 않아요 */
+  updated_at?: string | null;
 };
 export type ForecastUserCertificate = Pick<UserCertificate, "certificate_id" | "study_hours" | "prep_weeks">;
 export type ForecastCertificate = Pick<Certificate, "id" | "name" | "exam_date">;
@@ -254,7 +256,15 @@ interface ScheduleItem {
   activeOn: (date: string) => boolean;
   /** 실제로 기록한 날 → 시간 */
   logged: Map<string, number>;
+  /**
+   * 이 날짜부터의 기록만 더/덜 한 만큼을 다른 주로 넘겨요 (10/28 버그 수정).
+   * 계획 시간을 학기 중간에 바꾸면 지난 기록을 새 시간과 비교해서, 줄였을 때 남은 학기가 0시간이 되던 문제가 있었어요.
+   */
+  carryFrom?: string;
 }
+
+/** 저장 시각(ISO) → 한국 날짜 "YYYY-MM-DD" */
+const koreaDate = (iso: string) => new Date(Date.parse(iso) + 9 * 3_600_000).toISOString().slice(0, 10);
 
 /** 요일별 가용 시간 비율 (없으면 똑같이) */
 function dayShares(dates: string[], active: boolean[], daily: number[] | null | undefined): number[] {
@@ -316,6 +326,7 @@ function buildSchedule(
         (!plan.end_date || d <= plan.end_date) &&
         (!plan.study_days?.length || plan.study_days.includes(weekdayIndex(d))),
       logged: new Map(),
+      carryFrom: plan.updated_at && !Number.isNaN(Date.parse(plan.updated_at)) ? koreaDate(plan.updated_at) : undefined,
     });
   }
 
@@ -373,12 +384,15 @@ function applyLogs(items: ScheduleItem[], logs: StudyLog[], profile: ForecastPro
     const afterHours = remainingInWeek * afterShare;
     const delta = log.hours - planned;
     target.logged.set(log.date, log.hours);
+    // 계획을 고치기 전 기록은 그 주 안에서만 반영 (다음 주로 넘기지 않음)
+    const carry = !target.carryFrom || log.date >= target.carryFrom;
 
     if (delta > 0) {
       // 더 했으면: 이번 주 남은 날에서 먼저 빼고, 모자라면 다음 주들에서
       const inWeek = Math.min(delta, afterHours);
       let leftover = delta - inWeek;
       target.hours[w] += leftover;
+      if (!carry) continue;
       for (let next = w + 1; next <= TOTAL_WEEKS && leftover > 1e-9; next++) {
         const take = Math.min(leftover, target.hours[next]);
         target.hours[next] -= take;
@@ -389,7 +403,7 @@ function applyLogs(items: ScheduleItem[], logs: StudyLog[], profile: ForecastPro
       const deficit = -delta;
       const next = range(w + 1, TOTAL_WEEKS).find((x) => target.base[x] > 0);
       target.hours[w] -= deficit;
-      if (next) target.hours[next] += deficit;
+      if (next && carry) target.hours[next] += deficit;
     }
   }
 }

@@ -11,6 +11,7 @@ import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/features/auth/auth-context";
 import { useProfile, useSignOut } from "@/features/auth/api";
 import { useResetMyData } from "@/features/auth/reset-data";
+import { usePlans, useSyncPlanWeeks } from "@/features/plans/api";
 import { toAuthMessage } from "@/features/auth/errors";
 import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api";
 import { displayNameSchema, type DisplayNameValues } from "@/features/auth/schemas";
@@ -128,7 +129,11 @@ function ResetDataButton({ userId }: { userId?: string }) {
 function SemesterSection({ profile }: { profile: Profile }) {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
+  /** 개강일을 바꿔 학기 밖으로 벗어난 계획 수 (10/28) */
+  const [outside, setOutside] = useState(0);
   const update = useUpdateProfile();
+  const plans = usePlans();
+  const syncWeeks = useSyncPlanWeeks();
 
   if (editing) {
     return (
@@ -159,6 +164,11 @@ function SemesterSection({ profile }: { profile: Profile }) {
                   onSuccess: () => {
                     setEditing(false);
                     setSaved(true);
+                    setOutside(0);
+                    // 개강일이 바뀌면 날짜로 정한 계획의 주차를 새 개강일 기준으로 다시 맞춰요 (10/28 버그 수정)
+                    if (v.semesterStart !== profile.semester_start && plans.data?.length) {
+                      syncWeeks.mutate({ plans: plans.data, semesterStart: v.semesterStart }, { onSuccess: (r) => setOutside(r.outside) });
+                    }
                   },
                 },
               )
@@ -180,7 +190,13 @@ function SemesterSection({ profile }: { profile: Profile }) {
     setEditing(true);
   };
   return (
-    <Section title="학기 설정" notice={saved ? "저장했어요. 예보에 바로 반영돼요." : undefined}>
+    <Section title="학기 설정" notice={
+        syncWeeks.isError
+          ? "저장했지만 계획 주차를 새 개강일에 맞추지 못했어요. 새로고침한 뒤 다시 저장해 주세요."
+          : saved
+            ? `저장했어요. 예보에 바로 반영돼요.${outside > 0 ? ` 날짜가 새 학기 밖인 계획 ${outside}개는 [계획]에서 기간을 고쳐 주세요.` : ""}`
+            : undefined
+      }>
       {/* 10/26 UI 점검: 고른 공부 스타일이 요약에 안 보였음 */}
       <Row label="공부 스타일" onEdit={edit}>
         {STUDY_STYLE_LABEL[toStudyStyle(profile.study_style)]}

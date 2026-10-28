@@ -1,7 +1,7 @@
 // 10/26 피드백: 공부 스타일(벼락치기)과 실제 기록 반영
 import { describe, expect, it } from "vitest";
 import { certificates, demoUsers, plans, profiles, userCertificates } from "@/mocks/dummy-data";
-import { calculateForecast, dailyForecast, type ForecastInput, type StudyLog } from "./calc";
+import { calculateForecast, dailyForecast, weekDates, type ForecastInput, type StudyLog } from "./calc";
 
 const yeboId = demoUsers.find((u) => u.email === "yebo@hakgi.test")!.id;
 const base: ForecastInput = {
@@ -134,5 +134,37 @@ describe("현실적인 숫자 (10/27)", () => {
       for (const d of days) expect(d.hours).toBeLessThanOrEqual(d.available + 0.02);
     }
     expect(days.reduce((s, d) => s + d.hours, 0)).toBeCloseTo(week.total_hours, 0);
+  });
+});
+
+describe("학기 중간에 계획 시간을 바꿔도 남은 일정이 사라지지 않는다 (10/28 버그)", () => {
+  const profile: ForecastInput["profile"] = { available_hours: 44, semester_start: "2026-09-01", midterm_week: 8, final_week: 15, daily_hours: [7, 7, 7, 7, 7, 5, 4], study_style: "steady" };
+  const logs = Array.from({ length: 8 }, (_, i) => ({ plan_id: "p", date: weekDates(i + 1, "2026-09-01")[0], hours: 6 }));
+  const weeksOf = (hours: number, updated_at?: string) =>
+    calculateForecast({
+      profile,
+      plans: [{ id: "p", title: "운영체제", type: "class", hours_per_week: hours, start_week: 1, end_week: 16, no_exam: true, updated_at }],
+      userCertificates: [],
+      certificates: [],
+      logs,
+    }).weeks.map((w) => w.items[0]?.hours ?? 0);
+
+  it("1~8주에 6시간씩 하고 9주차에 3시간으로 줄이면, 9~16주는 3시간씩", () => {
+    const after = weeksOf(3, "2026-10-28T10:00:00+09:00");
+    expect(after.slice(8)).toEqual([3, 3, 3, 3, 3, 3, 3, 3]);
+    // 지난 주는 실제로 한 시간 그대로
+    expect(after.slice(0, 8)).toEqual([6, 6, 6, 6, 6, 6, 6, 6]);
+  });
+
+  it("고친 뒤의 기록은 지금처럼 남은 일정에서 뺀다", () => {
+    const later = calculateForecast({
+      profile,
+      plans: [{ id: "p", title: "운영체제", type: "class", hours_per_week: 3, start_week: 1, end_week: 16, no_exam: true, updated_at: "2026-10-01T10:00:00+09:00" }],
+      userCertificates: [],
+      certificates: [],
+      logs: [{ plan_id: "p", date: "2026-10-27", hours: 9 }],
+    }).weeks.map((w) => w.items[0]?.hours ?? 0);
+    expect(later[8]).toBe(9);
+    expect(later[9]).toBe(0);
   });
 });

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-context";
 import type { Plan, PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
+import { weeksFromDates } from "@/features/forecast/calc";
 import { MAX_PLANS } from "./defaults";
 
 /**
@@ -175,6 +176,36 @@ export function useDeletePlan() {
       return { previous };
     },
     onError: (_error, _id, context) => queryClient.setQueryData(key, context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}
+
+/**
+ * 개강일을 바꾼 뒤 날짜로 기간을 정한 계획의 주차를 다시 맞춰요 (10/28 버그 수정).
+ * 예전에는 개강일을 바꿔도 주차가 그대로라, 10/31 결혼식이 다른 주 일주일 내내로 들어갔어요.
+ * 기간 전체가 새 학기 밖이면 주차를 못 정해서 그대로 두고 개수만 돌려줘요.
+ */
+export function useSyncPlanWeeks() {
+  const { key } = useUserKey();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ plans, semesterStart }: { plans: Plan[]; semesterStart: string }): Promise<{ changed: number; outside: number }> => {
+      let changed = 0;
+      let outside = 0;
+      for (const plan of plans) {
+        if (!plan.start_date || !plan.end_date) continue;
+        const weeks = weeksFromDates(plan.start_date, plan.end_date, semesterStart);
+        if (!weeks) {
+          outside += 1;
+          continue;
+        }
+        if (weeks.start_week === plan.start_week && weeks.end_week === plan.end_week) continue;
+        const { error } = await supabase.from("plans").update(weeks).eq("id", plan.id);
+        if (error) throw error;
+        changed += 1;
+      }
+      return { changed, outside };
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 }

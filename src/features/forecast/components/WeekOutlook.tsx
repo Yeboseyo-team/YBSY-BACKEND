@@ -45,7 +45,7 @@ export function WeekOutlook({ weeks, availableHours, currentWeek, selectedWeek, 
           aria-pressed={isSelected}
           aria-label={`${w.week}주차${isCurrent ? "(이번 주)" : ""} ${style.label}, ${WEATHER_SHORT[w.level]}${exam ? `, ${exam}` : ""}`}
           className={cn(
-            "grid h-11 w-full grid-cols-[3.5rem_1.25rem_2.25rem_minmax(0,1fr)_4.75rem] items-center gap-2 rounded-lg px-2 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "grid h-11 w-full grid-cols-[3.5rem_1.25rem_2.25rem_minmax(0,1fr)_4.75rem] lg:h-9 items-center gap-2 rounded-lg px-2 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
             isCurrent ? "bg-accent" : "hover:bg-muted/60",
             isSelected && "ring-2 ring-ink/70 ring-inset",
             currentWeek !== null && w.week < currentWeek && !isSelected && "opacity-55",
@@ -88,10 +88,6 @@ export function WeekOutlook({ weeks, availableHours, currentWeek, selectedWeek, 
         <PagedWeeks weeks={weeks} pages={pages} startPage={Math.floor(((currentWeek ?? 1) - 1) / PER_PAGE)} row={row} />
       )}
 
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span className="w-3 border-t-[1.5px] border-dashed border-ink" aria-hidden="true" />
-        점선을 넘으면 폭풍 · 줄을 누르면 그 주 내역이 나와요
-      </p>
     </section>
   );
 }

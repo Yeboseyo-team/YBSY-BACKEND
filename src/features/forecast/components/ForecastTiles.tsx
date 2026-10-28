@@ -2,6 +2,7 @@ import type { Forecast } from "../calc";
 import { formatDday } from "../calc";
 import { nextWeekWith } from "../outlook";
 import { summaryText } from "../weather";
+import { cn } from "@/lib/utils";
 
 type Props = {
   forecast: Forecast;
@@ -13,10 +14,12 @@ type Props = {
   nextSemesterExam: { label: string; week: number } | null;
   /** 가장 가까운 접수 마감 (없으면 null) */
   nextDeadline: { name: string; days: number } | null;
+  /** PC 첫 줄 오른쪽 2×2 처럼 칸 배치를 바꿀 때 (10/28 시안) */
+  className?: string;
 };
 
 /** 날씨 앱의 "자외선·습도" 칸 자리 — 한눈에 보는 정보 4칸 (10/28). 휴대폰 2×2, PC 한 줄 */
-export function ForecastTiles({ forecast, week, nextExam, nextSemesterExam, nextDeadline }: Props) {
+export function ForecastTiles({ forecast, week, nextExam, nextSemesterExam, nextDeadline, className }: Props) {
   const current = forecast.weeks[week - 1];
   const clear = current?.level === "clear" ? week : nextWeekWith(forecast.weeks, week, "clear");
 
@@ -35,9 +38,9 @@ export function ForecastTiles({ forecast, week, nextExam, nextSemesterExam, next
   ];
 
   return (
-    <dl className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+    <dl className={cn("grid grid-cols-2 gap-2.5 lg:grid-cols-4", className)}>
       {tiles.map((t) => (
-        <div key={t.label} className="grid content-start gap-1 rounded-2xl border border-border bg-card px-4 py-3">
+        <div key={t.label} className="grid content-center gap-1 rounded-2xl border border-border bg-card px-4 py-3">
           <dt className="text-xs text-muted-foreground">{t.label}</dt>
           <dd className="text-[15px] leading-snug font-semibold">{t.value}</dd>
         </div>

@@ -5,6 +5,7 @@ import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormAlert } from "@/features/auth/components/FormAlert";
+import { NextSemesterButton } from "@/features/auth/components/NextSemesterButton";
 import { longDate } from "@/features/auth/semester";
 import { useForecastData } from "@/features/forecast/api";
 import { addDays, summarizeSemester, TOTAL_WEEKS } from "@/features/forecast/calc";
@@ -106,6 +107,8 @@ export default function ReviewPage() {
           aria-label="학기 회고 파일 고르기"
           onChange={(e) => void onPick(e.target.files?.[0])}
         />
+        {/* 10/28: 파일을 내려받은 뒤 바로 다음 학기로 */}
+        <NextSemesterButton size="default" />
       </section>
 
       {parseError ? <FormAlert>{parseError}</FormAlert> : null}

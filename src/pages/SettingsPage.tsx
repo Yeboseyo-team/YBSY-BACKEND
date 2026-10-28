@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ExternalLink, LogOut, RotateCcw } from "lucide-react";
+import { ExternalLink, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,7 @@ import { LoadError } from "@/components/LoadError";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/features/auth/auth-context";
 import { useProfile, useSignOut } from "@/features/auth/api";
-import { useResetMyData } from "@/features/auth/reset-data";
+import { NextSemesterButton } from "@/features/auth/components/NextSemesterButton";
 import { isDemoEmail, toDeleteAccountMessage, useDeleteMyAccount } from "@/features/auth/delete-account";
 import { usePlans, useSyncPlanWeeks } from "@/features/plans/api";
 import { toAuthMessage } from "@/features/auth/errors";
@@ -55,10 +55,12 @@ export default function SettingsPage() {
           </div>
           <div className="grid gap-6 lg:col-start-1 lg:row-start-3">
             <Section title="데이터">
-              <Row label="데이터 초기화">
-                <ResetDataButton userId={userId} />
+              <Row label="다음 학기">
+                <NextSemesterButton variant="ghost" />
               </Row>
-              <p className="px-5 py-3 text-[13px] text-muted-foreground">계획·자격증·기록·학기 설정을 모두 지우고 초기 설정부터 다시 해요.</p>
+              <p className="px-5 py-3 text-[13px] text-muted-foreground">
+                이번 학기 계획·기록을 정리하고 다음 학기 설정을 시작해요. 쓸 수 있는 시간·공부 스타일·내 유형·앞으로 볼 자격증은 그대로예요.
+              </p>
               <DeleteAccountRow userId={userId} email={user?.email} />
             </Section>
             <Section title="안내">
@@ -148,27 +150,6 @@ function DeleteAccountRow({ userId, email }: { userId?: string; email?: string }
   );
 }
 
-/** 데이터 초기화 (10/27) — 확인 창 뒤 계획·자격증·기록·학기 설정을 지우고 초기 설정으로 */
-function ResetDataButton({ userId }: { userId?: string }) {
-  const reset = useResetMyData(userId);
-  return (
-    <div className="grid justify-items-end gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-destructive hover:text-destructive"
-        disabled={reset.isPending}
-        onClick={() => {
-          if (window.confirm("계획·자격증·기록·학기 설정을 모두 지우고 초기 설정으로 돌아가요. 지운 데이터는 되돌릴 수 없어요. 초기화할까요?")) reset.mutate();
-        }}
-      >
-        <RotateCcw aria-hidden="true" />
-        {reset.isPending ? "초기화하는 중…" : "초기화"}
-      </Button>
-      {reset.error ? <p className="text-[13px] text-destructive">초기화하지 못했어요. 잠시 뒤 다시 시도하세요.</p> : null}
-    </div>
-  );
-}
 
 function SemesterSection({ profile }: { profile: Profile }) {
   const [editing, setEditing] = useState(false);

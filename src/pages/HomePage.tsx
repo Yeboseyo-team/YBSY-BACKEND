@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router";
 import { CalendarDays, List, Plus, RotateCw } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { NextSemesterButton } from "@/features/auth/components/NextSemesterButton";
 import { useForecastData } from "@/features/forecast/api";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { dailyForecast, todayInKorea, upcomingDeadlines } from "@/features/forecast/calc";
@@ -104,6 +105,22 @@ export default function HomePage() {
     />
   );
   const busy = data.input ? <BusyExplain key="busy" input={data.input} fromWeek={currentWeek ?? 1} /> : null;
+  // 10/28: 학기가 끝났으면 회고·다음 학기 시작으로 안내
+  const ended =
+    !currentWeek && !beforeStart ? (
+      <section key="ended" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 sm:p-5">
+        <div className="grid gap-0.5">
+          <h2 className="text-base font-semibold">이번 학기가 끝났어요</h2>
+          <p className="text-[13px] text-muted-foreground">회고에서 학기를 돌아보고 파일로 남긴 뒤, 다음 학기를 시작해 보세요.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/review">회고 보기</Link>
+          </Button>
+          <NextSemesterButton />
+        </div>
+      </section>
+    ) : null;
   const banner = <DeadlineBanner key="banner" deadlines={deadlines} semesterStart={profile.semester_start ?? ""} />;
   const outlook =
     view === "calendar" && profile.semester_start ? (
@@ -232,6 +249,7 @@ export default function HomePage() {
               nextDeadline={deadline ? { name: deadline.certificate.name, days: deadline.apply_dday } : null}
             />
           </div>
+          {ended}
           {busy}
           {banner}
           <div className="grid grid-cols-2 items-start gap-6">
@@ -240,7 +258,7 @@ export default function HomePage() {
           </div>
         </div>
       ) : (
-        <div className="grid min-w-0 gap-4">{[hero, busy, banner, outlook, daily, detail, tiles, summary]}</div>
+        <div className="grid min-w-0 gap-4">{[hero, ended, busy, banner, outlook, daily, detail, tiles, summary]}</div>
       )}
     </PageContainer>
   );

@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { CircleStop, Pencil, Play, Plus, Trash2, X } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { LoadError } from "@/components/LoadError";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormAlert } from "@/features/auth/components/FormAlert";
-import { TOTAL_WEEKS, WEEKDAY_LABELS } from "@/features/forecast/calc";
+import { todayInKorea, TOTAL_WEEKS, WEEKDAY_LABELS } from "@/features/forecast/calc";
 import { formatDuration } from "@/features/forecast/weather";
-import { toPlanMessage, useDeletePlan, usePlans } from "@/features/plans/api";
+import { toPlanMessage, useDeletePlan, usePlans, useStopPlan } from "@/features/plans/api";
 import { DeletePlanDialog } from "@/features/plans/components/DeletePlanDialog";
 import { toCategoryMessage, useDeleteCategory, usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { canAddPlan, groupPlansByType, LOAD_LEVEL_LABEL, MAX_PLANS, PRIORITY_LABEL } from "@/features/plans/defaults";
+import { withJosa } from "@/features/certificates/display";
 import { cn } from "@/lib/utils";
 import type { Plan, PlanLoadLevel, PlanPriority } from "@/types/database";
 
@@ -26,8 +27,24 @@ export default function PlansPage() {
   const categories = usePlanCategories();
   const deleteCategory = useDeleteCategory();
   const [deleting, setDeleting] = useState<Plan | null>(null);
+  const stopPlan = useStopPlan();
+  const today = todayInKorea();
 
   const list = plans.data ?? [];
+  // 10/28: 그만둔 계획은 아래 "그만둔 계획"으로 따로
+  const active = list.filter((p) => !p.stopped_at);
+  const stopped = list.filter((p) => p.stopped_at);
+  const stop = (plan: Plan) => {
+    const [, m, d] = today.split("-").map(Number);
+    if (
+      window.confirm(
+        `${withJosa(plan.title, "을", "를")} 오늘(${m}/${d})까지만 하고 그만둘까요?\n지금까지 기록한 시간과 지난 주 예보는 그대로 남고, 내일부터 예보에서 빠져요. [다시 시작]으로 되돌릴 수 있어요.`,
+      )
+    ) {
+      stopPlan.mutate({ id: plan.id, date: today });
+    }
+  };
+  const colorOf = (plan: Plan) => typeTagOf({ plan_type: plan.type, category_id: plan.category_id }, categories.data ?? []).color;
   const canAdd = canAddPlan(list.length);
 
   // 위쪽 메뉴(휴대폰·PC 모두)에 [계획 추가]가 있어서, 본문 버튼은 빈 목록일 때와 30개가 찼을 때만 (10/26 UI 점검: 휴대폰에서 두 번 보였음)
@@ -62,6 +79,7 @@ export default function PlansPage() {
       ) : null}
 
       {deletePlan.error ? <FormAlert>{toPlanMessage(deletePlan.error)}</FormAlert> : null}
+      {stopPlan.error ? <FormAlert>{toPlanMessage(stopPlan.error)}</FormAlert> : null}
       {deleteCategory.error ? <FormAlert>{toCategoryMessage(deleteCategory.error)}</FormAlert> : null}
 
       {plans.isPending ? (
@@ -76,7 +94,7 @@ export default function PlansPage() {
         </section>
       ) : (
         <div className="grid gap-5">
-          {groupPlansByType(list, categories.data ?? []).map((group) => {
+          {groupPlansByType(active, categories.data ?? []).map((group) => {
             const category = categories.data?.find((c) => c.id === group.key);
             return (
             <section key={group.key} aria-labelledby={`group-${group.key}`} className="rounded-2xl border border-border bg-card">
@@ -101,12 +119,42 @@ export default function PlansPage() {
               </h2>
               <ul>
                 {group.plans.map((plan) => (
-                  <PlanRow key={plan.id} plan={plan} color={typeTagOf({ plan_type: plan.type, category_id: plan.category_id }, categories.data ?? []).color} onDelete={() => setDeleting(plan)} />
+                  <PlanRow
+                    key={plan.id}
+                    plan={plan}
+                    color={colorOf(plan)}
+                    onDelete={() => setDeleting(plan)}
+                    // 이미 끝난 계획은 그만둘 게 없어요
+                    onStop={plan.end_date && plan.end_date < today ? undefined : () => stop(plan)}
+                    busy={stopPlan.isPending}
+                  />
                 ))}
               </ul>
             </section>
             );
           })}
+
+          {stopped.length > 0 ? (
+            <section aria-labelledby="group-stopped" className="rounded-2xl border border-dashed border-border bg-card/60">
+              <h2 id="group-stopped" className="flex items-baseline gap-2 border-b border-border/60 px-5 py-3.5 text-base font-semibold">
+                그만둔 계획
+                <span className="text-sm font-normal text-muted-foreground">{stopped.length}개</span>
+              </h2>
+              <p className="px-5 pt-3 text-[13px] text-muted-foreground">그만둔 날까지의 기록과 예보는 남아 있어요. 다음부터는 예보에 들어가지 않아요.</p>
+              <ul className="opacity-70">
+                {stopped.map((plan) => (
+                  <PlanRow
+                    key={plan.id}
+                    plan={plan}
+                    color={colorOf(plan)}
+                    onDelete={() => setDeleting(plan)}
+                    onResume={() => stopPlan.mutate({ id: plan.id, date: null })}
+                    busy={stopPlan.isPending}
+                  />
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </div>
       )}
 
@@ -125,7 +173,23 @@ export default function PlansPage() {
   );
 }
 
-function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelete: () => void }) {
+function PlanRow({
+  plan,
+  color,
+  onDelete,
+  onStop,
+  onResume,
+  busy = false,
+}: {
+  plan: Plan;
+  color: string;
+  onDelete: () => void;
+  /** 그만두기 (진행 중인 계획만) */
+  onStop?: () => void;
+  /** 다시 시작 (그만둔 계획만) */
+  onResume?: () => void;
+  busy?: boolean;
+}) {
   const left = ((plan.start_week - 1) / TOTAL_WEEKS) * 100;
   const width = ((plan.end_week - plan.start_week + 1) / TOTAL_WEEKS) * 100;
   return (
@@ -139,6 +203,11 @@ function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelet
           {plan.study_days?.length ? `${plan.study_days.map((d) => WEEKDAY_LABELS[d]).join("·")} · ` : ""}
           {LOAD_LEVEL_LABEL[plan.load_level as PlanLoadLevel]}
           {plan.start_date && plan.end_date ? <span>· {dateRange(plan.start_date, plan.end_date)}</span> : null}
+          {plan.stopped_at ? (
+            <span className="font-semibold text-foreground">
+              · 그만둠 {Number(plan.stopped_at.slice(5, 7))}/{Number(plan.stopped_at.slice(8, 10))}
+            </span>
+          ) : null}
         </p>
       </div>
 
@@ -158,6 +227,18 @@ function PlanRow({ plan, color, onDelete }: { plan: Plan; color: string; onDelet
 
       <div className="flex items-center gap-1">
         <span className="mr-1 text-sm font-semibold tabular-nums sm:hidden">{formatDuration(plan.hours_per_week)}</span>
+        {onStop ? (
+          <Button type="button" variant="ghost" size="sm" aria-label={`${plan.title} 그만두기`} title="그만두기" disabled={busy} onClick={onStop} className="px-2">
+            <CircleStop aria-hidden="true" />
+            <span className="hidden lg:inline">그만두기</span>
+          </Button>
+        ) : null}
+        {onResume ? (
+          <Button type="button" variant="ghost" size="sm" aria-label={`${plan.title} 다시 시작`} disabled={busy} onClick={onResume} className="px-2">
+            <Play aria-hidden="true" />
+            <span className="hidden sm:inline">다시 시작</span>
+          </Button>
+        ) : null}
         <Button asChild variant="ghost" size="icon" aria-label={`${plan.title} 수정`}>
           <Link to={`/plans/${plan.id}/edit`}>
             <Pencil aria-hidden="true" />

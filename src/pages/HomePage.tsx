@@ -294,7 +294,7 @@ function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCat
                 <span className="sr-only">({tag.label})</span>
               </span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
-                {p.start_week}~{p.end_week}주, {formatDuration(p.hours_per_week)}
+                {p.stopped_at ? "그만둠" : `${p.start_week}~${p.end_week}주, ${formatDuration(p.hours_per_week)}`}
               </span>
             </li>
             );

@@ -168,3 +168,33 @@ describe("학기 중간에 계획 시간을 바꿔도 남은 일정이 사라지
     expect(later[9]).toBe(0);
   });
 });
+
+describe("계획 그만두기 (10/28)", () => {
+  const profile: ForecastInput["profile"] = { available_hours: 44, semester_start: "2026-09-01", midterm_week: 8, final_week: 15, daily_hours: [7, 7, 7, 7, 7, 5, 4], study_style: "cram" };
+  const plan = { id: "p", title: "운영체제", type: "class", hours_per_week: 6, start_week: 1, end_week: 16 } as const;
+  const weeks = (extra: object, logs: StudyLog[] = []) =>
+    calculateForecast({ profile, plans: [{ ...plan, ...extra }], userCertificates: [], certificates: [], logs }).weeks.map((w) => w.items[0]?.hours ?? 0);
+
+  it("그만둔 주 전까지는 그대로, 그 뒤로는 0", () => {
+    const before = weeks({});
+    // 9주차(10/27 화 ~ 11/2 월) 목요일에 그만둠
+    const after = weeks({ stopped_at: "2026-10-29" });
+    expect(after.slice(0, 8)).toEqual(before.slice(0, 8));
+    expect(after.slice(9).every((h) => h === 0)).toBe(true);
+    // 그만둔 주는 그날까지 몫만 (화·수·목 = 7+7+7, 한 주 44)
+    expect(after[8]).toBeCloseTo(Math.round(((before[8] * 21) / 44) * 10) / 10, 5);
+  });
+
+  it("그만둔 뒤 날짜는 요일별 할 일에서도 빠지고, 지난 기록은 남는다", () => {
+    const input: ForecastInput = {
+      profile,
+      plans: [{ ...plan, stopped_at: "2026-10-29" }],
+      userCertificates: [],
+      certificates: [],
+      logs: [{ plan_id: "p", date: "2026-10-27", hours: 2 }],
+    };
+    const days = dailyForecast(input, 9)!;
+    expect(days.find((d) => d.date === "2026-10-27")!.items[0]).toMatchObject({ hours: 2, logged: true });
+    expect(days.filter((d) => d.date > "2026-10-29").every((d) => d.items.length === 0)).toBe(true);
+  });
+});

@@ -209,3 +209,27 @@ export function useSyncPlanWeeks() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 }
+
+/**
+ * 계획 그만두기·다시 시작 (10/28). 지우지 않고 그만둔 날(stopped_at)만 저장해요.
+ * 지난 기록과 지난 주 예보는 그대로, 그만둔 날 뒤로는 예보에서 빠져요. date 가 null 이면 다시 시작.
+ */
+export function useStopPlan() {
+  const { key } = useUserKey();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, date }: { id: string; date: string | null }): Promise<Plan> => {
+      const { data, error } = await supabase.from("plans").update({ stopped_at: date }).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ id, date }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Plan[]>(key);
+      queryClient.setQueryData<Plan[]>(key, (old) => old?.map((p) => (p.id === id ? { ...p, stopped_at: date } : p)));
+      return { previous };
+    },
+    onError: (_error, _vars, context) => queryClient.setQueryData(key, context?.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}

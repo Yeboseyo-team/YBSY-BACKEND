@@ -19,6 +19,7 @@ import { formatDuration } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { useIsDesktop } from "@/lib/use-media-query";
+import { cn } from "@/lib/utils";
 import type { Plan, PlanCategory } from "@/types/database";
 
 /**
@@ -44,6 +45,8 @@ export default function HomePage() {
   const isDesktop = useIsDesktop();
   const [picked, setPicked] = useState<number | null>(null);
   const [view, setViewState] = useState<ForecastView>(readView);
+  /** PC 오른쪽 이번 주 카드: 요일별 할 공부 / 계획별 시간 (10/28 시안) */
+  const [panel, setPanel] = useState<"daily" | "detail">("daily");
   const setView = (next: ForecastView) => {
     setViewState(next);
     try {
@@ -173,6 +176,34 @@ export default function HomePage() {
     />
   );
   const summary = <PlanSummary key="plans" plans={plans} categories={categories} />;
+  // PC: 같은 주를 보여 주던 두 카드(요일별 할 공부·주차 상세)를 탭 하나로 (10/28 시안)
+  const weekPanel = (
+    <div key="week-panel" className="grid gap-2">
+      <div role="tablist" aria-label={`${selectedWeek}주차 보기`} className="inline-flex justify-self-start rounded-lg bg-muted p-0.5">
+        {(
+          [
+            ["daily", "요일별 할 공부"],
+            ["detail", "계획별 시간"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={panel === value}
+            onClick={() => setPanel(value)}
+            className={cn(
+              "h-8 rounded-md px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              panel === value ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {panel === "daily" ? daily : detail}
+    </div>
+  );
 
   if (empty) {
     return (
@@ -187,9 +218,26 @@ export default function HomePage() {
   return (
     <PageContainer>
       {isDesktop ? (
-        <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start gap-6">
-          <div className="grid min-w-0 gap-4">{[hero, busy, banner, daily, tiles]}</div>
-          <div className="grid min-w-0 gap-4">{[outlook, detail, summary]}</div>
+        // 10/28 시안: 첫 줄 날씨 카드 + 정보 칸(2×2), 아래 16주 예보 | 이번 주(탭)·계획 — 두 칸 길이를 맞춤
+        <div className="grid gap-4">
+          <div className="grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-4">
+            {hero}
+            <ForecastTiles
+              key="tiles"
+              className="lg:grid-cols-2"
+              forecast={forecast}
+              week={heroWeek}
+              nextExam={nextCertificateExam(myCerts, data.certificates, today)}
+              nextSemesterExam={semesterExam ?? null}
+              nextDeadline={deadline ? { name: deadline.certificate.name, days: deadline.apply_dday } : null}
+            />
+          </div>
+          {busy}
+          {banner}
+          <div className="grid grid-cols-2 items-start gap-6">
+            <div className="grid min-w-0 gap-4">{outlook}</div>
+            <div className="grid min-w-0 gap-4">{[weekPanel, summary]}</div>
+          </div>
         </div>
       ) : (
         <div className="grid min-w-0 gap-4">{[hero, busy, banner, outlook, daily, detail, tiles, summary]}</div>

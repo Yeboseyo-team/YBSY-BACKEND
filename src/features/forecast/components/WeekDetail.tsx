@@ -13,16 +13,18 @@ type Props = {
   isCurrent: boolean;
   /** 내 유형 (색·이름 구분용, 10/24 QA) */
   categories?: PlanCategory[];
+  /** PC 에서 남는 높이만큼만 쓰고 안에서 스크롤할 때 (10/29) */
+  className?: string;
 };
 
 /** 고른 주의 구성 내역 (FR-05-4): 계획별 시간, 시험 가중치 적용 여부 */
-export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCurrent, categories = [] }: Props) {
+export function WeekDetail({ week, availableHours, midtermWeek, finalWeek, isCurrent, categories = [], className }: Props) {
   const style = WEATHER_STYLE[week.level];
   const scale = Math.max(week.total_hours, availableHours, 1);
   const examLabel = week.week === midtermWeek ? " 중간고사 주간" : week.week === finalWeek ? " 기말고사 주간" : "";
 
   return (
-    <section aria-live="polite" className="grid gap-3 rounded-2xl border border-border bg-card p-5">
+    <section aria-live="polite" className={cn("grid content-start gap-3 rounded-2xl border border-border bg-card p-5", className)}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-semibold">
           {week.week}주차{examLabel}

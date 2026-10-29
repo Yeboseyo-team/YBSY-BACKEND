@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { NextSemesterButton } from "@/features/auth/components/NextSemesterButton";
 import { useForecastData } from "@/features/forecast/api";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
+import { explainBusy } from "@/features/forecast/explain";
 import { dailyForecast, todayInKorea, upcomingDeadlines } from "@/features/forecast/calc";
 import { certificateEvents } from "@/features/forecast/calendar-events";
 import { ForecastCalendar } from "@/features/forecast/components/ForecastCalendar";
@@ -15,12 +16,12 @@ import { DeadlineBanner } from "@/features/forecast/components/DeadlineBanner";
 import { WeatherHero } from "@/features/forecast/components/WeatherHero";
 import { WeekDetail } from "@/features/forecast/components/WeekDetail";
 import { WeekOutlook } from "@/features/forecast/components/WeekOutlook";
+import { WeekStrip } from "@/features/forecast/components/WeekStrip";
 import { examOf, nextCertificateExam } from "@/features/forecast/outlook";
 import { formatDuration } from "@/features/forecast/weather";
 import { usePlanCategories } from "@/features/plans/categories";
 import { typeTagOf } from "@/features/plans/colors";
 import { useIsDesktop } from "@/lib/use-media-query";
-import { cn } from "@/lib/utils";
 import type { Plan, PlanCategory } from "@/types/database";
 
 /**
@@ -46,8 +47,6 @@ export default function HomePage() {
   const isDesktop = useIsDesktop();
   const [picked, setPicked] = useState<number | null>(null);
   const [view, setViewState] = useState<ForecastView>(readView);
-  /** PC 오른쪽 이번 주 카드: 요일별 할 공부 / 계획별 시간 (10/28 시안) */
-  const [panel, setPanel] = useState<"daily" | "detail">("daily");
   const setView = (next: ForecastView) => {
     setViewState(next);
     try {
@@ -193,34 +192,6 @@ export default function HomePage() {
     />
   );
   const summary = <PlanSummary key="plans" plans={plans} categories={categories} />;
-  // PC: 같은 주를 보여 주던 두 카드(요일별 할 공부·주차 상세)를 탭 하나로 (10/28 시안)
-  const weekPanel = (
-    <div key="week-panel" className="grid gap-2">
-      <div role="tablist" aria-label={`${selectedWeek}주차 보기`} className="inline-flex justify-self-start rounded-lg bg-muted p-0.5">
-        {(
-          [
-            ["daily", "요일별 할 공부"],
-            ["detail", "계획별 시간"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={panel === value}
-            onClick={() => setPanel(value)}
-            className={cn(
-              "h-8 rounded-md px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              panel === value ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      {panel === "daily" ? daily : detail}
-    </div>
-  );
 
   if (empty) {
     return (
@@ -235,7 +206,7 @@ export default function HomePage() {
   return (
     <PageContainer>
       {isDesktop ? (
-        // 10/28 시안: 첫 줄 날씨 카드 + 정보 칸(2×2), 아래 16주 예보 | 이번 주(탭)·계획 — 두 칸 길이를 맞춤
+        // 10/29 시안: 첫 줄 날씨 카드 + 정보 칸(2×2) → 이번 주 요일별 할 공부(가로 7칸) → 16주 예보 | 이번 학기 계획 + (폭풍이 있으면) 왜 바쁜지 / (없으면) 고른 주의 계획별 시간
         <div className="grid gap-4">
           <div className="grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-4">
             {hero}
@@ -250,11 +221,40 @@ export default function HomePage() {
             />
           </div>
           {ended}
-          {busy}
           {banner}
-          <div className="grid grid-cols-2 items-start gap-6">
-            <div className="grid min-w-0 gap-4">{outlook}</div>
-            <div className="grid min-w-0 gap-4">{[weekPanel, summary]}</div>
+          <WeekStrip
+            week={selectedWeek}
+            days={data.input ? dailyForecast(data.input, selectedWeek) : null}
+            today={today}
+            logs={data.logs}
+            categories={categories}
+          />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="grid min-w-0 content-start gap-4">{outlook}</div>
+            {/* 오른쪽은 16주 예보 높이를 넘지 않아요 (10/29): 칸 높이는 왼쪽이 정하고, 오른쪽 카드들은 그 안에 채워요.
+                이번 학기 계획 → (폭풍이 있으면) 왜 바쁜지 → 16주 예보에서 고른 주의 계획별 시간(남는 높이, 많으면 안에서 스크롤) */}
+            <div className="relative min-w-0">
+              <div className="absolute inset-0 flex flex-col gap-4 overflow-y-auto overscroll-contain">
+                {/* PC 는 3개만 (남는 높이를 계획별 시간에) */}
+                <div className="shrink-0">
+                  <PlanSummary plans={plans} categories={categories} limit={3} />
+                </div>
+                {data.input && explainBusy(data.input, currentWeek ?? 1) ? (
+                  <BusyExplain input={data.input} fromWeek={currentWeek ?? 1} className="max-h-[13rem] shrink-0 overflow-y-auto overscroll-contain" />
+                ) : null}
+                <div id="week-detail" className="min-h-[12rem] flex-1">
+                  <WeekDetail
+                    week={selected}
+                    availableHours={available}
+                    midtermWeek={profile.midterm_week}
+                    finalWeek={profile.final_week}
+                    isCurrent={selectedWeek === currentWeek}
+                    categories={categories}
+                    className="h-full overflow-y-auto overscroll-contain"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -264,8 +264,8 @@ export default function HomePage() {
   );
 }
 
-function PlanSummary({ plans, categories }: { plans: Plan[]; categories: PlanCategory[] }) {
-  const shown = plans.slice(0, 5);
+function PlanSummary({ plans, categories, limit = 5 }: { plans: Plan[]; categories: PlanCategory[]; limit?: number }) {
+  const shown = plans.slice(0, limit);
   return (
     <section aria-labelledby="plans-title" className="grid gap-2 rounded-2xl border border-border bg-card p-5">
       <div className="flex items-baseline justify-between">

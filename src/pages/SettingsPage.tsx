@@ -59,7 +59,7 @@ export default function SettingsPage() {
                 <NextSemesterButton variant="ghost" />
               </Row>
               <p className="px-5 py-3 text-[13px] text-muted-foreground">
-                이번 학기 계획·기록을 정리하고 다음 학기 설정을 시작해요. 쓸 수 있는 시간·공부 스타일·내 유형·앞으로 볼 자격증은 그대로예요.
+                지금 학기는 그대로 보관하고 새 학기를 시작해요. 위쪽 학기 메뉴에서 언제든 오갈 수 있어요.
               </p>
               <DeleteAccountRow userId={userId} email={user?.email} />
             </Section>

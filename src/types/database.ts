@@ -114,6 +114,7 @@ export type Database = {
       }
       plans: {
         Row: {
+          semester_id: string
           category_id: string | null
           created_at: string
           credits: number | null
@@ -135,6 +136,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          semester_id?: string
           category_id?: string | null
           created_at?: string
           credits?: number | null
@@ -156,6 +158,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          semester_id?: string
           category_id?: string | null
           created_at?: string
           credits?: number | null
@@ -195,6 +198,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          current_semester_id: string | null
           available_hours: number | null
           created_at: string
           daily_hours: number[] | null
@@ -208,6 +212,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          current_semester_id?: string | null
           available_hours?: number | null
           created_at?: string
           daily_hours?: number[] | null
@@ -221,6 +226,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          current_semester_id?: string | null
           available_hours?: number | null
           created_at?: string
           daily_hours?: number[] | null
@@ -235,8 +241,45 @@ export type Database = {
         }
         Relationships: []
       }
+      semesters: {
+        Row: {
+          available_hours: number | null
+          created_at: string
+          daily_hours: number[] | null
+          final_week: number
+          id: string
+          midterm_week: number
+          semester_start: string | null
+          study_style: string
+          user_id: string
+        }
+        Insert: {
+          available_hours?: number | null
+          created_at?: string
+          daily_hours?: number[] | null
+          final_week?: number
+          id?: string
+          midterm_week?: number
+          semester_start?: string | null
+          study_style?: string
+          user_id: string
+        }
+        Update: {
+          available_hours?: number | null
+          created_at?: string
+          daily_hours?: number[] | null
+          final_week?: number
+          id?: string
+          midterm_week?: number
+          semester_start?: string | null
+          study_style?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_logs: {
         Row: {
+          semester_id: string
           certificate_id: string | null
           created_at: string
           date: string
@@ -247,6 +290,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          semester_id?: string
           certificate_id?: string | null
           created_at?: string
           date: string
@@ -257,6 +301,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          semester_id?: string
           certificate_id?: string | null
           created_at?: string
           date?: string
@@ -270,6 +315,7 @@ export type Database = {
       }
       user_certificates: {
         Row: {
+          semester_id: string
           certificate_id: string
           notified_at: string | null
           prep_weeks: number
@@ -277,6 +323,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          semester_id?: string
           certificate_id: string
           notified_at?: string | null
           prep_weeks: number
@@ -284,6 +331,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          semester_id?: string
           certificate_id?: string
           notified_at?: string | null
           prep_weeks?: number
@@ -317,6 +365,8 @@ export type Database = {
       reset_my_data: { Args: never; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
       start_next_semester: { Args: never; Returns: undefined }
+      switch_semester: { Args: { target: string }; Returns: undefined }
+      current_semester_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
@@ -457,6 +507,7 @@ export type Certificate = Tables<"certificates">
 export type UserCertificate = Tables<"user_certificates">
 export type PlanCategory = Tables<"plan_categories">
 export type StudyLogRow = Tables<"study_logs">
+export type Semester = Tables<"semesters">
 /** plans.type, plans.load_level 은 DB에서 text + check 라서 생성 타입이 string 입니다. 화면에서는 아래 타입으로 좁혀 쓰세요. */
 /** custom = 사용자가 만든 유형(plan_categories). 10/24 QA */
 export type PlanType = "class" | "activity" | "project" | "custom"

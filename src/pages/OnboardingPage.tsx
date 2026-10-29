@@ -13,6 +13,7 @@ import { toProfileMessage, useUpdateProfile } from "@/features/auth/profile-api"
 import { SemesterForm, type SemesterFormValues } from "@/features/auth/components/SemesterForm";
 import { OnboardingTexts, type OnboardingTextValues } from "@/features/auth/components/OnboardingTexts";
 import { SemesterPreview } from "@/features/auth/components/SemesterPreview";
+import { SemesterSwitcher } from "@/features/auth/components/SemesterSwitcher";
 import { toStudyStyle, type SemesterValues } from "@/features/auth/schemas";
 import { DEFAULT_SEMESTER, defaultSemesterStart } from "@/features/auth/semester";
 import { splitWeeklyHours, todayInKorea } from "@/features/forecast/calc";
@@ -97,6 +98,8 @@ export default function OnboardingPage() {
         <span className="text-sm text-muted-foreground tabular-nums">1 / 2 단계</span>
         {/* 다른 계정으로 바꾸고 싶을 때 (온보딩 전에는 설정 화면에 갈 수 없음) */}
         <div className="flex items-center gap-2">
+          {/* 10/29: [다음 학기 시작]을 눌렀다가 이전 학기로 돌아가고 싶을 때 */}
+          <SemesterSwitcher />
           {signOut.error ? <p className="text-[13px] text-destructive">{toAuthMessage(signOut.error)}</p> : null}
           <Button variant="ghost" size="sm" disabled={signOut.isPending} onClick={() => signOut.mutate()}>
             {signOut.isPending ? "로그아웃하는 중…" : "다른 계정으로 로그인"}

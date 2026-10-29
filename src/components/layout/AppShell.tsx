@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { CalendarCheck, CloudSun, ListTodo, NotebookPen, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/Logo";
+import { SemesterSwitcher } from "@/features/auth/components/SemesterSwitcher";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; end: boolean; icon: LucideIcon };
@@ -60,6 +61,8 @@ export function AppShell() {
           </nav>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            {/* 10/29: 학기가 둘 이상이면 오가기 */}
+            <SemesterSwitcher />
             <NavLink
               to="/settings"
               aria-label="설정"

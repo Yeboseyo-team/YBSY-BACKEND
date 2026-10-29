@@ -6,11 +6,10 @@ import { useStartNextSemester } from "@/features/auth/next-semester";
 
 const CONFIRM =
   "다음 학기를 시작할까요?\n\n" +
-  "정리돼요: 이번 학기 계획·공부 기록·시험이 지난 자격증·개강일\n" +
-  "남아요: 쓸 수 있는 시간·공부 스타일·시험 주차·내 유형·앞으로 볼 자격증\n\n" +
-  "정리한 내용은 되돌릴 수 없어요. 지난 학기 기록이 필요하면 먼저 [회고]에서 파일로 내려받으세요.";
+  "지금 학기는 그대로 보관돼요. 위쪽 학기 메뉴에서 언제든 다시 돌아올 수 있어요.\n" +
+  "새 학기는 개강일부터 다시 정하고, 쓸 수 있는 시간·공부 스타일·시험 주차·내 유형은 이어서 써요.";
 
-/** 다음 학기 시작 버튼 (10/28) — 설정·회고·학기가 끝난 홈에서 같이 써요 */
+/** 다음 학기 시작 버튼 (10/28, 10/29 학기별 저장) — 설정·회고·학기가 끝난 홈에서 같이 써요 */
 export function NextSemesterButton({ variant = "outline", size = "sm", className }: Pick<ComponentProps<typeof Button>, "variant" | "size" | "className">) {
   const { user } = useAuth();
   const start = useStartNextSemester(user?.id);

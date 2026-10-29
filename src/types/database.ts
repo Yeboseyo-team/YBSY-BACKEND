@@ -316,6 +316,7 @@ export type Database = {
       hook_google_only_signup: { Args: { event: Json }; Returns: Json }
       reset_my_data: { Args: never; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
+      start_next_semester: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

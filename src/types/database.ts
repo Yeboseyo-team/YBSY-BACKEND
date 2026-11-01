@@ -365,6 +365,7 @@ export type Database = {
       reset_my_data: { Args: never; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
       start_next_semester: { Args: never; Returns: undefined }
+      reset_current_semester: { Args: never; Returns: undefined }
       switch_semester: { Args: { target: string }; Returns: undefined }
       current_semester_id: { Args: never; Returns: string }
     }

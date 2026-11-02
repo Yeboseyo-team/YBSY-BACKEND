@@ -2,7 +2,8 @@ import { RotateCcw } from "lucide-react";
 import { useState, type ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/auth-context";
-import { canResetSemester, toResetSemesterMessage, useResetCurrentSemester } from "@/features/auth/reset-semester";
+import { useResetCurrentSemester } from "@/features/auth/reset-semester";
+import { canResetSemester, toResetSemesterMessage } from "@/features/auth/reset-semester-rules";
 import { ResetSemesterDialog } from "./ResetSemesterDialog";
 
 /** 이번 학기 초기화 버튼 (11/01) — 설정 화면의 데이터 섹션에서 사용 */

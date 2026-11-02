@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { addDays, dailyForecast, TOTAL_WEEKS, WEEKDAY_LABELS, type DayForecast, type Forecast, type ForecastInput } from "../calc";
+import { addDays, dailyForecast, TOTAL_WEEKS, WEEKDAY_LABELS, weekOf, type DayForecast, type Forecast, type ForecastInput } from "../calc";
 import { CERT_EVENT_LABEL, CERT_EVENT_SHORT, monthsBetween, type CertEvent, type CertEventKind } from "../calendar-events";
 import { formatDuration, WEATHER_STYLE } from "../weather";
 
@@ -170,7 +170,6 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
         </div>
 
         {rows.map(({ week, inSemester, dates }) => {
-          const weekForecast = inSemester ? forecast.weeks[week - 1] : null;
           const exam = week === midtermWeek ? "중간" : week === finalWeek ? "기말" : null;
           const selected = week === selectedWeek;
           return (
@@ -203,7 +202,8 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
                     key={date}
                     date={date}
                     day={dayByDate.get(date) ?? null}
-                    weekLevel={isOutOfSemester ? null : weekForecast?.level ?? null}
+                    // 줄(일~토)과 학기 주차(개강일 요일 기준)가 어긋나도 칸 색은 그 날짜의 실제 주차로
+                    weekLevel={isOutOfSemester ? null : (forecast.weeks[weekOf(date, semesterStart) - 1]?.level ?? null)}
                     events={eventsByDate.get(date) ?? []}
                     dim={monthOf(date) !== month}
                     isToday={date === today}

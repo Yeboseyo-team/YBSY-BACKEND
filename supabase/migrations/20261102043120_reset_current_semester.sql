@@ -9,9 +9,16 @@ as $function$
 declare
   uid uuid := auth.uid();
   cur_sem_id uuid;
+  mail text;
 begin
   if uid is null then
     raise exception '로그인이 필요해요.' using errcode = '42501';
+  end if;
+
+  -- 시연 데이터가 지워지지 않게 데모 계정은 막아요 (테스트용 정새내만 허용)
+  select email into mail from auth.users where id = uid;
+  if mail like '%@hakgi.test' and mail <> 'newbie@hakgi.test' then
+    raise exception '시연용 데모 계정은 초기화할 수 없어요.' using errcode = 'P0042';
   end if;
 
   -- 현재 보고 있는 학기 id 가져오기 (semesters 구조 지원)

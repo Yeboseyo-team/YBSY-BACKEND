@@ -11,6 +11,7 @@ import { PageContainer, PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/features/auth/auth-context";
 import { useProfile, useSignOut } from "@/features/auth/api";
 import { NextSemesterButton } from "@/features/auth/components/NextSemesterButton";
+import { ResetSemesterButton } from "@/features/auth/components/ResetSemesterButton";
 import { isDemoEmail, toDeleteAccountMessage, useDeleteMyAccount } from "@/features/auth/delete-account";
 import { usePlans, useSyncPlanWeeks } from "@/features/plans/api";
 import { toAuthMessage } from "@/features/auth/errors";
@@ -60,6 +61,12 @@ export default function SettingsPage() {
               </Row>
               <p className="px-5 py-3 text-[13px] text-muted-foreground">
                 지금 학기는 그대로 보관하고 새 학기를 시작해요. 위쪽 학기 메뉴에서 언제든 오갈 수 있어요.
+              </p>
+              <Row label="이번 학기">
+                <ResetSemesterButton variant="ghost" />
+              </Row>
+              <p className="px-5 py-3 text-[13px] text-muted-foreground">
+                이번 학기의 계획·공부 기록·선택한 자격증을 비우고 온보딩부터 다시 시작해요.
               </p>
               <DeleteAccountRow userId={userId} email={user?.email} />
             </Section>

@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { addDays, dailyForecast, TOTAL_WEEKS, WEEKDAY_LABELS, weekDates, weekdayIndex, weekOf, type DayForecast, type Forecast, type ForecastInput } from "../calc";
+import { addDays, dailyForecast, TOTAL_WEEKS, WEEKDAY_LABELS, weekOf, type DayForecast, type Forecast, type ForecastInput } from "../calc";
 import { CERT_EVENT_LABEL, CERT_EVENT_SHORT, monthsBetween, type CertEvent, type CertEventKind } from "../calendar-events";
 import { formatDuration, WEATHER_STYLE } from "../weather";
 
@@ -31,8 +31,17 @@ const EVENT_STYLE: Record<CertEventKind, { chip: string; dot: string }> = {
   apply_start: { chip: "bg-card text-primary ring-1 ring-primary/30", dot: "bg-primary" },
 };
 
+/** 한 줄의 첫 요일 = 일요일 (일~토 달력). WEEKDAY_LABELS: 0=월, 1=화, 2=수, 3=목, 4=금, 5=토, 6=일 */
+export const CALENDAR_HEADERS = [6, 0, 1, 2, 3, 4, 5] as const;
+
+/** date 가 속한 주의 일요일 (일요일 시작 달력의 첫 날) */
+export function startOfWeekSunday(date: string): string {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return addDays(date, -day);
+}
+
 /** "2026-10" → 그 달 마지막 날 "2026-10-31" */
-function lastDayOf(month: string): string {
+export function lastDayOf(month: string): string {
   const [y, m] = month.split("-").map(Number);
   const next = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
   return addDays(next, -1);
@@ -41,14 +50,56 @@ function lastDayOf(month: string): string {
 const monthOf = (date: string) => date.slice(0, 7);
 const dayNumber = (date: string) => Number(date.slice(8, 10));
 
+export interface CalendarRow {
+  week: number;
+  inSemester: boolean;
+  dates: string[];
+}
+
 /**
- * 예보 달력 보기 (10/24 QA). 한 줄 = 학기 한 주(개강일 요일부터 7일). 칸 색 = 그날 단계, 숫자 = 그날 예상 시간.
+ * month ("YYYY-MM") 달력을 덮는 일요일 시작 줄들을 만듭니다.
+ * 한 줄 = 일요일부터 토요일까지 7일.
+ * 주차는 개강일이 속한 주를 1주차로 하여 계산합니다.
+ */
+export function getCalendarRows(month: string, semesterStart: string): CalendarRow[] {
+  const semesterFirstSunday = startOfWeekSunday(semesterStart);
+  const firstSunday = startOfWeekSunday(`${month}-01`);
+  const lastDay = lastDayOf(month);
+  const rows: CalendarRow[] = [];
+  let curSunday = firstSunday;
+
+  while (curSunday <= lastDay) {
+    const dates = Array.from({ length: 7 }, (_, i) => addDays(curSunday, i));
+    const diffWeeks = Math.round((Date.parse(curSunday) - Date.parse(semesterFirstSunday)) / (7 * 86_400_000));
+    const week = diffWeeks + 1;
+    const inSemester = week >= 1 && week <= TOTAL_WEEKS;
+    rows.push({ week, inSemester, dates });
+    curSunday = addDays(curSunday, 7);
+  }
+  return rows;
+}
+
+/**
+ * 예보 달력 보기 (10/24 QA). 한 줄 = 일요일로 시작하는 한 주(7일). 칸 색 = 그날 단계, 숫자 = 그날 예상 시간.
  * 요일별 가용 시간을 아직 안 정했으면 그 주 단계 색으로만 칠하고 안내를 띄워요.
  * 날짜를 누르면 하루 할 일(/day/:date), 왼쪽 주차를 누르면 오른쪽 주차 상세가 그 주로 바뀌어요.
  */
 export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, finalWeek, today, currentWeek, selectedWeek, onSelectWeek, events = [] }: Props) {
-  // 학기 16주의 요일별 예보 (요일별 시간이 없으면 null)
-  const daily = useMemo(() => Array.from({ length: TOTAL_WEEKS }, (_, i) => (input ? dailyForecast(input, i + 1) : null)), [input]);
+  // 학기 16주의 날짜별 예보 (요일별 시간이 없으면 빈 맵)
+  const dayByDate = useMemo(() => {
+    const map = new Map<string, DayForecast>();
+    if (!input) return map;
+    for (let w = 1; w <= TOTAL_WEEKS; w++) {
+      const days = dailyForecast(input, w);
+      if (days) {
+        for (const d of days) {
+          map.set(d.date, d);
+        }
+      }
+    }
+    return map;
+  }, [input]);
+
   // 학기 달 + 자격증 일정이 있는 달까지 (10/27: 학기 뒤 1월 시험도 볼 수 있게, 사이 달은 빠짐없이)
   const months = useMemo(() => {
     const all = [monthOf(semesterStart), monthOf(addDays(semesterStart, TOTAL_WEEKS * 7 - 1)), ...events.map((e) => monthOf(e.date))].sort();
@@ -56,14 +107,10 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
   }, [semesterStart, events]);
   const [month, setMonth] = useState(() => (months.includes(monthOf(today)) ? monthOf(today) : months[0]));
   const index = months.indexOf(month);
-  // 그 달을 덮는 줄 (학기 주 단위, 개강일 요일부터 7일). 학기 밖 주는 날씨 없이 날짜·일정만
-  const firstWeek = weekOf(`${month}-01`, semesterStart);
-  const rows = Array.from({ length: weekOf(lastDayOf(month), semesterStart) - firstWeek + 1 }, (_, i) => {
-    const week = firstWeek + i;
-    const inSemester = week >= 1 && week <= TOTAL_WEEKS;
-    return { week, inSemester, dates: weekDates(week, semesterStart), days: inSemester ? daily[week - 1] : null };
-  });
-  const hasDaily = daily.some((d) => d !== null);
+
+  // 그 달을 덮는 줄 (일요일부터 토요일까지 7일)
+  const rows = useMemo(() => getCalendarRows(month, semesterStart), [month, semesterStart]);
+  const hasDaily = dayByDate.size > 0;
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CertEvent[]>();
     for (const e of events) map.set(e.date, [...(map.get(e.date) ?? []), e]);
@@ -71,8 +118,7 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
   }, [events]);
   const monthEvents = events.filter((e) => monthOf(e.date) === month);
   const [year, mon] = month.split("-").map(Number);
-  // 한 줄의 첫 요일 = 개강일 요일 (월요일 개강이면 월~일)
-  const headers = weekDates(1, semesterStart).map((d) => weekdayIndex(d));
+  const semesterEnd = addDays(semesterStart, TOTAL_WEEKS * 7 - 1);
 
   return (
     <div className="grid gap-3">
@@ -116,19 +162,18 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
           <span role="columnheader" className="text-center text-xs text-muted-foreground">
             주차
           </span>
-          {headers.map((w) => (
+          {CALENDAR_HEADERS.map((w) => (
             <span role="columnheader" key={w} className={cn("text-center text-xs", w >= 5 ? "text-primary" : "text-muted-foreground")}>
               {WEEKDAY_LABELS[w]}
             </span>
           ))}
         </div>
 
-        {rows.map(({ week, inSemester, dates, days }) => {
-          const weekForecast = inSemester ? forecast.weeks[week - 1] : null;
+        {rows.map(({ week, inSemester, dates }) => {
           const exam = week === midtermWeek ? "중간" : week === finalWeek ? "기말" : null;
           const selected = week === selectedWeek;
           return (
-            <div role="row" key={week} className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] gap-1 sm:grid-cols-[2.75rem_repeat(7,minmax(0,1fr))]">
+            <div role="row" key={dates[0]} className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] gap-1 sm:grid-cols-[2.75rem_repeat(7,minmax(0,1fr))]">
               {!inSemester ? (
                 <span role="rowheader" aria-label="학기 밖" className="grid content-center justify-items-center text-xs text-muted-foreground">
                   -
@@ -150,18 +195,22 @@ export function ForecastCalendar({ forecast, input, semesterStart, midtermWeek, 
                 {week === currentWeek ? <span className="text-[10px] text-muted-foreground">이번</span> : null}
               </button>
               )}
-              {dates.map((date, i) => (
-                <DayCell
-                  key={date}
-                  date={date}
-                  day={days?.[i] ?? null}
-                  weekLevel={weekForecast?.level ?? null}
-                  events={eventsByDate.get(date) ?? []}
-                  dim={monthOf(date) !== month}
-                  isToday={date === today}
-                  selectedWeek={selected}
-                />
-              ))}
+              {dates.map((date) => {
+                const isOutOfSemester = date < semesterStart || date > semesterEnd;
+                return (
+                  <DayCell
+                    key={date}
+                    date={date}
+                    day={dayByDate.get(date) ?? null}
+                    // 줄(일~토)과 학기 주차(개강일 요일 기준)가 어긋나도 칸 색은 그 날짜의 실제 주차로
+                    weekLevel={isOutOfSemester ? null : (forecast.weeks[weekOf(date, semesterStart) - 1]?.level ?? null)}
+                    events={eventsByDate.get(date) ?? []}
+                    dim={monthOf(date) !== month}
+                    isToday={date === today}
+                    selectedWeek={selected}
+                  />
+                );
+              })}
             </div>
           );
         })}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canResetSemester, toResetSemesterMessage } from "./reset-semester";
+import { canResetSemester, toResetSemesterMessage } from "./reset-semester-rules";
 
 describe("canResetSemester", () => {
   it("일반 계정과 체험 계정 정새내만 초기화할 수 있어요", () => {

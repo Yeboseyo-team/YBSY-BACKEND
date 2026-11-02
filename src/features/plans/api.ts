@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-context";
-import type { Plan, PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
+import type { Json, Plan, PlanLoadLevel, PlanPriority, PlanType } from "@/types/database";
 import { weeksFromDates } from "@/features/forecast/calc";
 import { MAX_PLANS } from "./defaults";
 
@@ -30,6 +30,15 @@ export interface PlanInput {
   exam_only?: "midterm" | "final" | null;
   /** 주로 공부·과제를 하는 요일 (0=월 … 6=일, 10/27). 비우면 아무 요일 */
   study_days?: number[] | null;
+}
+
+/** 온보딩 2단계 자격증 한 줄: 목록에서 고른 회차(certificate_id) 또는 직접 쓴 자격증(name·exam_date) */
+export interface OnboardingCertificateInput {
+  certificate_id: string | null;
+  name: string;
+  exam_date: string | null;
+  prep_weeks: number;
+  study_hours: number;
 }
 
 export const planKeys = {
@@ -191,6 +200,22 @@ export function useDeletePlan() {
     },
     onError: (_error, _id, context) => queryClient.setQueryData(key, context?.previous),
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+  });
+}
+
+/** 온보딩 2단계: 계획·자격증을 DB 함수 하나로 한 번에 저장 (11/02). 중간에 실패하면 아무것도 저장되지 않아요 */
+export function useSaveOnboardingPlans() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { plans: PlanInput[]; certificates: OnboardingCertificateInput[] }) => {
+      const { error } = await supabase.rpc("save_onboarding_plans", {
+        plans: input.plans as unknown as Json,
+        certificates: input.certificates as unknown as Json,
+      });
+      if (error) throw error;
+    },
+    // 계획·자격증 캐시를 모두 새로 읽어요
+    onSettled: () => queryClient.invalidateQueries(),
   });
 }
 

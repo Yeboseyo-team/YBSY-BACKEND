@@ -1,16 +1,14 @@
 import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
 import { Check, ExternalLink, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { certificatePrepRange } from "@/features/forecast/calc";
-import { useMoveCertificateLogs } from "@/features/forecast/logs";
 import { PreviewSheet } from "@/features/preview/PreviewSheet";
 import { cn } from "@/lib/utils";
 import type { Certificate, UserCertificate } from "@/types/database";
-import { toCertificateMessage, useAddCertificate, useRemoveMyCertificate } from "../api";
+import { toCertificateMessage, useAddCertificate } from "../api";
 import { applyBadge, examLabel, prepSentence, validatePrep, withJosa } from "../display";
 import { searchCertificates, type CertificateGroup, type CertificateRound } from "../search";
 import { ApplyBadge } from "./ApplyBadge";
@@ -23,7 +21,7 @@ type Props = {
   semesterStart: string;
   today: string;
   currentWeek: number | null;
-  /** 처음 펼쳐 둘 자격증 이름 (내 자격증의 "다른 회차로 바꾸기") */
+  /** 처음 펼쳐 둘 자격증 이름 */
   initialName?: string;
   /** 저장 끝 → 내 자격증 목록으로 */
   onAdded: (message: string) => void;
@@ -136,7 +134,7 @@ type DetailProps = Omit<Props, "certificates" | "initialName" | "mine"> & { grou
 
 function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }: DetailProps) {
   const mineIds = new Set(mine.map((m) => m.certificate_id));
-  /** 같은 자격증에서 이미 고른 회차 → 다른 회차를 추가하면 바꾸기 */
+  /** 같은 자격증에서 이미 고른 회차 (11/06: 회차 바꾸기는 뺐어요 — 발표 시점에 바꿀 수 있는 회차가 없어서) */
   const current = group.rounds.find((r) => mineIds.has(r.certificate.id)) ?? null;
   const initial = group.rounds.find((r) => r.selectable && !mineIds.has(r.certificate.id)) ?? null;
 
@@ -147,11 +145,9 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const add = useAddCertificate();
-  const remove = useRemoveMyCertificate();
-  const moveLogs = useMoveCertificateLogs();
   const invalid = Boolean(validatePrep(prepWeeks, studyHours));
-  const pending = add.isPending || remove.isPending;
-  const error = add.error ?? remove.error;
+  const pending = add.isPending;
+  const error = add.error;
 
   const pickRound = (r: CertificateRound) => {
     setRoundId(r.certificate.id);
@@ -166,25 +162,23 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
     add.mutate(
       { certificate: round.certificate, prep_weeks: prepWeeks, study_hours: studyHours },
       {
-        onSuccess: () => {
-          if (current) {
-            // 회차 바꾸기: 새 회차를 저장하고, 그동안의 기록을 새 회차로 옮긴 뒤(10/28) 예전 회차를 해제
-            const releaseOld = () => remove.mutate(current.certificate.id, {
-              onSuccess: () => onAdded(`${withJosa(label, "으로", "로")} 바꿨어요. 예보에 바로 반영돼요.`),
-              onError: () =>
-                onAdded(`${withJosa(label, "을", "를")} 추가했어요. 예전 회차(${current.certificate.round})는 내 자격증에서 직접 해제해 주세요.`),
-            });
-            // 기록 옮기기에 실패해도 회차는 바꿔요 (기록은 예전 회차에 그대로 남아 있어요)
-            moveLogs.mutate({ from: current.certificate.id, to: round.certificate.id }, { onSettled: releaseOld });
-          } else {
-            onAdded(`${withJosa(label, "을", "를")} 추가했어요. 예보에 바로 반영돼요.`);
-          }
-        },
+        onSuccess: () => onAdded(`${withJosa(label, "을", "를")} 추가했어요. 예보에 바로 반영돼요.`),
         // 저장 실패: 시트를 닫고 화면의 오류 문구로 알려 줌
         onError: () => setPreviewOpen(false),
       },
     );
   };
+
+  if (current) {
+    return (
+      <div className="grid gap-6">
+        <h2 className="text-xl font-bold tracking-tight">{group.name}</h2>
+        <FormAlert tone="info">
+          이미 {withJosa(current.certificate.round, "을", "를")} 골라 두었어요. 준비 기간·시간은 내 자격증에서 바꿀 수 있어요.
+        </FormAlert>
+      </div>
+    );
+  }
 
   const range = round ? certificatePrepRange(round.certificate.exam_date, Number.isInteger(prepWeeks) ? prepWeeks : 1, semesterStart) : null;
 
@@ -195,24 +189,8 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
         {round ? <ApplyBadge {...applyBadge(round.certificate, round.status, today)} /> : null}
       </div>
 
-      {current ? (
-        <FormAlert tone="info">
-          지금 {withJosa(current.certificate.round, "을", "를")} 골라 두었어요. 다른 회차를 추가하면 그 회차로 바뀌어요.
-        </FormAlert>
-      ) : null}
-
       <fieldset className="grid gap-2">
-        <legend className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 text-sm font-medium">
-          회차
-          {group.rounds.filter((r) => r.selectable || mineIds.has(r.certificate.id)).length > 1 ? (
-            <Link
-              to={`/certificates?view=suggest&name=${encodeURIComponent(group.name)}`}
-              className="text-[13px] font-medium text-primary hover:underline"
-            >
-              폭풍이 가장 적은 회차 보기
-            </Link>
-          ) : null}
-        </legend>
+        <legend className="mb-2 text-sm font-medium">회차</legend>
         {group.rounds.map((r) => {
           const isMine = mineIds.has(r.certificate.id);
           const disabled = !r.selectable || isMine;
@@ -289,11 +267,10 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
               disabled={invalid || pending}
               onClick={() => {
                 add.reset();
-                remove.reset();
                 setPreviewOpen(true);
               }}
             >
-              {current ? "이 회차로 바꾸기" : "추가하기"}
+              추가하기
             </Button>
             <p className="text-[13px] text-muted-foreground">누르면 먼저 예보가 어떻게 바뀌는지 보여 드려요. 확인한 뒤에 저장돼요.</p>
           </div>
@@ -310,10 +287,9 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
                     certificate: round.certificate,
                     prep_weeks: prepWeeks,
                     study_hours: studyHours,
-                    replaceCertificateId: current?.certificate.id,
                   }
             }
-            confirmLabel={current ? "이 회차로 바꾸기" : "추가하기"}
+            confirmLabel="추가하기"
             pending={pending}
             onCancel={() => setPreviewOpen(false)}
             onConfirm={save}
@@ -321,7 +297,7 @@ function RoundDetail({ group, mine, semesterStart, today, currentWeek, onAdded }
         </>
       ) : (
         <p className="text-sm text-muted-foreground">
-          {current ? "다른 회차가 없거나 모두 접수가 끝났어요." : "이 자격증은 지금 접수할 수 있는 회차가 없어요. 다음 회차 공고를 기다려 주세요."}
+          이 자격증은 지금 접수할 수 있는 회차가 없어요. 다음 회차 공고를 기다려 주세요.
         </p>
       )}
     </div>

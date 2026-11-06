@@ -364,6 +364,7 @@ export type Database = {
       hook_google_only_signup: { Args: { event: Json }; Returns: Json }
       reset_my_data: { Args: never; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
+      save_onboarding_plans: { Args: { plans: Json; certificates: Json }; Returns: undefined }
       start_next_semester: { Args: never; Returns: undefined }
       reset_current_semester: { Args: never; Returns: undefined }
       switch_semester: { Args: { target: string }; Returns: undefined }

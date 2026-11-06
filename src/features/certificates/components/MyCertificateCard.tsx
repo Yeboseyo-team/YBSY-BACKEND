@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormAlert } from "@/features/auth/components/FormAlert";
@@ -107,9 +106,6 @@ export function MyCertificateCard({ mine, certificate, semesterStart, today, cur
             <Button type="button" variant="outline" onClick={() => setMode("view")} disabled={update.isPending}>
               취소
             </Button>
-            <Button asChild variant="ghost" className="ml-auto">
-              <Link to={`/certificates?view=add&name=${encodeURIComponent(certificate.name)}`}>다른 회차로 바꾸기</Link>
-            </Button>
           </div>
         </form>
       ) : mode === "confirm-remove" ? (
@@ -138,10 +134,7 @@ export function MyCertificateCard({ mine, certificate, semesterStart, today, cur
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={startEdit}>
-            회차·시간 바꾸기
-          </Button>
-          <Button asChild variant="outline">
-            <Link to={`/certificates?view=suggest&name=${encodeURIComponent(certificate.name)}`}>회차 추천</Link>
+            준비 기간·시간 바꾸기
           </Button>
           <Button
             variant="ghost"

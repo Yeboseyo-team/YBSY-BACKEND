@@ -9,16 +9,16 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/auth-context";
 import { FormAlert } from "@/features/auth/components/FormAlert";
 import { NativeSelect } from "@/features/auth/components/NativeSelect";
+import { toOnboardingSaveMessage } from "@/features/auth/onboarding-save-rules";
 import { clearOnboardingDraft, loadOnboardingDraft, ONBOARDING_PLANS_PATH, saveOnboardingDraft } from "@/features/auth/onboarding-draft";
 import { CatalogQuickPick } from "@/features/certificates/components/CatalogQuickPick";
-import { toCertificateMessage, useAddCertificate, useCreateOwnCertificate } from "@/features/certificates/api";
 import { useForecastData } from "@/features/forecast/api";
-import { addDays, calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
+import { calculateForecast, TOTAL_WEEKS, weekDates, type ForecastInput } from "@/features/forecast/calc";
 import { BusyExplain } from "@/features/forecast/components/BusyExplain";
 import { WindowedForecastChart } from "@/features/forecast/components/WindowedForecastChart";
 import { formatDuration, WEATHER_STYLE } from "@/features/forecast/weather";
 import type { DraftCertificate, DraftPlan } from "@/features/plans/ai";
-import { toPlanMessage, useCreatePlans, type PlanInput } from "@/features/plans/api";
+import { useSaveOnboardingPlans } from "@/features/plans/api";
 import { WeekdayPicker } from "@/features/plans/components/WeekdayPicker";
 import { CREDITS_RANGE, EXAM_MODE_LABEL, EXAM_MODES, fromExamMode, MAX_PLANS, PLAN_TYPE_LABEL, toExamMode, type ExamMode } from "@/features/plans/defaults";
 import { cn } from "@/lib/utils";
@@ -67,9 +67,7 @@ export default function OnboardingPlansPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const data = useForecastData();
-  const createPlans = useCreatePlans();
-  const addCertificate = useAddCertificate();
-  const createOwn = useCreateOwnCertificate();
+  const saveAll = useSaveOnboardingPlans();
   const [handoff] = useState(() => loadOnboardingDraft(user?.id));
   const [plans, setPlans] = useState<PlanRow[]>(() => (handoff?.plans ?? []).map((p) => ({ ...p, key: nextKey() })));
   const [certs, setCerts] = useState<CertRow[]>(() => (handoff?.certificates ?? []).map((c) => ({ ...c, key: nextKey() })));
@@ -154,15 +152,14 @@ export default function OnboardingPlansPage() {
   const tooMany = data.plans.length + plans.length > MAX_PLANS;
   const selectedWeek = picked ?? data.currentWeek ?? 1;
 
-  /** 저장: 계획 → 고른 회차 → 직접 추가 자격증 순서. 저장된 줄은 목록에서 빼서 다시 눌러도 두 번 들어가지 않아요 */
+  /** 저장: 계획·자격증을 DB 함수 하나로 한 번에 (11/02). 실패하면 아무것도 저장되지 않고 화면 목록도 그대로예요 */
   const save = async () => {
     if (!semesterStart || problems.length > 0 || tooMany) return;
     setSaving(true);
     setSaveError(null);
-    let step: "plans" | "certificates" = "plans";
     try {
-      if (plans.length > 0) {
-        const inputs: PlanInput[] = plans.map((p) => ({
+      await saveAll.mutateAsync({
+        plans: plans.map((p) => ({
           title: p.title.trim().slice(0, 30),
           type: p.type,
           credits: p.type === "class" ? p.credits : null,
@@ -176,36 +173,20 @@ export default function OnboardingPlansPage() {
           category_id: null,
           ...fromExamMode(p.type === "class" ? toExamMode(p) : "both"),
           study_days: p.study_days?.length ? p.study_days : null,
-        }));
-        await createPlans.mutateAsync(inputs);
-        setPlans([]);
-      }
-      step = "certificates";
-      for (const c of certs) {
-        const catalog = c.certificate_id ? catalogById.get(c.certificate_id) : undefined;
-        if (catalog) {
-          await addCertificate.mutateAsync({ certificate: catalog, prep_weeks: c.prep_weeks, study_hours: c.study_hours });
-        } else {
-          const exam = c.exam_date!;
-          const applyEnd = addDays(exam, -1) < data.today ? data.today : addDays(exam, -1);
-          await createOwn.mutateAsync({
-            name: c.name.trim().slice(0, 30),
-            round: `${Number(exam.slice(5, 7))}월 ${Number(exam.slice(8, 10))}일 시험`,
-            apply_start: data.today,
-            apply_end: applyEnd,
-            exam_date: exam,
-            prep_weeks: c.prep_weeks,
-            study_hours: c.study_hours,
-            source_url: null,
-          });
-        }
-        setCerts((all) => all.filter((x) => x.key !== c.key));
-      }
+        })),
+        certificates: certs.map((c) => ({
+          certificate_id: c.certificate_id,
+          name: c.name.trim(),
+          exam_date: c.exam_date,
+          prep_weeks: c.prep_weeks,
+          study_hours: c.study_hours,
+        })),
+      });
       finished.current = true;
       clearOnboardingDraft(user?.id);
       navigate("/", { replace: true });
     } catch (error) {
-      setSaveError(step === "plans" ? toPlanMessage(error) : toCertificateMessage(error));
+      setSaveError(toOnboardingSaveMessage(error));
     } finally {
       setSaving(false);
     }
